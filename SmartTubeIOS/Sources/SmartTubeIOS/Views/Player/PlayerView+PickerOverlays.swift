@@ -33,6 +33,9 @@ extension PlayerView {
             VStack(spacing: 0) {
                 HStack {
                     Button("Cancel") { showQualityPicker = false }
+                        #if os(tvOS)
+                        .buttonStyle(PickerHeaderButtonStyle())
+                        #endif
                         .padding()
                     Spacer()
                     Text("Quality")
@@ -139,6 +142,9 @@ extension PlayerView {
             VStack(spacing: 0) {
                 HStack {
                     Button("Cancel") { showSpeedPicker = false }
+                        #if os(tvOS)
+                        .buttonStyle(PickerHeaderButtonStyle())
+                        #endif
                         .padding()
                     Spacer()
                     Text("Playback Speed")
@@ -206,6 +212,9 @@ extension PlayerView {
             VStack(spacing: 0) {
                 HStack {
                     Button("Cancel") { showSleepTimerPicker = false }
+                        #if os(tvOS)
+                        .buttonStyle(PickerHeaderButtonStyle())
+                        #endif
                         .padding()
                     Spacer()
                     Text("Sleep Timer")
@@ -289,6 +298,9 @@ extension PlayerView {
             VStack(spacing: 0) {
                 HStack {
                     Button("Cancel") { showCaptionPicker = false }
+                        #if os(tvOS)
+                        .buttonStyle(PickerHeaderButtonStyle())
+                        #endif
                         .padding()
                     Spacer()
                     Text("Captions")
@@ -378,6 +390,9 @@ extension PlayerView {
             VStack(spacing: 0) {
                 HStack {
                     Button("Cancel") { showAudioTrackPicker = false }
+                        #if os(tvOS)
+                        .buttonStyle(PickerHeaderButtonStyle())
+                        #endif
                         .padding()
                     Spacer()
                     Text("Audio Track")
@@ -487,3 +502,31 @@ extension PlayerView {
     }
     #endif
 }
+
+#if os(tvOS)
+// MARK: - PickerHeaderButtonStyle (tvOS)
+
+/// Flat style for the Cancel button in picker sheet headers. The default tvOS
+/// button style renders a bright white platter that clashes with the dark
+/// sheet material; this shows a gray highlight when focused instead, matching
+/// the more-menu row treatment.
+struct PickerHeaderButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        PickerHeaderButtonLabel(configuration: configuration)
+    }
+
+    private struct PickerHeaderButtonLabel: View {
+        @Environment(\.isFocused) private var isFocused
+        let configuration: ButtonStyle.Configuration
+
+        var body: some View {
+            configuration.label
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(isFocused ? Color.gray.opacity(0.35) : .clear)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+    }
+}
+#endif

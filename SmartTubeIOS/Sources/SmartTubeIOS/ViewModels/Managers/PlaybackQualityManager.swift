@@ -81,6 +81,11 @@ final class PlaybackQualityManager {
     /// Stats for Nerds "Selected" row and by UI tests that verify selectFormat was called.
     /// Cleared only when the user picks Auto or a new video loads.
     var pendingQualityLabel: String = ""
+    /// The user's quality pick for the *current video*, set by `selectFormat`.
+    /// `nil` = no pick this video (the persisted default applies); `.auto` = the
+    /// user explicitly chose Auto for this video. Unlike `selectedFormat`, this
+    /// survives CDN-failure reverts; cleared only by `reset()` on a new video.
+    var perVideoQuality: AppSettings.VideoQuality? = nil
     var availableFormats: [VideoFormat] = []
     var hlsVariantURLs: [Int: URL] = [:]
     /// `true` when the current stream is a muxed (360p) fallback.
@@ -130,6 +135,7 @@ final class PlaybackQualityManager {
     func reset() {
         selectedFormat = nil
         pendingQualityLabel = ""
+        perVideoQuality = nil
         availableFormats = []
         hlsVariantURLs = [:]
         isMuxedFallback = false
@@ -159,14 +165,6 @@ final class PlaybackQualityManager {
         playerLog.notice("[quality] selectFormat: \(previousLabel) → \(newLabel)")
         selectedFormat = format
         pendingQualityLabel = format?.qualityLabel ?? ""
-        delegate?.toastMessage = format.map { "\($0.height)p" } ?? "Auto"
-        qualityTask?.cancel()
-        qualityTask = nil
-        guard let delegate else {
-            playerLog.error("[quality] selectFormat: delegate is nil — quality reload skipped")
-            return
-        }
-        let savedTime = delegate.currentTime
         let quality: AppSettings.VideoQuality
         if let fmt = format {
             if let q = AppSettings.VideoQuality.from(height: fmt.height) {
@@ -179,6 +177,16 @@ final class PlaybackQualityManager {
         } else {
             quality = .auto
         }
+        // Per-video intent: overrides the persisted default for this video only.
+        perVideoQuality = quality
+        delegate?.toastMessage = format.map { "\($0.height)p" } ?? "Auto"
+        qualityTask?.cancel()
+        qualityTask = nil
+        guard let delegate else {
+            playerLog.error("[quality] selectFormat: delegate is nil — quality reload skipped")
+            return
+        }
+        let savedTime = delegate.currentTime
         qualityTask = Task { [weak self] in
             guard let self else { return }
             #if canImport(WebKit)
@@ -383,13 +391,17 @@ final class PlaybackQualityManager {
     /// only the `selectedFormat` state needs to reflect the preference (e.g. fallback paths
     /// that keep the master URL for EXT-X-MEDIA audio rendition reasons).
     func setSelectedFormatForCurrentPreference() {
-        guard let settings = delegate?.settings,
-              settings.preferredQuality != .auto,
-              let maxH = settings.preferredQuality.maxHeight else {
+        guard let maxH = effectiveQuality.maxHeight else {
             selectedFormat = nil
             return
         }
         selectedFormat = availableFormats.first { $0.height <= maxH }
+    }
+
+    /// The quality cap recovery and stream-selection paths must honour:
+    /// the per-video pick when one exists, otherwise the persisted default.
+    var effectiveQuality: AppSettings.VideoQuality {
+        perVideoQuality ?? delegate?.settings.preferredQuality ?? .auto
     }
 
     /// Fetches the HLS master manifest and returns a map of stream height → variant playlist URL.

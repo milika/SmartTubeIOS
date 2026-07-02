@@ -919,7 +919,7 @@ extension PlaybackViewModel {
                     PlaybackQualityManager.cacheHLSVariants(variantURLs, for: videoId)
                 }
             }
-            playerLog.notice("[\(label)] HLS: hlsURL=yes variantCount=\(variantURLs.count) preferredQuality=\(settings.preferredQuality)")
+            playerLog.notice("[\(label)] HLS: hlsURL=yes variantCount=\(variantURLs.count) effectiveQuality=\(effectiveQuality)")
             if !variantURLs.isEmpty {
                 hlsVariantURLs = variantURLs
                 availableFormats = availableFormats.filter { variantURLs.keys.contains($0.height) }
@@ -928,7 +928,9 @@ extension PlaybackViewModel {
                 // because it requires session-level auth that AVPlayer's isolated network stack
                 // cannot provide. Variant playlist URLs (hls_playlist) are directly downloadable
                 // — yt-dlp confirms 720p in 13 s, 1080p in 29 s for the same video.
-                let preferredMaxH = settings.preferredQuality == .auto ? nil : settings.preferredQuality.maxHeight
+                // Per-video pick (when set) takes precedence over the persisted default —
+                // a mid-playback 403 recovery must not silently revert the user's choice.
+                let preferredMaxH = effectiveQuality.maxHeight
                 let chosen = preferredMaxH
                     .flatMap { h in variantURLs.filter { $0.key <= h }.max(by: { $0.key < $1.key }) }
                     ?? variantURLs.max(by: { $0.key < $1.key })
@@ -1064,7 +1066,7 @@ extension PlaybackViewModel {
             item?.preferredForwardBufferDuration = 0
         }
         if applyHLSHints {
-            if settings.preferredQuality != .auto, let maxH = settings.preferredQuality.maxHeight {
+            if let maxH = effectiveQuality.maxHeight {
                 item.preferredMaximumResolution = CGSize(width: CGFloat(maxH) * 4, height: CGFloat(maxH))
                 item.preferredPeakBitRate = peakBitRate(for: maxH)
                 playerLog.notice("[\(label)] HLS ABR hints: maxH=\(maxH)p peakBitRate=\(peakBitRate(for: maxH) / 1_000_000)Mbps (master URL preserved)")

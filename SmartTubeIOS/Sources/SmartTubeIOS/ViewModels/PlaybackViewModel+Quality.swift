@@ -21,6 +21,12 @@ extension PlaybackViewModel {
         if statsForNerdsVisible { updateStatsSnapshot() }
     }
 
+    /// Quality cap for recovery/stream-selection paths: the per-video pick when
+    /// one exists, otherwise the persisted default (`settings.preferredQuality`).
+    var effectiveQuality: AppSettings.VideoQuality {
+        qualityManager.effectiveQuality
+    }
+
     func reloadHLSItem(seekTo time: TimeInterval, quality: AppSettings.VideoQuality) async {
         await qualityManager.reloadHLSItem(seekTo: time, quality: quality)
     }

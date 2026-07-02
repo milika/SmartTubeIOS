@@ -46,8 +46,6 @@ extension PlayerView {
                         Button {
                             pickerLog.notice("[qualityPicker] selected Auto (was: \(vm.selectedFormat?.qualityLabel ?? "Auto"))")
                             vm.selectFormat(nil)
-                            store.settings.preferredQuality = .auto
-                            vm.updateSettings(store.settings)
                             showQualityPicker = false
                             qualityToastMessage = "Auto quality"
                         } label: {
@@ -73,14 +71,6 @@ extension PlayerView {
                             Button {
                                 pickerLog.notice("[qualityPicker] selected \(fmt.qualityLabel) (was: \(vm.selectedFormat?.qualityLabel ?? "Auto"))")
                                 vm.selectFormat(fmt)
-                                if let q = AppSettings.VideoQuality.from(height: fmt.height) {
-                                    store.settings.preferredQuality = q
-                                } else {
-                                    pickerLog.error("Quality picker: non-standard height \(fmt.height)p — falling back to .auto")
-                                    assertionFailure("Quality picker tapped for format with non-standard height \(fmt.height)")
-                                    store.settings.preferredQuality = .auto
-                                }
-                                vm.updateSettings(store.settings)
                                 showQualityPicker = false
                                 qualityToastMessage = "\(fmt.qualityLabel) · may take up to 30s"
                             } label: {

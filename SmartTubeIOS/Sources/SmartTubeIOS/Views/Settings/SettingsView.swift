@@ -94,7 +94,7 @@ public struct SettingsView: View {
             }
 
             #if !os(iOS)
-            Picker("Max Resolution", selection: $store.settings.preferredQuality) {
+            Picker("Default Quality", selection: $store.settings.preferredQuality) {
                 ForEach(AppSettings.VideoQuality.allCases, id: \.self) { q in
                     Text(q.rawValue.capitalized).tag(q)
                 }

@@ -40,29 +40,12 @@ extension PlayerView {
     // MARK: - MoreMenuRow
 
     /// Identifies each focusable row in the more menu overlay.
-    /// Used by `moreMenuFocusedRow` and `moreMenuVisibleRows` to drive explicit
-    /// D-pad navigation — SwiftUI's spatial focus engine cannot reliably navigate
-    /// between buttons inside a ZStack overlay on tvOS.
+    /// Navigation is native SwiftUI focus via the `.focused($moreMenuFocusedRow, equals:)`
+    /// binding on each row; initial focus is set to `.speed` when the menu opens
+    /// (PlayerView+Lifecycle). The case value drives the row's focus highlight.
     enum MoreMenuRow: Hashable {
-        case speed, like, dislike, sleepTimer, audioOnly, queueShuffle, captions, audioTrack, description, comments, cancel
-    }
-
-    /// Ordered list of rows currently visible in the more menu.
-    /// Drives the `.onMoveCommand` handler to know which row comes next.
-    /// `.dislike` is not in this list — it sits to the right of `.like` and is
-    /// reached via left/right D-pad, not up/down.
-    var moreMenuVisibleRows: [MoreMenuRow] {
-        var rows: [MoreMenuRow] = [.speed]
-        if authService.isSignedIn { rows.append(.like) }
-        rows.append(.sleepTimer)
-        rows.append(.audioOnly)
-        if !vm.availableCaptions.isEmpty { rows.append(.captions) }
-        if vm.availableAudioTracks.count > 1 { rows.append(.audioTrack) }
-        let desc = (vm.playerInfo?.video ?? video).description ?? ""
-        if !desc.isEmpty { rows.append(.description) }
-        rows.append(.comments)
-        rows.append(.cancel)
-        return rows
+        case speed, quality, like, dislike, sleepTimer, audioOnly, queueShuffle, captions,
+             audioTrack, description, comments, statsForNerds, cancel
     }
 
     // MARK: - TVPlayerControl

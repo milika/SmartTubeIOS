@@ -173,6 +173,7 @@ extension PlayerView {
             Divider()
             #if os(tvOS)
             moreMenuSpeedRow
+            moreMenuQualityRow
             #endif
             moreMenuLikeDislikeRow
             moreMenuShareRow
@@ -361,6 +362,35 @@ extension PlayerView {
         #endif
         Divider()
     }
+
+    #if os(tvOS)
+    @ViewBuilder private var moreMenuQualityRow: some View {
+        if !vm.availableFormats.isEmpty {
+            Button {
+                menuLog.notice("[moreMenu] Quality row tapped — closing moreMenu, opening qualityPicker")
+                showMoreMenu = false
+                showQualityPicker = true
+            } label: {
+                HStack {
+                    Label("Quality", systemImage: "film.stack")
+                    Spacer()
+                    Text(vm.selectedFormat?.qualityLabel
+                         ?? (vm.pendingQualityLabel.isEmpty ? "Auto" : vm.pendingQualityLabel))
+                        .foregroundStyle(.secondary)
+                }
+                .padding()
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.primary)
+            .accessibilityIdentifier("player.moreMenu.qualityRow")
+            .background(moreMenuFocusedRow == .quality ? Color.gray.opacity(0.35) : .clear)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .focused($moreMenuFocusedRow, equals: .quality)
+            Divider()
+        }
+    }
+    #endif
 
     private var shouldShowAudioTrackInMoreMenu: Bool {
         #if os(tvOS)
@@ -690,8 +720,9 @@ extension PlayerView {
         .foregroundStyle(.primary)
         .accessibilityIdentifier("player.moreMenu.statsForNerds")
         #if os(tvOS)
-        .background(moreMenuFocusedRow == .cancel ? Color.gray.opacity(0.35) : .clear)
+        .background(moreMenuFocusedRow == .statsForNerds ? Color.gray.opacity(0.35) : .clear)
         .clipShape(RoundedRectangle(cornerRadius: 10))
+        .focused($moreMenuFocusedRow, equals: .statsForNerds)
         #endif
         Divider()
     }

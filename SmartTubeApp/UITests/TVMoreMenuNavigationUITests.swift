@@ -132,5 +132,26 @@ final class TVMoreMenuNavigationUITests: XCTestCase {
         XCTContext.runActivity(named:
             "Navigation path: Speed → \(after1) → \(after2) → \(after3)") { _ in }
     }
+
+    /// The Quality row must be present in the more menu, directly reachable
+    /// with one DOWN press from Speed, and it must open the quality picker.
+    func test_QualityRow_ExistsAndOpensPicker() throws {
+        try waitForMoreMenu()
+
+        let qualityRow = element("player.moreMenu.qualityRow")
+        XCTAssertTrue(qualityRow.waitForExistence(timeout: 5),
+                      "player.moreMenu.qualityRow must be in the more menu")
+
+        // Speed is focused initially; one DOWN lands on Quality (the next row).
+        remote.press(.down)
+        Thread.sleep(forTimeInterval: 0.6)
+        XCTAssertEqual(focusedIdentifier(), "player.moreMenu.qualityRow",
+                       "One DOWN from Speed must focus the Quality row")
+
+        remote.press(.select)
+        let picker = element("player.qualityPicker")
+        XCTAssertTrue(picker.waitForExistence(timeout: 10),
+                      "Selecting the Quality row must open the quality picker")
+    }
 }
 #endif

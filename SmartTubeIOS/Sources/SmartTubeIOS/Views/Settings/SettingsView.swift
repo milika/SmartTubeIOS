@@ -87,6 +87,14 @@ public struct SettingsView: View {
     private var playerSection: some View {
         @Bindable var store = store
         return Section("Player") {
+            #if os(iOS)
+            Picker("Video Player", selection: $store.settings.iOSPlayer) {
+                Text("YouTube Player").tag(AppSettings.IOSPlayer.youtubeEmbed)
+                Text("Native Player (Background Playback)").tag(AppSettings.IOSPlayer.native)
+            }
+            .accessibilityIdentifier("settings.iOSPlayerPicker")
+            #endif
+
             Picker("Playback Speed", selection: $store.settings.playbackSpeed) {
                 ForEach(AppSettings.availableSpeeds, id: \.self) { s in
                     Text(s == 1.0 ? "Normal" : "\(s, specifier: "%.2g")×").tag(s)
@@ -169,6 +177,18 @@ public struct SettingsView: View {
 
             Toggle("Autoplay next video", isOn: $store.settings.autoplayEnabled)
             Toggle("Background Playback", isOn: $store.settings.backgroundPlaybackEnabled)
+                #if os(iOS)
+                .disabled(store.effectiveIOSPlayer == .youtubeEmbed)
+                .accessibilityIdentifier("settings.backgroundPlaybackToggle")
+                #endif
+            #if os(iOS)
+            if store.effectiveIOSPlayer == .youtubeEmbed {
+                Text("Background Playback requires the Native Player.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("settings.backgroundPlaybackHint")
+            }
+            #endif
             #if !os(iOS)
             Toggle("Prefer H.264 Codec", isOn: $store.settings.preferH264)
                 .accessibilityIdentifier("settings.preferH264Toggle")

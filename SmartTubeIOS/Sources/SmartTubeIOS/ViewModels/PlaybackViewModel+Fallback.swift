@@ -1085,8 +1085,39 @@ extension PlaybackViewModel {
         player.replaceCurrentItem(with: item)
         itemObserverTask?.cancel()
 
-        for await status in item.statusStream {
-            switch status {
+        // Some unreachable CDN URLs remain `.unknown` indefinitely on iOS 26.
+        // Race the terminal status against a timeout so exhaustiveRetry can move on
+        // to the next candidate instead of leaving the loading spinner up forever.
+        let (statusRace, statusContinuation) = AsyncStream<AVPlayerItem.Status?>.makeStream()
+        let statusTask = Task { @MainActor in
+            for await status in item.statusStream {
+                guard status != .unknown else { continue }
+                statusContinuation.yield(status)
+                statusContinuation.finish()
+                return
+            }
+            statusContinuation.yield(nil)
+            statusContinuation.finish()
+        }
+        let timeoutTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(12))
+            guard !Task.isCancelled else { return }
+            statusContinuation.yield(nil)
+            statusContinuation.finish()
+        }
+        let terminalStatus = await statusRace.first(where: { @Sendable _ in true }) ?? nil
+        statusTask.cancel()
+        timeoutTask.cancel()
+
+        guard let terminalStatus else {
+            playerLog.error("❌ [\(label)] AVPlayerItem startup timed out after 12s")
+            if player.currentItem === item {
+                player.replaceCurrentItem(with: nil)
+            }
+            return false
+        }
+
+        switch terminalStatus {
             case .readyToPlay:
                 playerLog.notice("[benchmark] readyToPlay — \(label) — videoId=\(video.id) title=\(video.title)")
                 playerLog.notice("✅ [\(label)] readyToPlay")
@@ -1143,12 +1174,10 @@ extension PlaybackViewModel {
                 }
                 return false
             case .unknown:
-                continue
+                return false
             @unknown default:
-                continue
-            }
+                return false
         }
-        return false
     }
 
     /// Composes a video-only + audio-only adaptive stream pair via `AVMutableComposition`.

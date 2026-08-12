@@ -274,6 +274,13 @@ public final class PlaybackViewModel {
     /// True while a SponsorBlock auto-skip seek is in-flight — forwarded to sponsorBlockManager.
     var isSkippingSegment: Bool { sponsorBlockManager.isSkippingSegment }
     var itemObserverTask: Task<Void, Never>?
+    /// Cancels an AVPlayerItem attempt that remains `.unknown` indefinitely. YouTube
+    /// CDN failures do not always transition AVFoundation to `.failed` on iOS 26.
+    var itemStartupWatchdogTask: Task<Void, Never>?
+    /// Bounds the complete native loading/fallback pipeline. Individual AVPlayerItem
+    /// attempts are timed out separately, but a sequence of bad CDN URLs must not leave
+    /// the player spinner visible indefinitely.
+    var loadDeadlineTask: Task<Void, Never>?
     var endObserverTask: Task<Void, Never>?
     var stallObserverTask: Task<Void, Never>?
     /// Observes `AVPlayerItem.duration` via KVO after `.readyToPlay` for HLS streams

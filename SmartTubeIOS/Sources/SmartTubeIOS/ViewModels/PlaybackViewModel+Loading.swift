@@ -37,6 +37,10 @@ extension PlaybackViewModel {
         // Cancel any previous in-flight load so we never have two concurrent API
         // fetches for the same (or different) video running at the same time.
         loadTask?.cancel()
+        itemStartupWatchdogTask?.cancel()
+        itemStartupWatchdogTask = nil
+        loadDeadlineTask?.cancel()
+        loadDeadlineTask = nil
         #if canImport(WebKit)
         // fix10: preserve the pre-warm task when the same video is re-tapped after stop().
         // racePathB will await earlyTask.value and get the result when extraction completes
@@ -194,6 +198,7 @@ extension PlaybackViewModel {
         // one-frame gap (one run-loop cycle) where the PlayerView renders with isLoading=false,
         // making the spinner invisible until the Task runs and sets it inside loadAsync().
         isLoading = true
+        scheduleLoadDeadline(for: video)
         // UI-testing: re-show controls after load() resets controlsVisible=false.
         // Mirrors the onAppear --uitesting-show-controls handling so controls remain
         // visible across queue advances without relying on a second onAppear trigger.
@@ -228,10 +233,39 @@ extension PlaybackViewModel {
         exhaustiveRetryTask = nil
         loadTask?.cancel()
         isLoading = true
+        scheduleLoadDeadline(for: video)
         loadTask = Task { [weak self] in
             guard let self else { return }
             await VideoPreloadCache.shared.invalidatePlayerInfo(for: video.id)
             await self.loadAsync(video: video)
+        }
+    }
+
+    /// Prevents the complete native fallback chain from keeping the loading UI alive
+    /// forever. This is deliberately longer than the per-item timeout so at least one
+    /// fallback can be attempted before the user is offered Retry.
+    private func scheduleLoadDeadline(for video: Video) {
+        loadDeadlineTask?.cancel()
+        loadDeadlineTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(30))
+            guard !Task.isCancelled,
+                  let self,
+                  self.isLoading,
+                  self.currentVideo?.id == video.id else { return }
+
+            playerLog.error("❌ Native playback load timed out after 30s — videoId=\(video.id)")
+            self.loadTask?.cancel()
+            self.exhaustiveRetryTask?.cancel()
+            self.exhaustiveRetryTask = nil
+            self.itemObserverTask?.cancel()
+            self.itemObserverTask = nil
+            self.itemStartupWatchdogTask?.cancel()
+            self.itemStartupWatchdogTask = nil
+            self.player.pause()
+            self.player.replaceCurrentItem(with: nil)
+            self.isPlaying = false
+            self.isLoading = false
+            self.error = APIError.unavailable("Stream loading timed out. Please retry.")
         }
     }
 
@@ -832,6 +866,10 @@ extension PlaybackViewModel {
                     guard let self, !Task.isCancelled else { return }
                     switch status {
                     case .readyToPlay:
+                        self.itemStartupWatchdogTask?.cancel()
+                        self.itemStartupWatchdogTask = nil
+                        self.loadDeadlineTask?.cancel()
+                        self.loadDeadlineTask = nil
                         let elapsedMs = Int(Date().timeIntervalSince(self.videoLoadStartedAt) * 1000)
                         self.timeToPlayMs = elapsedMs
                         playerLog.notice("✅ AVPlayerItem readyToPlay — video=\(self.currentVideo?.id ?? "nil") rate=\(self.player.rate) timeControlStatus=\(self.player.timeControlStatus.rawValue) isAudioOnlyMode=\(self.isAudioOnlyMode)")
@@ -912,6 +950,8 @@ extension PlaybackViewModel {
                             }
                         }
                     case .failed:
+                        self.itemStartupWatchdogTask?.cancel()
+                        self.itemStartupWatchdogTask = nil
                         let err = item.error.map { "\($0)" } ?? "nil"
                         playerLog.error("❌ AVPlayerItem failed: \(err)")
                         if let video = self.currentVideo {
@@ -925,6 +965,30 @@ extension PlaybackViewModel {
                     @unknown default:
                         break
                     }
+                }
+            }
+            // iOS 26 may leave an unreachable HLS item in `.unknown` forever instead
+            // of reporting `.failed`. Advance to the existing fallback chain after a
+            // bounded startup window so the spinner can never wait on this item forever.
+            let startupItem = item
+            itemStartupWatchdogTask?.cancel()
+            itemStartupWatchdogTask = Task { @MainActor [weak self, weak startupItem] in
+                try? await Task.sleep(for: .seconds(12))
+                guard !Task.isCancelled,
+                      let self,
+                      let startupItem,
+                      self.player.currentItem === startupItem,
+                      startupItem.status == .unknown,
+                      self.isLoading,
+                      self.currentVideo?.id == video.id else { return }
+                playerLog.error("❌ AVPlayerItem startup timed out after 12s — routing to exhaustiveRetry")
+                self.itemObserverTask?.cancel()
+                self.exhaustiveRetryTask?.cancel()
+                self.exhaustiveRetryTask = Task {
+                    await self.exhaustiveRetry(
+                        video: video,
+                        originalError: APIError.unavailable("Stream startup timed out")
+                    )
                 }
             }
 
@@ -1167,6 +1231,10 @@ extension PlaybackViewModel {
         }
         itemObserverTask?.cancel()
         itemObserverTask = nil
+        itemStartupWatchdogTask?.cancel()
+        itemStartupWatchdogTask = nil
+        loadDeadlineTask?.cancel()
+        loadDeadlineTask = nil
         endObserverTask?.cancel()
         endObserverTask = nil
         stallObserverTask?.cancel()

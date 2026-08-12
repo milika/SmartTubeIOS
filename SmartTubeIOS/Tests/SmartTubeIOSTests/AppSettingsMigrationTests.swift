@@ -82,9 +82,21 @@ struct AppSettingsMigrationTests {
         #expect(settings.audioOnlyMode == true)
         #expect(settings.preferH264 == true)
         #expect(settings.iCloudSyncEnabled == true)
+        #expect(settings.iOSPlayer == .youtubeEmbed)
 
         // Missing field must decode to 0 (the pre-migration sentinel)
         #expect(settings.settingsVersion == 0, "Old JSON without settingsVersion should decode as 0 (migration sentinel), not fail")
+    }
+
+    @Test("iOS player selection round-trips through persisted settings")
+    func iOSPlayerSelectionRoundTrips() throws {
+        var settings = AppSettings()
+        settings.iOSPlayer = .native
+
+        let data = try JSONEncoder().encode(settings)
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        #expect(decoded.iOSPlayer == .native)
     }
 
     // MARK: - Type-mismatched field → default for that field, others preserved

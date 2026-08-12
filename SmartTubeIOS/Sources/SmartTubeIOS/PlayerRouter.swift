@@ -14,16 +14,19 @@ import SmartTubeIOSCore
 // place instead of duplicated across every view.
 //
 // Routing rules:
-//   - If `settingsStore.useTOSPlayerOnIOS` is true (the default — always on except
-//     for UI tests that opt out) and this video hasn't previously hit a fatal embed
-//     error (TOSPlayerStateStore.fallbackVideoId), present the WKWebView-based
-//     TOS-compliant player.
+//   - If the effective iOS player selection is the YouTube embed and this video
+//     hasn't previously hit a fatal embed error, present the WKWebView-based player.
 //   - Otherwise present the AVPlayer-based pipeline.
 // In both cases, any active mini-player for the *other* pipeline is stopped
 // first — AVPlayer and TOS playback are mutually exclusive.
 @MainActor
 @Observable
 public final class PlayerRouter {
+    enum Route: Equatable {
+        case youtubeEmbed
+        case native
+    }
+
     private let playerState: PlayerStateStore
     private let tosState: TOSPlayerStateStore
     private let settingsStore: SettingsStore
@@ -34,14 +37,26 @@ public final class PlayerRouter {
         self.settingsStore = settingsStore
     }
 
+    func route(for video: Video) -> Route {
+        if settingsStore.effectiveIOSPlayer == .youtubeEmbed,
+           tosState.fallbackVideoId != video.id {
+            return .youtubeEmbed
+        }
+        return .native
+    }
+
     /// Open `video` in whichever player pipeline is currently preferred.
     public func open(video: Video, api: InnerTubeAPI) {
-        if settingsStore.useTOSPlayerOnIOS && tosState.fallbackVideoId != video.id {
+        if route(for: video) == .youtubeEmbed {
             if playerState.presentation != .hidden { playerState.stop() }
             tosState.play(video: video, api: api)
             return
         }
         if tosState.presentation != .hidden { tosState.stop() }
+        // PlayerStateStore.play() starts loading synchronously, before PlayerView.onAppear
+        // can propagate preferences. Seed them here so the very first stream attempt uses
+        // the selected quality, playback speed, and background-playback configuration.
+        playerState.vm.updateSettings(settingsStore.settings)
         playerState.play(video: video)
     }
 }

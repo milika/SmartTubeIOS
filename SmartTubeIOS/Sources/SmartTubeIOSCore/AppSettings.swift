@@ -11,6 +11,10 @@ public struct AppSettings: Codable {
     public var autoplayEnabled: Bool
     public var subtitlesLanguage: String?
     public var backgroundPlaybackEnabled: Bool
+    /// Player implementation used for regular videos on iOS.
+    /// The YouTube embed is the compatibility-first default; the native player
+    /// supports reliable background playback and the full set of native controls.
+    public var iOSPlayer: IOSPlayer
     /// When `true`, the player automatically rotates to landscape when a video starts on iPhone.
     public var landscapeAlwaysPlay: Bool
     /// When `true`, Picture-in-Picture is available and the PiP button is shown in the player.
@@ -148,14 +152,6 @@ public struct AppSettings: Codable {
     /// Opt-in experiment — has no effect on tvOS.
     public var useTOSPlayerOnMac: Bool
 
-    // Note: there is no `useTOSPlayerOnIOS` setting. The TOS-compliant player is
-    // always used on iOS (PlayerRouter.open(), gated #if os(iOS)) — see
-    // SettingsStore.useTOSPlayerOnIOS, which is a non-persisted, hardcoded-true
-    // property (overridable only by UI test launch arguments). It has no effect
-    // on macOS or tvOS. Automatically falls back to the AVPlayer pipeline for a
-    // given video if the embed reports a fatal error (TOSPlayerStateStore.markFallback
-    // — see TOSPlayerView.onFallback).
-
     // MARK: Schema version
     /// Persisted schema version. Starts at 1 for newly stored settings.
     /// Old JSON lacking this key decodes as 0, signalling a pre-migration store.
@@ -169,6 +165,11 @@ public struct AppSettings: Codable {
 
     /// Canonical ordered list of selectable seek-interval values (seconds) — used by Stepper on iOS and Picker on tvOS.
     public static let availableSeekOptions: [Int] = [5, 10, 15, 20, 30, 45, 60]
+
+    public enum IOSPlayer: String, Codable, CaseIterable, Sendable {
+        case youtubeEmbed = "youtubeEmbed"
+        case native = "native"
+    }
 
     public enum VideoQuality: String, Codable, CaseIterable, Sendable {
         case auto  = "auto"
@@ -225,6 +226,7 @@ public struct AppSettings: Codable {
         autoplayEnabled      = true
         subtitlesLanguage    = nil
         backgroundPlaybackEnabled = false
+        iOSPlayer            = .youtubeEmbed
         landscapeAlwaysPlay  = false
         pipEnabled           = true
         miniPlayerEnabled    = true
@@ -305,6 +307,7 @@ extension AppSettings {
         case autoplayEnabled
         case subtitlesLanguage
         case backgroundPlaybackEnabled
+        case iOSPlayer
         case landscapeAlwaysPlay
         case pipEnabled
         case miniPlayerEnabled
@@ -348,6 +351,7 @@ extension AppSettings {
         autoplayEnabled              = c.safeDecode(Bool.self,              forKey: .autoplayEnabled,              default: d.autoplayEnabled)
         subtitlesLanguage            = c.safeDecode(String?.self,           forKey: .subtitlesLanguage,            default: d.subtitlesLanguage)
         backgroundPlaybackEnabled    = c.safeDecode(Bool.self,              forKey: .backgroundPlaybackEnabled,    default: d.backgroundPlaybackEnabled)
+        iOSPlayer                    = c.safeDecode(IOSPlayer.self,          forKey: .iOSPlayer,                    default: d.iOSPlayer)
         landscapeAlwaysPlay          = c.safeDecode(Bool.self,              forKey: .landscapeAlwaysPlay,          default: d.landscapeAlwaysPlay)
         pipEnabled                   = c.safeDecode(Bool.self,              forKey: .pipEnabled,                   default: d.pipEnabled)
         miniPlayerEnabled            = c.safeDecode(Bool.self,              forKey: .miniPlayerEnabled,            default: d.miniPlayerEnabled)

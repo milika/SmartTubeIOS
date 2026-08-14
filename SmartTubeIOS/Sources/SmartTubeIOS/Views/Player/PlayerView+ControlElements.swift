@@ -46,6 +46,20 @@ struct PlayerControlsOverlay: View {
         VStack {
             // Top bar: back + title
             HStack {
+                #if os(tvOS)
+                tvOverlayControl(
+                    highlighted: highlightedControl == .back,
+                    scale: 1.5,
+                    shadowRadius: 12,
+                    identifier: "player.backButton",
+                    width: 64,
+                    height: 64
+                ) {
+                    Image(systemName: AppSymbol.chevronLeft)
+                        .font(.title2)
+                        .foregroundStyle(.white)
+                }
+                #else
                 Button {
                     #if os(iOS)
                     if store.settings.miniPlayerEnabled { playerState.minimize() } else { playerState.stop() }
@@ -61,12 +75,6 @@ struct PlayerControlsOverlay: View {
                         .clipShape(Circle())
                 }
                 .accessibilityIdentifier("player.backButton")
-                #if os(tvOS)
-                .buttonStyle(.plain)
-                .focusable(false)
-                .scaleEffect(highlightedControl == .back ? 1.5 : 1.0)
-                .shadow(color: highlightedControl == .back ? .white.opacity(0.85) : .clear, radius: 12)
-                .animation(.easeInOut(duration: 0.15), value: highlightedControl)
                 #endif
                 VStack(alignment: .leading, spacing: 2) {
                     Text(vm.playerInfo?.video.title ?? video.title)
@@ -76,6 +84,20 @@ struct PlayerControlsOverlay: View {
                         .accessibilityIdentifier("player.titleLabel")
                     let channelId = vm.playerInfo?.video.channelId ?? video.channelId
                     let channelTitle = vm.playerInfo?.video.channelTitle ?? video.channelTitle
+                    #if os(tvOS)
+                    tvOverlayControl(
+                        highlighted: highlightedControl == .channel,
+                        scale: 1.5,
+                        shadowRadius: 12,
+                        identifier: "player.channelName",
+                        enabled: channelId?.isEmpty == false
+                    ) {
+                        Text(channelTitle)
+                            .font(.subheadline)
+                            .foregroundStyle(.white.opacity(0.8))
+                            .lineLimit(1)
+                    }
+                    #else
                     Button {
                         guard let cid = channelId, !cid.isEmpty else { return }
                         #if os(iOS)
@@ -98,17 +120,10 @@ struct PlayerControlsOverlay: View {
                             .foregroundStyle(.white.opacity(0.8))
                             .lineLimit(1)
                     }
-                    #if os(tvOS)
                     .buttonStyle(.plain)
-                    .focusable(false)
-                    .scaleEffect(highlightedControl == .channel ? 1.5 : 1.0)
-                    .shadow(color: highlightedControl == .channel ? .white.opacity(0.85) : .clear, radius: 12)
-                    .animation(.easeInOut(duration: 0.15), value: highlightedControl)
-                    #else
-                    .buttonStyle(.plain)
-                    #endif
                     .accessibilityIdentifier("player.channelName")
                     .disabled(channelId == nil || channelId?.isEmpty == true)
+                    #endif
                 }
                 Spacer()
                 #if os(iOS)
@@ -137,6 +152,20 @@ struct PlayerControlsOverlay: View {
                     .accessibilityIdentifier("player.airPlayButton")
                 #endif
                 // Share / Download menu
+                #if os(tvOS)
+                tvOverlayControl(
+                    highlighted: highlightedControl == .more,
+                    scale: 1.5,
+                    shadowRadius: 12,
+                    identifier: "player.moreButton",
+                    width: 64,
+                    height: 64
+                ) {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 18 * controlScale))
+                        .foregroundStyle(.white)
+                }
+                #else
                 Button {
                     controlsLog.notice("[menu] ... button tapped — controlsVisible=\(vm.controlsVisible) showMoreMenu=\(showMoreMenu)")
                     showMoreMenu = true
@@ -149,13 +178,6 @@ struct PlayerControlsOverlay: View {
                         .clipShape(Circle())
                 }
                 .accessibilityIdentifier("player.moreButton")
-                #if os(tvOS)
-                .buttonStyle(.plain)
-                .focusable(false)
-                .scaleEffect(highlightedControl == .more ? 1.5 : 1.0)
-                .shadow(color: highlightedControl == .more ? .white.opacity(0.85) : .clear, radius: 12)
-                .animation(.easeInOut(duration: 0.15), value: highlightedControl)
-                #else
                 .buttonStyle(.plain)
                 #endif
             }
@@ -211,6 +233,21 @@ struct PlayerControlsOverlay: View {
                 #endif
                 HStack {
                     // Previous video button
+                    #if os(tvOS)
+                    tvOverlayControl(
+                        highlighted: highlightedControl == .prevVideo,
+                        scale: 1.55,
+                        shadowRadius: 14,
+                        identifier: "player.prevBtn",
+                        enabled: vm.hasPrevious && !vm.isLoading,
+                        width: 64,
+                        height: 64
+                    ) {
+                        Image(systemName: AppSymbol.previousTrack)
+                            .font(.system(size: 18 * controlScale))
+                            .foregroundStyle(vm.hasPrevious && !vm.isLoading ? .white : .white.opacity(0.3))
+                    }
+                    #else
                     Button {
                         vm.playPrevious()
                     } label: {
@@ -224,17 +261,27 @@ struct PlayerControlsOverlay: View {
                             #endif
                     }
                     .buttonStyle(.plain)
-                    #if os(tvOS)
-                    .focusable(false)
-                    .scaleEffect(highlightedControl == .prevVideo ? 1.55 : 1.0)
-                    .shadow(color: highlightedControl == .prevVideo ? .white.opacity(0.85) : .clear, radius: 14)
-                    .animation(.easeInOut(duration: 0.15), value: highlightedControl)
-                    #endif
                     .disabled(!vm.hasPrevious || vm.isLoading)
                     .accessibilityIdentifier("player.prevBtn")
+                    #endif
 
                     // Previous chapter button — only present when the video has chapters
                     if !vm.chapters.isEmpty {
+                        #if os(tvOS)
+                        tvOverlayControl(
+                            highlighted: highlightedControl == .prevChapter,
+                            scale: 1.55,
+                            shadowRadius: 14,
+                            identifier: "player.prevChapterBtn",
+                            enabled: vm.hasPreviousChapter && !vm.isLoading,
+                            width: 64,
+                            height: 64
+                        ) {
+                            Image(systemName: AppSymbol.previousChapter)
+                                .font(.system(size: 18 * controlScale))
+                                .foregroundStyle(vm.hasPreviousChapter && !vm.isLoading ? .white : .white.opacity(0.3))
+                        }
+                        #else
                         Button {
                             vm.skipToPreviousChapter()
                         } label: {
@@ -243,14 +290,9 @@ struct PlayerControlsOverlay: View {
                                 .foregroundStyle(vm.hasPreviousChapter && !vm.isLoading ? .white : .white.opacity(0.3))
                         }
                         .buttonStyle(.plain)
-                        #if os(tvOS)
-                        .focusable(false)
-                        .scaleEffect(highlightedControl == .prevChapter ? 1.55 : 1.0)
-                        .shadow(color: highlightedControl == .prevChapter ? .white.opacity(0.85) : .clear, radius: 14)
-                        .animation(.easeInOut(duration: 0.15), value: highlightedControl)
-                        #endif
                         .disabled(!vm.hasPreviousChapter || vm.isLoading)
                         .accessibilityIdentifier("player.prevChapterBtn")
+                        #endif
                     }
 
                     #if !os(tvOS)
@@ -267,6 +309,21 @@ struct PlayerControlsOverlay: View {
 
                     // Next chapter button — only present when the video has chapters
                     if !vm.chapters.isEmpty {
+                        #if os(tvOS)
+                        tvOverlayControl(
+                            highlighted: highlightedControl == .nextChapter,
+                            scale: 1.55,
+                            shadowRadius: 14,
+                            identifier: "player.nextChapterBtn",
+                            enabled: vm.hasNextChapter && !vm.isLoading,
+                            width: 64,
+                            height: 64
+                        ) {
+                            Image(systemName: AppSymbol.nextChapter)
+                                .font(.system(size: 18 * controlScale))
+                                .foregroundStyle(vm.hasNextChapter && !vm.isLoading ? .white : .white.opacity(0.3))
+                        }
+                        #else
                         Button {
                             vm.skipToNextChapter()
                         } label: {
@@ -275,14 +332,9 @@ struct PlayerControlsOverlay: View {
                                 .foregroundStyle(vm.hasNextChapter && !vm.isLoading ? .white : .white.opacity(0.3))
                         }
                         .buttonStyle(.plain)
-                        #if os(tvOS)
-                        .focusable(false)
-                        .scaleEffect(highlightedControl == .nextChapter ? 1.55 : 1.0)
-                        .shadow(color: highlightedControl == .nextChapter ? .white.opacity(0.85) : .clear, radius: 14)
-                        .animation(.easeInOut(duration: 0.15), value: highlightedControl)
-                        #endif
                         .disabled(!vm.hasNextChapter || vm.isLoading)
                         .accessibilityIdentifier("player.nextChapterBtn")
+                        #endif
                     }
 
                     #if os(iOS)
@@ -317,6 +369,21 @@ struct PlayerControlsOverlay: View {
                     #endif
 
                     // Next video button
+                    #if os(tvOS)
+                    tvOverlayControl(
+                        highlighted: highlightedControl == .nextVideo,
+                        scale: 1.55,
+                        shadowRadius: 14,
+                        identifier: "player.nextBtn",
+                        enabled: vm.hasNext,
+                        width: 64,
+                        height: 64
+                    ) {
+                        Image(systemName: AppSymbol.nextTrack)
+                            .font(.system(size: 18 * controlScale))
+                            .foregroundStyle(vm.hasNext ? .white : .white.opacity(0.3))
+                    }
+                    #else
                     Button {
                         vm.playNext()
                     } label: {
@@ -330,14 +397,9 @@ struct PlayerControlsOverlay: View {
                             #endif
                     }
                     .buttonStyle(.plain)
-                    #if os(tvOS)
-                    .focusable(false)
-                    .scaleEffect(highlightedControl == .nextVideo ? 1.55 : 1.0)
-                    .shadow(color: highlightedControl == .nextVideo ? .white.opacity(0.85) : .clear, radius: 14)
-                    .animation(.easeInOut(duration: 0.15), value: highlightedControl)
-                    #endif
                     .disabled(!vm.hasNext)
                     .accessibilityIdentifier("player.nextBtn")
+                    #endif
                 }
                 .font(.caption)
                 .foregroundStyle(.white.opacity(0.8))
@@ -372,57 +434,97 @@ struct PlayerControlsOverlay: View {
 
 extension PlayerControlsOverlay {
 
+    #if os(tvOS)
+    /// The outer player routes remote input; labels avoid tvOS 26's forced Liquid Glass button chrome.
+    func tvOverlayControl<Content: View>(
+        highlighted: Bool,
+        scale: CGFloat,
+        shadowOpacity: Double = 0.85,
+        shadowRadius: CGFloat,
+        identifier: String,
+        enabled: Bool = true,
+        width: CGFloat? = nil,
+        height: CGFloat? = nil,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        content()
+            .frame(width: width, height: height)
+            .scaleEffect(highlighted ? scale : 1)
+            .shadow(color: highlighted ? .white.opacity(shadowOpacity) : .clear, radius: shadowRadius)
+            .animation(.easeInOut(duration: 0.15), value: highlighted)
+            .disabled(!enabled)
+            .accessibilityElement()
+            .accessibilityAddTraits(.isButton)
+            .accessibilityIdentifier(identifier)
+    }
+    #endif
+
     // MARK: - Play / Pause
 
+    @ViewBuilder
     var playPauseButton: some View {
+        #if os(tvOS)
+        tvOverlayControl(
+            highlighted: highlightedControl == .playPause,
+            scale: 1.6,
+            shadowOpacity: 0.65,
+            shadowRadius: 8,
+            identifier: "player.playPauseButton",
+            width: 88,
+            height: 88
+        ) {
+            playPauseIcon
+        }
+        #else
         Button { vm.togglePlayPause() } label: {
-            Image(systemName: vm.videoEnded ? "arrow.counterclockwise" : (vm.isPlaying ? "pause.fill" : "play.fill"))
-                // .original preserves the white foreground on tvOS even when the focus
-                // engine or button state tries to apply a system tint colour.
-                .renderingMode(.original)
-                .font(.system(size: 42 * controlScale))
-                .foregroundStyle(.white)
-                #if !os(tvOS)
+            playPauseIcon
                 .padding(12)
-                #endif
         }
         .buttonStyle(.plain)
-        #if !os(tvOS)
         .contentShape(Rectangle())
-        #endif
-        #if os(tvOS)
-        .focusable(false)
-        .scaleEffect(highlightedControl == .playPause ? 1.6 : 1.0)
-        .shadow(color: highlightedControl == .playPause ? .white.opacity(0.65) : .clear, radius: 8)
-        .animation(.easeInOut(duration: 0.15), value: highlightedControl)
-        #endif
         .accessibilityIdentifier("player.playPauseButton")
+        #endif
+    }
+
+    var playPauseIcon: some View {
+        Image(systemName: vm.videoEnded ? "arrow.counterclockwise" : (vm.isPlaying ? "pause.fill" : "play.fill"))
+            .renderingMode(.original)
+            .font(.system(size: 42 * controlScale))
+            .foregroundStyle(.white)
     }
 
     // MARK: - Seek buttons
 
+    @ViewBuilder
     func seekButton(symbol: String, seconds: TimeInterval, tvHighlighted: Bool = false) -> some View {
+        #if os(tvOS)
+        tvOverlayControl(
+            highlighted: tvHighlighted,
+            scale: 1.55,
+            shadowOpacity: 0.6,
+            shadowRadius: 7,
+            identifier: seconds < 0 ? "player.seekBackButton" : "player.seekForwardButton",
+            width: 72,
+            height: 72
+        ) {
+            seekIcon(symbol: symbol)
+        }
+        #else
         Button { vm.seekRelative(seconds: seconds) } label: {
-            Image(systemName: symbol)
-                // .original preserves the white foreground on tvOS — prevents system
-                // tinting from turning the icon into a white rectangle when highlighted.
-                .renderingMode(.original)
-                .font(.system(size: 28 * controlScale))
-                .foregroundStyle(.white)
-                #if !os(tvOS)
+            seekIcon(symbol: symbol)
                 .padding(12)
-                #endif
         }
         .buttonStyle(.plain)
-        #if !os(tvOS)
         .contentShape(Rectangle())
+        .accessibilityIdentifier(seconds < 0 ? "player.seekBackButton" : "player.seekForwardButton")
         #endif
-        #if os(tvOS)
-        .focusable(false)
-        .scaleEffect(tvHighlighted ? 1.55 : 1.0)
-        .shadow(color: tvHighlighted ? .white.opacity(0.6) : .clear, radius: 7)
-        .animation(.easeInOut(duration: 0.15), value: tvHighlighted)
-        #endif
+    }
+
+    func seekIcon(symbol: String) -> some View {
+        Image(systemName: symbol)
+            .renderingMode(.original)
+            .font(.system(size: 28 * controlScale))
+            .foregroundStyle(.white)
     }
 
     // MARK: - Progress bar

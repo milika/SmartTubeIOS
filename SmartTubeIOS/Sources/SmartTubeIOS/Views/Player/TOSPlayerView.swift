@@ -184,6 +184,17 @@ public struct TOSPlayerView: View {
                 )
                 .ignoresSafeArea()
 
+                #if os(iOS)
+                // Keep WebKit visible for YouTube's player checks, but cover its
+                // white startup paints with a video-appropriate background.
+                if !vm.isReady {
+                    Color.black
+                        .ignoresSafeArea()
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+                #endif
+
                 #if os(macOS)
                 // MARK: Top-right control cluster — more menu (like/dislike, sleep
                 // timer, share) + playback speed picker. See topRightControls for why

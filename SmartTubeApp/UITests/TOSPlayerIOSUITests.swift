@@ -150,7 +150,61 @@ final class TOSPlayerIOSUITests: XCTestCase {
         return stateLabel
     }
 
+    private func centerBrightness(of screenshot: XCUIScreenshot) -> CGFloat {
+        guard let image = screenshot.image.cgImage else { return 255 }
+        let width = CGFloat(image.width)
+        let height = CGFloat(image.height)
+        let rect = CGRect(x: width * 0.25, y: height * 0.35, width: width * 0.5, height: height * 0.3)
+        guard let cropped = image.cropping(to: rect) else { return 255 }
+
+        let side = 12
+        var pixels = [UInt8](repeating: 0, count: side * side * 4)
+        guard let context = CGContext(
+            data: &pixels,
+            width: side,
+            height: side,
+            bitsPerComponent: 8,
+            bytesPerRow: side * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return 255 }
+        context.draw(cropped, in: CGRect(x: 0, y: 0, width: side, height: side))
+
+        var total: CGFloat = 0
+        for index in stride(from: 0, to: pixels.count, by: 4) {
+            let red = CGFloat(pixels[index])
+            let green = CGFloat(pixels[index + 1])
+            let blue = CGFloat(pixels[index + 2])
+            total += (red + green + blue) / 3
+        }
+        return total / CGFloat(side * side)
+    }
+
     // MARK: - Tests
+
+    func testLoadingCoverIsBlackInLightAndDarkAppearance() throws {
+        for style in ["Light", "Dark"] {
+            launchApp(extraArguments: ["-AppleInterfaceStyle", style])
+            guard let cards = waitForVideoCards(),
+                  let card = firstNonShortCard(from: cards) else {
+                throw XCTSkip("No non-short video card found in \(style) appearance")
+            }
+
+            card.tap()
+            let screenshot = app.screenshot()
+            let attachment = XCTAttachment(screenshot: screenshot)
+            attachment.name = "tos-player-startup-\(style.lowercased())"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+
+            XCTAssertLessThan(
+                centerBrightness(of: screenshot),
+                8,
+                "TOS player startup must remain black in \(style) appearance"
+            )
+            app.terminate()
+        }
+    }
 
     func testTOSPlayerIOSSmoke() throws {
         // Deeplink to a known-playable video (Rick Astley — 3:34, public, no

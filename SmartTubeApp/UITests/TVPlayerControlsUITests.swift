@@ -109,6 +109,35 @@ final class TVPlayerControlsUITests: XCTestCase {
         XCTAssertTrue(btn.exists, "player.playPauseButton must be in the accessibility tree")
     }
 
+    /// Highlighted center transport controls must not overlap.
+    func testCenterTransportControlsDoNotOverlap() throws {
+        try waitForMoreMenu()
+        remote.press(.menu)
+        Thread.sleep(forTimeInterval: 0.8)
+        remote.press(.up)
+        Thread.sleep(forTimeInterval: 0.5)
+
+        let seekBack = element(identifier: "player.seekBackButton")
+        let playPause = element(identifier: "player.playPauseButton")
+        let seekForward = element(identifier: "player.seekForwardButton")
+        guard seekBack.waitForExistence(timeout: 8),
+              playPause.waitForExistence(timeout: 8),
+              seekForward.waitForExistence(timeout: 8) else {
+            try captureAndSkip("Center transport controls were not available", in: app)
+        }
+
+        XCTAssertGreaterThanOrEqual(
+            playPause.frame.midX - seekBack.frame.midX,
+            110,
+            "Rewind and play/pause are too close when highlighted"
+        )
+        XCTAssertGreaterThanOrEqual(
+            seekForward.frame.midX - playPause.frame.midX,
+            110,
+            "Play/pause and fast-forward are too close when highlighted"
+        )
+    }
+
     /// The next-video button must be in the accessibility tree when controls are visible.
     func testNextVideoButtonExistsInControls() throws {
         try waitForMoreMenu()

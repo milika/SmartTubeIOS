@@ -158,6 +158,7 @@ public final class TOSPlayerStateStore {
         }
 
         // Stop and release any previous session.
+        let replacesOnScreenPlayer = vm != nil && presentation == .fullScreen
         if let existingVM = vm {
             existingVM.pause()
             existingVM.saveProgress()
@@ -199,11 +200,14 @@ public final class TOSPlayerStateStore {
         setActive()
         tosStoreLog.notice("[TOSPlayerStateStore] play — presentation set to .fullScreen, vm created for \(video.id)")
         // When swipe navigation creates a new vm while the fullscreen player is
-        // already on screen, TOSPlayerView's .onAppear does NOT re-fire (it fires
-        // only once per view lifetime). Call startIfNeeded() here so the new
-        // vm's embed loads immediately. The .onAppear guard (hasStartedLoading)
-        // makes this idempotent for the first-open case.
-        newVM.startIfNeeded()
+        // already on screen, the cover is not re-presented, so the window-ready
+        // callback in YouTubeWebPlayerView — the normal trigger for the IFrame
+        // load — never fires for the new vm. Start the load here: updateUIView
+        // attaches the new web view well within the load delay. First open keeps
+        // the window-ready path.
+        if replacesOnScreenPlayer {
+            newVM.startIfNeededWhenWindowReady()
+        }
     }
 
     /// Pops and returns the most recent video from the swipe-navigation history,

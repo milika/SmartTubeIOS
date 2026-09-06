@@ -353,6 +353,9 @@ public struct TOSPlayerView: View {
         // We seek once the player reports .playing or .paused (i.e. after onReady fires)
         // so the IFrame API is ready to accept seekTo() calls.
         .task {
+            // Only on a fresh load. Re-appearing from the mini-player (where playback
+            // kept running) must not rewind to the position saved when it minimized.
+            guard vm.playerState == .unstarted else { return }
             let saved = await VideoStateStore.shared.state(for: video.id)?.position ?? 0
             guard saved > 1 else { return }
             // Poll briefly for player readiness before seeking.

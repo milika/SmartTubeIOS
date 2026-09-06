@@ -168,6 +168,7 @@ public struct TOSPlayerView: View {
                 // MARK: WKWebView layer
                 YouTubeWebPlayerView(
                     webView: vm.webView,
+                    externalDisplayOwnsWebView: ExternalDisplayManager.shared.owns(vm.webView),
                     onWindowReady: { [weak vm] in
                         // Defer the IFrame load until the WKWebView is actually
                         // in a visible window. The cover-present animation that
@@ -222,10 +223,21 @@ public struct TOSPlayerView: View {
                         // YouTube's native tap = toggle-play/pause stand is the correct
                         // behaviour: it matches YouTube's own app and is what users expect.
                         showControls()
-                    }
+                    },
+                    // Its pan recognizer lives on the window, so it would also see a
+                    // drag along the external-display scrubber drawn above it and turn
+                    // a seek into a video change. Prev/next are buttons there.
+                    isEnabled: !ExternalDisplayManager.shared.owns(vm.webView)
                 )
                 .ignoresSafeArea()
                 .accessibilityHidden(true)
+
+                // External display: the embed renders on the TV, so the local
+                // container is empty. This sits above TOSSwipeNavigationOverlay so its
+                // buttons receive taps instead of the gesture layer below.
+                if ExternalDisplayManager.shared.owns(vm.webView) {
+                    TOSExternalDisplayOverlay(vm: vm)
+                }
 
                 // MARK: Back button (iOS only)
                 // Safe here — full-screen modal has no OS chrome above it. Tapping
@@ -234,8 +246,10 @@ public struct TOSPlayerView: View {
                 // status bar — see backButton's doc comment for why `topInset` must
                 // NOT be added here too.
                 backButton(vm: vm)
-                    .opacity(controlsVisible ? 1 : 0)
-                    .allowsHitTesting(controlsVisible)
+                    // The overlay below covers the tap-to-reveal gesture layer, so the
+                    // back button has to stay reachable on its own while it is up.
+                    .opacity(controlsVisible || ExternalDisplayManager.shared.owns(vm.webView) ? 1 : 0)
+                    .allowsHitTesting(controlsVisible || ExternalDisplayManager.shared.owns(vm.webView))
                 #endif
 
                 // MARK: SponsorBlock skip toast (bottom-centre)
@@ -375,6 +389,11 @@ public struct TOSPlayerView: View {
             tosViewLog.notice("[TOSPlayerView] playerError=\(String(describing: error)) isFatal=\(error.isFatal)")
             guard error.isFatal else { return }
             tosViewLog.notice("[TOSPlayerView] ⚠️ fatal error — triggering fallback to standard player")
+            #if os(iOS)
+            // This embed will never reach playback, so it can never take the external
+            // screen over from its predecessor — release whatever is still shown there.
+            ExternalDisplayManager.shared.withdrawAll()
+            #endif
             onFallback()
         }
         #if os(iOS)
@@ -551,6 +570,23 @@ public struct TOSPlayerView: View {
     //                     CommentRowView (PlayerView+AuxViews.swift).
     private func moreButton(vm: TOSPlayerViewModel) -> some View {
         Menu {
+            #if os(iOS)
+            if ExternalDisplayManager.shared.isScreenConnected {
+                // Reflects the user's choice, not whether the embed is on the screen
+                // right now: before playback starts nothing is shown there yet, and
+                // the row must still offer the phone.
+                let onExternal = ExternalDisplayManager.shared.userWantsExternal
+                Button {
+                    ExternalDisplayManager.shared.setUserWantsExternal(!onExternal)
+                } label: {
+                    Label(onExternal
+                          ? String(localized: "Play on Phone", bundle: .module)
+                          : String(localized: "Play on External Display", bundle: .module),
+                          systemImage: onExternal ? "iphone" : "tv")
+                }
+                .accessibilityIdentifier("tosPlayer.moreMenu.externalDisplayRow")
+            }
+            #endif
             if authService.isSignedIn {
                 Button {
                     vm.like()
@@ -710,8 +746,172 @@ private struct YouTubeWebPlayerView: NSViewRepresentable {
 /// calls addSubview(webView), UIKit automatically removes it from this container —
 /// no explicit removeFromSuperview needed on dismiss. updateUIView re-attaches the
 /// webView here if it was transplanted away and is now expanding back to full screen.
+/// Shown in place of the embed while it lives on an external screen.
+///
+/// YouTube's own controls are part of the IFrame page, so they travel to the TV with
+/// the web view. These native ones drive the same player through the JS bridge.
+private struct TOSExternalDisplayOverlay: View {
+    let vm: TOSPlayerViewModel
+
+    /// Non-nil while the user drags the bar, or while a seek is still in flight.
+    @State private var scrubTarget: Double?
+
+    private var isPlaying: Bool {
+        vm.playerState == .playing || vm.playerState == .buffering
+    }
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            VStack(spacing: 24) {
+                VStack(spacing: 8) {
+                    Image(systemName: "tv")
+                        .font(.system(size: 40))
+                    Text(String(localized: "Playing on external display", bundle: .module))
+                        .font(.callout)
+                }
+                .foregroundStyle(.white.opacity(0.6))
+
+                transportRow
+                progressRow
+            }
+            .padding(.horizontal, 32)
+        }
+        .overlay(alignment: .topTrailing) { topRightCluster }
+        // Identified for UI tests as a container, so the buttons inside stay
+        // reachable rather than being folded into one element.
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("tosPlayer.externalDisplayOverlay")
+    }
+
+    /// Stands in for YouTube's own top-right cluster, which is part of the chrome
+    /// hidden on the external screen. Same position and styling as the app's other
+    /// player buttons; the settings gear is not reproduced because its menu opens
+    /// inside the page — that is, on the TV, out of reach.
+    private var topRightCluster: some View {
+        HStack(spacing: 8) {
+            iconButton(vm.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill",
+                       id: "muteButton", label: vm.isMuted ? "Unmute" : "Mute") { vm.toggleMuted() }
+            iconButton(vm.captionsOn ? "captions.bubble.fill" : "captions.bubble",
+                       id: "captionsButton", label: "Captions") { vm.toggleCaptions() }
+        }
+        .padding(.top, 16)
+        .padding(.trailing, 16)
+    }
+
+    private func iconButton(_ systemName: String, id: String, label: String, action: @escaping () -> Void) -> some View {
+        Button {
+            tosViewLog.notice("[ExternalDisplay] panel tap — \(id, privacy: .public)")
+            action()
+        } label: {
+            Image(systemName: systemName)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 30, height: 30)
+                .background(.ultraThinMaterial, in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityIdentifier("tosPlayer.externalDisplay.\(id)")
+    }
+
+    private var transportRow: some View {
+        HStack(spacing: 28) {
+            button("backward.end.fill", size: 22, id: "previousButton", label: "Previous") { vm.playPrevious() }
+            button("gobackward.10", size: 26, id: "seekBackButton", label: "Back 10 seconds") {
+                vm.seekTo(max(0, vm.currentTime - 10))
+            }
+            button(isPlaying ? "pause.fill" : "play.fill", size: 34, id: "playPauseButton",
+                   label: isPlaying ? "Pause" : "Play") {
+                if isPlaying { vm.pause() } else { vm.play() }
+            }
+            button("goforward.10", size: 26, id: "seekForwardButton", label: "Forward 10 seconds") {
+                // Duration is 0 until the player reports it; clamping to it would rewind.
+                let target = vm.currentTime + 10
+                vm.seekTo(vm.duration > 0 ? min(vm.duration, target) : target)
+            }
+            button("forward.end.fill", size: 22, id: "nextButton", label: "Next") { vm.playNext() }
+        }
+    }
+
+    @ViewBuilder
+    private var progressRow: some View {
+        let duration = max(vm.duration, 1)
+        // While dragging, and until the player's reported time catches up with the
+        // seek, the bar follows the finger instead of snapping back to the old time.
+        let position = min(scrubTarget ?? vm.currentTime, duration)
+        VStack(spacing: 6) {
+            GeometryReader { geo in
+                let width = max(geo.size.width, 1)
+                ZStack(alignment: .leading) {
+                    Capsule().fill(.white.opacity(0.25))
+                    Capsule().fill(.white).frame(width: width * (position / duration))
+                }
+                .frame(height: 4)
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            scrubTarget = seconds(at: value.location.x, width: width, duration: duration)
+                        }
+                        .onEnded { value in
+                            let target = seconds(at: value.location.x, width: width, duration: duration)
+                            scrubTarget = target
+                            vm.seekTo(target)
+                        }
+                )
+            }
+            .frame(height: 24)
+            .accessibilityIdentifier("tosPlayer.externalDisplay.scrubber")
+
+            HStack {
+                Text(timeLabel(position))
+                Spacer()
+                Text(timeLabel(vm.duration))
+            }
+            .font(.caption2.monospacedDigit())
+            .foregroundStyle(.white.opacity(0.6))
+        }
+        .onChange(of: vm.currentTime) { _, now in
+            // Hand the bar back to the player once it reports a time near the seek.
+            if let target = scrubTarget, abs(now - target) < 1.5 { scrubTarget = nil }
+        }
+    }
+
+    private func seconds(at x: CGFloat, width: CGFloat, duration: Double) -> Double {
+        min(max(Double(x / width), 0), 1) * duration
+    }
+
+    private func button(_ systemName: String, size: CGFloat, id: String, label: String, action: @escaping () -> Void) -> some View {
+        Button {
+            tosViewLog.notice("[ExternalDisplay] panel tap — \(id, privacy: .public)")
+            action()
+        } label: {
+            Image(systemName: systemName)
+                .font(.system(size: size))
+                .foregroundStyle(.white)
+                .padding(8)
+        }
+        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+        .accessibilityLabel(label)
+        .accessibilityIdentifier("tosPlayer.externalDisplay.\(id)")
+    }
+
+    private func timeLabel(_ seconds: Double) -> String {
+        guard seconds.isFinite, seconds >= 0 else { return "0:00" }
+        let total = Int(seconds)
+        let h = total / 3600, m = (total % 3600) / 60, sec = total % 60
+        return h > 0 ? String(format: "%d:%02d:%02d", h, m, sec) : String(format: "%d:%02d", m, sec)
+    }
+}
+
 private struct YouTubeWebPlayerView: UIViewRepresentable {
     let webView: WKWebView
+    /// True while the external screen holds this web view. Passed in rather than read
+    /// from the manager inside make/update, which are not observation-tracked.
+    let externalDisplayOwnsWebView: Bool
     /// Fires when the container view is added to a visible window (i.e. the
     /// cover-present animation has finished and the WKWebView is actually
     /// on-screen). TOSPlayerView passes a closure that calls
@@ -765,7 +965,11 @@ private struct YouTubeWebPlayerView: UIViewRepresentable {
         tosViewLog.notice("[TOSView] YouTubeWebPlayerView.makeUIView called")
         let container = UIView()
         container.backgroundColor = .black
-        attach(to: container)
+        // Skip while the external display holds this web view — updateUIView takes it
+        // back once the screen is released.
+        if !externalDisplayOwnsWebView {
+            attach(to: container)
+        }
         // No window-key notification observation here — the window is
         // already key when the WKWebView is added to it (the cover-present
         // animation runs in a key window, not a window that's about to
@@ -780,7 +984,7 @@ private struct YouTubeWebPlayerView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
-        if webView.superview !== uiView {
+        if !externalDisplayOwnsWebView, webView.superview !== uiView {
             attach(to: uiView)
         }
         // No fire-from-here — the makeUIView async already schedules the

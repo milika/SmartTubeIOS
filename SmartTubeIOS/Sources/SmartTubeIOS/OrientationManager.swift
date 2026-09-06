@@ -47,8 +47,11 @@ public final class OrientationManager {
     // MARK: - Private helpers
 
     private func invalidateOrientationCache() {
+        // The external-display scene (ExternalDisplayManager) is a UIWindowScene too;
+        // orientation belongs to the phone's own.
         guard let scene = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene }).first else {
+            .compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.session.role == .windowApplication }) else {
             orientationLog.error("[OrientationManager] invalidateOrientationCache — no UIWindowScene found")
             return
         }
@@ -69,7 +72,8 @@ public final class OrientationManager {
         Task { @MainActor [weak self] in
             guard self != nil else { return }
             guard let scene = UIApplication.shared.connectedScenes
-                .compactMap({ $0 as? UIWindowScene }).first else {
+                .compactMap({ $0 as? UIWindowScene })
+                .first(where: { $0.session.role == .windowApplication }) else {
                 orientationLog.error("[OrientationManager] requestGeometryUpdate — no UIWindowScene found")
                 return
             }

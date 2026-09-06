@@ -90,6 +90,7 @@ extension TOSPlayerViewModel {
         case "stateChange":
             let raw = (json["state"] as? Int) ?? 999
             playerState = YTPlayerState(raw: raw)
+            syncExternalDisplay()
             tosLog.debug("[ytCallback] stateChange → \(raw)")
             #if os(iOS)
             updateNowPlayingPlayback()
@@ -219,6 +220,7 @@ extension TOSPlayerViewModel {
                 )
             }
             playerState = newState
+            syncExternalDisplay()
             checkSponsorSkip(at: t)
             // Confirm/observe the landing of any in-flight auto-skip seek (no-op when
             // none is pending — see PendingSkipLog for why this must happen here, on

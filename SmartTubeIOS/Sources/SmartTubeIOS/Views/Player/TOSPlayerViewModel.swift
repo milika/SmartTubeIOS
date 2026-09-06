@@ -69,6 +69,13 @@ final class TOSPlayerViewModel: NSObject {
     var currentTime: Double = 0
     var duration: Double = 0
     var isReady: Bool = false
+    /// Mirror of the player's mute state, for the external-display controls.
+    var isMuted: Bool = false
+    /// Mirror of YouTube's caption toggle, for the external-display controls.
+    var captionsOn: Bool = false
+    /// Whether the current embed document carries the external-display CSS class.
+    /// Reset by loadEmbed: a new document starts without it.
+    @ObservationIgnored private var chromeHiddenForExternalDisplay = false
     /// Non-nil when the player encounters an error that requires falling back.
     var playerError: TOSPlayerError? = nil
 
@@ -278,6 +285,29 @@ final class TOSPlayerViewModel: NSObject {
         #endif
 
         let contentController = WKUserContentController()
+        // The external-display chrome rule travels with every document, in every frame,
+        // so a video change cannot lose it. Only the class toggled by setChromeHidden
+        // decides whether it applies — and a fresh document starts without the class,
+        // which is the right default for playback on the phone.
+        //
+        // With the TV user agent above, YouTube serves its mobile embed: `#movie_player`
+        // runs with `ytp-hide-controls` and the actual controls (title row, play/pause,
+        // scrubber, mute/CC/settings) live in a sibling `#player-controls` host at body
+        // level, which pops up on every pause and seek. The engagement panel and bottom
+        // sheet are its menus; `.ytp-popup` / `.ytp-unmute` are the player's own
+        // overlays. Captions stay visible on purpose.
+        contentController.addUserScript(WKUserScript(
+            source: "(function(){var d=document,i='st-ext-style';if(d.getElementById(i))return;"
+                + "var s=d.createElement('style');s.id=i;s.textContent="
+                + "'html.st-external-display #player-controls,"
+                + "html.st-external-display #engagement-panel-wrapper,"
+                + "html.st-external-display #bottom-sheet-wrapper,"
+                + "html.st-external-display .ytp-popup,"
+                + "html.st-external-display .ytp-unmute{display:none!important}';"
+                + "(d.head||d.documentElement).appendChild(s);})();",
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false
+        ))
         let proxyHandler = ScriptMessageProxy()
         contentController.add(proxyHandler, contentWorld: .page, name: "ytCallback")
 
@@ -350,13 +380,70 @@ final class TOSPlayerViewModel: NSObject {
         // that actually appears calls startIfNeeded() from onAppear.
     }
 
-    /// Called from TOSPlayerView.onAppear and TOSPlayerStateStore.play().
-    /// No-op — the actual load happens from YouTubeWebPlayerView's
-    /// window-ready callback via startIfNeededWhenWindowReady. Kept as a
-    /// public method for the existing call sites; the hasStartedLoading
-    /// guard is no longer needed here because the window callback's
-    /// DispatchQueue.main.asyncAfter is the single, idempotent trigger
-    /// for the load.
+    /// Move the embed onto an attached external screen once it is audibly playing,
+    /// and keep the embed's chrome in step with where it is shown. Called on every
+    /// poll tick, so the phone and the TV never disagree for more than one tick.
+    ///
+    /// The IFrame's player-config check times out against a page that is not visible,
+    /// so the web view has to stay in the phone's window until playback has started.
+    /// And the embed starts muted: the poll script unmutes it on the first tick past
+    /// 0.1 s (the tick that also sets `hasReceivedTimeAdvanced`). Moving the view
+    /// before that lands the unmute on a page WebKit already treats as hidden, and
+    /// the video plays on silently until the next play() from the phone — hence the
+    /// margin after that tick.
+    func syncExternalDisplay() {
+        #if os(iOS)
+        if playerState == .playing, hasReceivedTimeAdvanced, currentTime > 0.5 {
+            ExternalDisplayManager.shared.offer(webView)
+        }
+        let onExternalScreen = ExternalDisplayManager.shared.owns(webView)
+        guard onExternalScreen != chromeHiddenForExternalDisplay else { return }
+        chromeHiddenForExternalDisplay = onExternalScreen
+        setChromeHidden(onExternalScreen)
+        if onExternalScreen { refreshExternalDisplayControls() }
+        #endif
+    }
+
+    /// Read the player's mute and caption state back into the mirrors the
+    /// external-display controls draw from. YouTube resets both per video.
+    func refreshExternalDisplayControls() {
+        evalReturning("refreshExternalDisplayControls",
+                      "(function(){var p=document.getElementById('movie_player');"
+                        + "if(!p||typeof p.isMuted!=='function')return null;"
+                        + "return {muted:p.isMuted(),captions:p.isSubtitlesOn()};})();") { [weak self] value in
+            guard let self, let state = value as? [String: Any] else { return }
+            if let muted = state["muted"] as? Bool { isMuted = muted }
+            if let captions = state["captions"] as? Bool { captionsOn = captions }
+        }
+    }
+
+    /// Toggle mute through the player API rather than the media element: YouTube keeps
+    /// its own mute flag and re-applies it onto `video.muted`, so a DOM-only change
+    /// drifts out of step with what the player reports.
+    func toggleMuted() {
+        evalReturning("toggleMuted",
+                      "(function(){var p=document.getElementById('movie_player');"
+                        + "if(!p||typeof p.isMuted!=='function')return null;"
+                        + "if(p.isMuted()){p.unMute();}else{p.mute();}return p.isMuted();})();") { [weak self] value in
+            if let muted = value as? Bool { self?.isMuted = muted }
+        }
+    }
+
+    /// Toggle YouTube's own caption track. Its CC button is part of the chrome hidden on
+    /// the external screen, so the phone needs a way to reach it.
+    func toggleCaptions() {
+        evalReturning("toggleCaptions",
+                      "(function(){var p=document.getElementById('movie_player');"
+                        + "if(!p||typeof p.toggleSubtitles!=='function')return null;"
+                        + "p.toggleSubtitles();return p.isSubtitlesOn();})();") { [weak self] value in
+            if let on = value as? Bool { self?.captionsOn = on }
+        }
+    }
+
+    /// Called from TOSPlayerView.onAppear. No-op — the actual load happens from
+    /// YouTubeWebPlayerView's window-ready callback via startIfNeededWhenWindowReady
+    /// (and from TOSPlayerStateStore.play() when a vm replaces one already on
+    /// screen). Kept for the existing call site.
     func startIfNeeded() {
         // Intentionally empty — see startIfNeededWhenWindowReady().
     }
@@ -432,6 +519,17 @@ final class TOSPlayerViewModel: NSObject {
     #if os(iOS)
     func handleForeground() {
         Task { await webView.setAllMediaPlaybackSuspended(false) }
+        // On the external screen the resume can leave the element "playing" with the
+        // clock stopped. A play() from native counts as a user gesture and gets it
+        // going again; only nudge when the clock has actually stalled.
+        guard ExternalDisplayManager.shared.owns(webView) else { return }
+        let before = currentTime
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            guard let self, playerState == .playing, currentTime == before,
+                  ExternalDisplayManager.shared.owns(webView) else { return }
+            tosLog.notice("[ExternalDisplay] foreground — clock stalled at \(before, format: .fixed(precision: 1))s, nudging play()")
+            play()
+        }
     }
     #endif
 
@@ -502,6 +600,16 @@ final class TOSPlayerViewModel: NSObject {
         eval("seekTo(\(seconds))", "(function(){var v=document.querySelector('video');var ifr=document.querySelectorAll('iframe').length;if(v){v.currentTime=\(seconds);}return {found: !!v, iframes: ifr, currentTime: v ? v.currentTime : null};})();")
     }
 
+    /// Hide the IFrame's own chrome while the embed plays on an external screen.
+    /// Its controls and menus are unreachable there — nothing can tap them — and they
+    /// dim the picture. The phone draws its own. See the user script in init for
+    /// what the class hides.
+    func setChromeHidden(_ hidden: Bool) {
+        eval("setChromeHidden(\(hidden))",
+             "(function(){document.documentElement.classList.toggle('st-external-display',\(hidden));"
+                + "return document.documentElement.className;})();")
+    }
+
     func setPlaybackRate(_ rate: Double) {
         eval("setPlaybackRate(\(rate))", "(function(){var v=document.querySelector('video');var ifr=document.querySelectorAll('iframe').length;if(v){v.playbackRate=\(rate);}return {found: !!v, iframes: ifr, playbackRate: v ? v.playbackRate : null};})();")
     }
@@ -524,6 +632,20 @@ final class TOSPlayerViewModel: NSObject {
     // see the device-log comparison in the "before"/"after" sections of this
     // session's investigation. Logged at .notice (not .debug) so it survives
     // xcresulttool diagnostic export.
+    /// `eval` plus the returned value, for the controls that mirror player state.
+    func evalReturning(_ label: String, _ js: String, _ completion: @escaping (Any?) -> Void) {
+        webView.evaluateJavaScript(js, in: embedFrameInfo, in: .page) { result in
+            switch result {
+            case .success(let value):
+                tosLog.notice("[eval] \(label, privacy: .public) result: \(String(describing: value), privacy: .public)")
+                Task { @MainActor in completion(value) }
+            case .failure(let error):
+                tosLog.notice("[eval] \(label, privacy: .public) ERROR: \(String(describing: error), privacy: .public)")
+                Task { @MainActor in completion(nil) }
+            }
+        }
+    }
+
     func eval(_ label: String, _ js: String) {
         webView.evaluateJavaScript(js, in: embedFrameInfo, in: .page) { result in
             switch result {
@@ -595,6 +717,13 @@ final class TOSPlayerViewModel: NSObject {
     }
 
     private func loadEmbed(videoId: String, startTime: Double) {
+        #if os(iOS)
+        // The document loads on the phone: this web view is not offered to the
+        // external screen until playback is running (see syncExternalDisplay), as the
+        // IFrame's player-config check times out there (error 153). A fresh document
+        // starts without the chrome class.
+        chromeHiddenForExternalDisplay = false
+        #endif
         // TOSPlayerViewModel never instantiates PlaybackViewModel (PlayerRouter
         // routes TOS and AVPlayer pipelines exclusively), so nothing else in the TOS
         // pipeline activates the audio session. Without this, WKWebView's media

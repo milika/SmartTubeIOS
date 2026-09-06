@@ -30,4 +30,31 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         return mask
     }
 }
+
+// MARK: - ExternalDisplaySceneDelegate
+
+/// Delegate for the external-display scene declared in Info.plist under
+/// `UIWindowSceneSessionRoleExternalDisplayNonInteractive`.
+///
+/// iOS creates this scene when a display is attached over HDMI / USB-C. Handing it to
+/// `ExternalDisplayManager` lets the TOS player's web view move onto that screen, so
+/// the video plays there at full resolution instead of being mirrored from the phone.
+@MainActor
+final class ExternalDisplaySceneDelegate: UIResponder, UIWindowSceneDelegate {
+
+    func scene(
+        _ scene: UIScene,
+        willConnectTo session: UISceneSession,
+        options connectionOptions: UIScene.ConnectionOptions
+    ) {
+        guard let windowScene = scene as? UIWindowScene else { return }
+        appDelegateLog.notice("[ExternalDisplay] scene willConnect")
+        ExternalDisplayManager.shared.sceneConnected(windowScene)
+    }
+
+    func sceneDidDisconnect(_ scene: UIScene) {
+        appDelegateLog.notice("[ExternalDisplay] scene didDisconnect")
+        ExternalDisplayManager.shared.sceneDisconnected(scene)
+    }
+}
 #endif

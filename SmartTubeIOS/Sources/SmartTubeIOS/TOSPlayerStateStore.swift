@@ -263,6 +263,7 @@ public final class TOSPlayerStateStore {
         vm?.clearNowPlayingInfo()
         vm?.onPlayNext = nil
         vm?.onPlayPrevious = nil
+        ExternalDisplayManager.shared.withdrawAll()
         vm = nil
         currentVideo = nil
         presentation = .hidden

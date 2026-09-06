@@ -106,6 +106,7 @@
 		TV00000000000000000000B02 /* TVVideoPlaybackBenchmarkUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TV00000000000000000000B01 /* TVVideoPlaybackBenchmarkUITests.swift */; };
 		TV00000000000000000000R02 /* TVWKHLSReplayRegressionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TV00000000000000000000R01 /* TVWKHLSReplayRegressionUITests.swift */; };
 		TW0000000000000000001A2 /* TOSPlayerSwipeNavigationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TW0000000000000000001A1 /* TOSPlayerSwipeNavigationUITests.swift */; };
+		ED0000000000000000002 /* TOSExternalDisplayUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED0000000000000000001 /* TOSExternalDisplayUITests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -267,6 +268,7 @@
 		TV00000000000000000000B01 /* TVVideoPlaybackBenchmarkUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVVideoPlaybackBenchmarkUITests.swift; sourceTree = "<group>"; };
 		TV00000000000000000000R01 /* TVWKHLSReplayRegressionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVWKHLSReplayRegressionUITests.swift; sourceTree = "<group>"; };
 		TW0000000000000000001A1 /* TOSPlayerSwipeNavigationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TOSPlayerSwipeNavigationUITests.swift; sourceTree = "<group>"; };
+		ED0000000000000000001 /* TOSExternalDisplayUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TOSExternalDisplayUITests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -391,6 +393,7 @@
 				MAC000000000000000003A1 /* TOSPlayerUITests.swift */,
 				TI0000000000000000001A1 /* TOSPlayerIOSUITests.swift */,
 				TW0000000000000000001A1 /* TOSPlayerSwipeNavigationUITests.swift */,
+				ED0000000000000000001 /* TOSExternalDisplayUITests.swift */,
 				SP0000000000000000001A1 /* ShortsEmbedPauseControlsUITests.swift */,
 				SS0000000000000000001A1 /* ShortsEmbedSrcSwapSpikeUITests.swift */,
 				SX0000000000000000001A1 /* ShortsEmbedPlayerUITests.swift */,
@@ -922,6 +925,7 @@
 				MAC000000000000000003A2 /* TOSPlayerUITests.swift in Sources */,
 				TI0000000000000000001A2 /* TOSPlayerIOSUITests.swift in Sources */,
 				TW0000000000000000001A2 /* TOSPlayerSwipeNavigationUITests.swift in Sources */,
+				ED0000000000000000002 /* TOSExternalDisplayUITests.swift in Sources */,
 				SP0000000000000000001A2 /* ShortsEmbedPauseControlsUITests.swift in Sources */,
 				SS0000000000000000001A2 /* ShortsEmbedSrcSwapSpikeUITests.swift in Sources */,
 				SX0000000000000000001A2 /* ShortsEmbedPlayerUITests.swift in Sources */,

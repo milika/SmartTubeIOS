@@ -459,6 +459,15 @@ public final class PlaybackViewModel {
         self.comments = CommentsController(api: api)
 
         player.allowsExternalPlayback = true
+        #if os(iOS)
+        // With an external screen attached (a wired HDMI / USB-C adapter, or AirPlay
+        // mirroring) hand the stream to that screen instead of mirroring the device
+        // display: it then decodes at its own resolution rather than showing a scaled
+        // copy of the phone. The layer goes blank locally while this is active, which
+        // is the documented behaviour of external playback.
+        player.usesExternalPlaybackWhileExternalScreenIsActive = true
+        player.externalPlaybackVideoGravity = .resizeAspect
+        #endif
         #if canImport(UIKit)
         do {
             // Only configure the audio category at init time. setActive(true) is

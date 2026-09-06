@@ -571,7 +571,7 @@ extension PlayerView {
                 // status-bar orientation rather than the physical device sensor).
                 let windowScene = UIApplication.shared.connectedScenes
                     .compactMap { $0 as? UIWindowScene }
-                    .first
+                    .first(where: { $0.session.role == .windowApplication })
                 physicallyLandscape = windowScene?.interfaceOrientation.isLandscape ?? false
                 swipeLog.notice("[orientation] onAppear — rawOrientation=\(rawOrientation.rawValue) is ambiguous; using windowScene interfaceOrientation=\(windowScene?.interfaceOrientation.rawValue ?? -1)")
             }

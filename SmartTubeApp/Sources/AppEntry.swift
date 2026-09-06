@@ -262,6 +262,7 @@ struct AppEntry: App {
                             #if os(iOS)
                             consumePendingWatchLaterID()
                             consumePendingQueueVideoID()
+                            attachFakeExternalDisplayFromLaunchArgs()
                             if playerStateStore.presentation == .miniPlayer {
                                 playerStateStore.vm.handleForeground()
                             }
@@ -450,6 +451,28 @@ struct AppEntry: App {
         }
         #endif
     }
+
+    #if os(iOS)
+    /// Handles the `--uitesting-fake-external-display` launch argument.
+    ///
+    /// No simulator emulates an external screen, so the phone's own window scene is
+    /// handed to `ExternalDisplayManager` as if it were one. Its stand-in window takes
+    /// the bottom quarter of the screen, which leaves the player's own controls — the
+    /// overlay drawn while the embed is "on the TV" — clear for the test to tap.
+    @MainActor
+    private func attachFakeExternalDisplayFromLaunchArgs() {
+        guard ProcessInfo.processInfo.arguments.contains("--uitesting-fake-external-display"),
+              !ExternalDisplayManager.shared.isScreenConnected,
+              let scene = UIApplication.shared.connectedScenes
+                  .first(where: { $0.session.role == .windowApplication }) as? UIWindowScene
+        else { return }
+        let bounds = scene.coordinateSpace.bounds
+        ExternalDisplayManager.shared.uiTestWindowFrame = CGRect(
+            x: 0, y: bounds.height * 0.75, width: bounds.width, height: bounds.height * 0.25
+        )
+        ExternalDisplayManager.shared.sceneConnected(scene)
+    }
+    #endif
 
     /// Handles `--uitesting-inject-queue-video-ids=<id1,id2,...>` launch argument.
     ///

@@ -46,7 +46,10 @@ struct TOSMiniPlayerView: View {
                         // the full-screen player, so the embedded YouTube <video> stays
                         // attached to the window (visibilityState remains 'visible') and
                         // playback continues. See TOSMiniPlayerLayerView below.
-                        TOSMiniPlayerLayerView(webView: webView)
+                        TOSMiniPlayerLayerView(
+                            webView: webView,
+                            externalDisplayOwnsWebView: ExternalDisplayManager.shared.owns(webView)
+                        )
                             .frame(width: 46, height: 46)
                             .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                             .accessibilityHidden(true)
@@ -112,17 +115,22 @@ struct TOSMiniPlayerView: View {
 /// while minimized. Mirrors MiniPlayerLayerView's transplant pattern for AVPlayer.
 private struct TOSMiniPlayerLayerView: UIViewRepresentable {
     let webView: WKWebView
+    /// True while the external screen holds this web view. Passed in rather than read
+    /// from the manager inside make/update, which are not observation-tracked.
+    let externalDisplayOwnsWebView: Bool
 
     func makeUIView(context: Context) -> UIView {
         let container = UIView()
         container.backgroundColor = .black
         container.clipsToBounds = true
-        attach(to: container)
+        if !externalDisplayOwnsWebView {
+            attach(to: container)
+        }
         return container
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
-        if webView.superview !== uiView {
+        if !externalDisplayOwnsWebView, webView.superview !== uiView {
             attach(to: uiView)
         }
     }

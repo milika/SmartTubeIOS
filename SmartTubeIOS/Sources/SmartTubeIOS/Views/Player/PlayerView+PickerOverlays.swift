@@ -495,7 +495,7 @@ extension PlayerView {
         }
         guard
             let scene = UIApplication.shared.connectedScenes
-                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+                .first(where: { $0.activationState == .foregroundActive && $0.session.role == .windowApplication }) as? UIWindowScene,
             let root = scene.windows.first(where: \.isKeyWindow)?.rootViewController
         else { return }
         var top = root

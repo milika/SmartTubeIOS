@@ -12,6 +12,22 @@ import SwiftUI
 // pure math run under `swift test`, which always builds for the macOS host —
 // an iOS-gated file would never be compiled or tested by that command at all.
 
+/// Which edge strip a vertical drag began in (#148). Only the outer edges of the screen
+/// adjust brightness/volume, so a stray vertical drag in the middle of the video doesn't.
+enum GestureEdgeZone: Equatable {
+    case left  // brightness
+    case right  // volume
+
+    /// `nil` when `startX` is in the middle region (or `viewWidth` is unusable).
+    static func zone(forStartX startX: CGFloat, viewWidth: CGFloat, edgeFraction: CGFloat = 0.2) -> GestureEdgeZone? {
+        guard viewWidth > 0 else { return nil }
+        let edge = viewWidth * edgeFraction
+        if startX <= edge { return .left }
+        if startX >= viewWidth - edge { return .right }
+        return nil
+    }
+}
+
 struct GestureAdjustmentInfo: Equatable {
     enum Kind: Equatable {
         case brightness

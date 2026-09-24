@@ -27,10 +27,11 @@ struct TOSSwipeNavigationOverlay: UIViewRepresentable {
     /// Called on any tap anywhere on the player. Receives window coordinates so
     /// the caller can distinguish tap zones (e.g. native controls area at bottom).
     var onTap: ((CGPoint) -> Void)? = nil
-    /// #19: continuous vertical-drag callback for brightness (left half of the screen)
-    /// / volume (right half), fired on every `.changed` update of a drag where vertical
+    /// #19: continuous vertical-drag callback for brightness (outer-left 20% of the screen)
+    /// / volume (outer-right 20%, #148), fired on every `.changed` update of a drag where vertical
     /// movement dominates horizontal (so it never fires alongside a horizontal swipe-nav
-    /// gesture). `isLeftHalf` is fixed for the whole gesture from where the touch began.
+    /// gesture). `isLeftHalf` is fixed for the whole gesture from where the touch began; drags starting
+    /// in the middle 60% never call this.
     /// `translationY`/`viewHeight` let the caller compute a delta-from-gesture-start value
     /// itself (this view holds no brightness/volume state of its own).
     var onVerticalDragChanged: ((_ isLeftHalf: Bool, _ translationY: CGFloat, _ viewHeight: CGFloat) -> Void)? = nil
@@ -143,7 +144,14 @@ struct TOSSwipeNavigationOverlay: UIViewRepresentable {
                     isVerticalDrag = true
                     if let view = gr.view {
                         let startX = gestureStartX ?? (gr.location(in: view).x - t.x)
-                        verticalDragIsLeftHalf = startX < view.bounds.width / 2
+                        // #148: only the outer edge strips adjust brightness/volume; a
+                        // vertical drag starting mid-screen commits to "vertical" (so it can't
+                        // become a swipe-nav) but leaves verticalDragIsLeftHalf nil → no-op.
+                        switch GestureEdgeZone.zone(forStartX: startX, viewWidth: view.bounds.width) {
+                        case .left: verticalDragIsLeftHalf = true
+                        case .right: verticalDragIsLeftHalf = false
+                        case nil: verticalDragIsLeftHalf = nil
+                        }
                     }
                 }
                 if isVerticalDrag, let isLeftHalf = verticalDragIsLeftHalf, let view = gr.view {

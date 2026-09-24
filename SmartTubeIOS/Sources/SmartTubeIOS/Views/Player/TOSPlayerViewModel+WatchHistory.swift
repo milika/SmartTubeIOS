@@ -39,6 +39,12 @@ extension TOSPlayerViewModel {
             tosLog.debug("[watchtime] history disabled — skipping tracker session")
             return
         }
+        // #150: on-device history (the YouTube account can't be written to — see
+        // LocalWatchHistoryStore). Guards above already cover Incognito / history disabled.
+        LocalWatchHistoryStore.shared.record(
+            Video(
+                id: videoId, title: videoTitle, channelTitle: channelTitle, channelId: channelId,
+                thumbnailURL: thumbnailURL))
         // No prior session in this instance's lifetime — flushPosition/flushDuration
         // of 0 means the returned flush closure is a guaranteed no-op (oldVideoId is
         // empty), exactly like the very first transition() call in a fresh

@@ -224,13 +224,25 @@ public struct SettingsView: View {
 
     private var generalSection: some View {
         @Bindable var store = store
-        return Section("General") {
+        return Section {
             Picker("Watch History", selection: $store.settings.historyState) {
                 Text("Enabled").tag(AppSettings.HistoryState.enabled)
                 Text("Disabled").tag(AppSettings.HistoryState.disabled)
             }
+            if !LocalWatchHistoryStore.shared.entries.isEmpty {
+                Button("Clear Watch History on This Device", role: .destructive) {
+                    LocalWatchHistoryStore.shared.clear()
+                }
+                .accessibilityIdentifier("settings.clearLocalHistoryButton")
+            }
             Toggle("Sync to iCloud", isOn: $store.settings.iCloudSyncEnabled)
                 .accessibilityIdentifier("settings.iCloudSyncToggle")
+        } header: {
+            Text("General")
+        } footer: {
+            Text(
+                "Watch history is saved on this device. SmartTube can't add videos to your YouTube account's watch history, so videos watched here won't appear on youtube.com or in the YouTube app."
+            )
         }
     }
 

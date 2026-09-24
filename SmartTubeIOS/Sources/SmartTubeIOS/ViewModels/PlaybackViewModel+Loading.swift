@@ -133,6 +133,11 @@ extension PlaybackViewModel {
                 flushPosition: 0, flushDuration: 0)
         }
 
+        // #150: on-device history (the YouTube account can't be written to).
+        if settings.historyState == .enabled {
+            LocalWatchHistoryStore.shared.record(video)
+        }
+
         // Stop and clear the current item immediately so the previous frame
         // is not visible while the next video is loading.
         player.pause()

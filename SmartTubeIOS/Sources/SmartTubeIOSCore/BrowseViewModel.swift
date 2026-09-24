@@ -53,6 +53,7 @@ public final class BrowseViewModel {
     // MARK: - Dependencies
 
     private let api: any InnerTubeAPIProtocol
+    private let localHistory: LocalWatchHistoryStore
     private var fetchTask: Task<Void, Never>?
     private var enrichTask: Task<Void, Never>?
     /// When `false`, the History section returns empty content rather than fetching from YouTube.
@@ -70,7 +71,11 @@ public final class BrowseViewModel {
     private var hasAuthToken: Bool = false
     private var hideObserverTasks: [Task<Void, Never>] = []
 
-    public init(api: any InnerTubeAPIProtocol = InnerTubeAPI(), initialSection: BrowseSection? = nil) {
+    public init(
+        api: any InnerTubeAPIProtocol = InnerTubeAPI(), initialSection: BrowseSection? = nil,
+        localHistory: LocalWatchHistoryStore = .shared
+    ) {
+        self.localHistory = localHistory
         self.api = api
         if let initial = initialSection {
             // Ensure the initial section appears in the picker list.
@@ -418,8 +423,16 @@ public final class BrowseViewModel {
                 }
                 return
             }
-            let group = try await api.fetchHistory()
+            // #150: SmartTube can't write to the YouTube account's history (no web
+            // session cookies from device-code sign-in), so the app keeps its own
+            // on-device history and shows it first, followed by whatever the account
+            // history returns (best-effort — signed-out/failed fetches just yield local).
+            let local = localHistory.videos
+            let remote: VideoGroup? = try? await api.fetchHistory()
             if !Task.isCancelled {
+                let localIds = Set(local.map(\.id))
+                var group = remote ?? VideoGroup(title: "History", videos: [])
+                group.videos = local + group.videos.filter { !localIds.contains($0.id) }
                 isAuthRequired = group.videos.isEmpty
                 videoGroups = group.videos.isEmpty ? [] : [group]
             }

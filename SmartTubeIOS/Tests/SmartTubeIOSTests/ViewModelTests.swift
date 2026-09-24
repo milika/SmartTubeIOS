@@ -556,6 +556,38 @@ struct BrowseViewModelTests {
         #expect(vm.videoGroups.first?.videos.first?.id == "histvid_AAAA")
     }
 
+    @Test("loadContent for .history shows local history first, then account history without duplicates (#150)")
+    func loadHistoryMergesLocalFirst() async {
+        let mock = MockInnerTubeAPI()
+        mock.historyResult = VideoGroup(
+            title: "History", videos: [makeVideo("histvid_AAAA"), makeVideo("histvid_BBBB")])
+        let local = LocalWatchHistoryStore(defaults: UserDefaults(suiteName: "hist-\(UUID().uuidString)")!)
+        local.record(makeVideo("histvid_BBBB"))  // also in account history → must not duplicate
+        local.record(makeVideo("localonly_CCCC"))
+
+        let section = BrowseSection(id: "history", title: "History", type: .history)
+        let vm = BrowseViewModel(api: mock, initialSection: section, localHistory: local)
+        vm.loadContent(for: section, refresh: true, source: "test")
+        await waitForTasks(until: { vm.videoGroups.first?.videos.count == 3 })
+
+        #expect(vm.videoGroups.first?.videos.map(\.id) == ["localonly_CCCC", "histvid_BBBB", "histvid_AAAA"])
+    }
+
+    @Test("loadContent for .history shows local history even when the account fetch yields nothing (#150)")
+    func loadHistoryLocalOnlyWhenRemoteEmpty() async {
+        let mock = MockInnerTubeAPI()
+        let local = LocalWatchHistoryStore(defaults: UserDefaults(suiteName: "hist-\(UUID().uuidString)")!)
+        local.record(makeVideo("localonly_CCCC"))
+
+        let section = BrowseSection(id: "history", title: "History", type: .history)
+        let vm = BrowseViewModel(api: mock, initialSection: section, localHistory: local)
+        vm.loadContent(for: section, refresh: true, source: "test")
+        await waitForTasks(until: { vm.videoGroups.first?.videos.first != nil })
+
+        #expect(vm.videoGroups.first?.videos.map(\.id) == ["localonly_CCCC"])
+        #expect(!vm.isAuthRequired)
+    }
+
     @Test("Empty subscriptions (local path) does not set isAuthRequired")
     func emptyLocalSubscriptionsDoNotSetAuthRequired() async {
         let mock = MockInnerTubeAPI()

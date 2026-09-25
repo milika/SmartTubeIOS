@@ -306,4 +306,3 @@ final class HomeShortsUITests: XCTestCase {
         )
     }
 }
-

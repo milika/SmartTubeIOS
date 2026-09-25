@@ -1011,7 +1011,6 @@ extension InnerTubeAPI {
         }
     }
 
-
     // MARK: - Test helpers (for AuthenticatedTrackingURLsTests)
 
     static func statsURLForTesting(

@@ -503,6 +503,12 @@ final class TOSPlayerViewModel: NSObject {
     func pause() {
         let stateBefore = playerState
         let timeBefore = currentTime
+        let durationBefore = duration
+        Task {
+            guard !isIncognito, settings.historyState == .enabled, durationBefore > 0 else { return }
+            await self.ensureTrackingSession()
+            await self.tracker.checkpoint(position: timeBefore, duration: durationBefore)
+        }
         tosLog.notice(
             "[pause] requested — playerState=\(String(describing: stateBefore), privacy: .public) currentTime=\(timeBefore, format: .fixed(precision: 1))s"
         )
@@ -536,6 +542,8 @@ final class TOSPlayerViewModel: NSObject {
     }
 
     func seekTo(_ seconds: Double) {
+        let target = Self.clampedSeekTarget(currentTime: currentTime, delta: seconds - currentTime, duration: duration)
+        recordSeek(to: target, from: currentTime)
         eval(
             "seekTo(\(seconds))",
             "(function(){var v=document.querySelector('video');var ifr=document.querySelectorAll('iframe').length;if(v){v.currentTime=\(seconds);}return {found: !!v, iframes: ifr, currentTime: v ? v.currentTime : null};})();"

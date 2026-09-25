@@ -25,7 +25,7 @@ private let tosLog = Logger(subsystem: "com.void.smarttube.app", category: "TOSP
 
 extension TOSPlayerViewModel {
 
-    private func ensureTrackingSession() async {
+    func ensureTrackingSession() async {
         guard !tracker.hasTrackingSession else { return }
         if let task = trackingSessionTask {
             await task.value
@@ -124,6 +124,15 @@ extension TOSPlayerViewModel {
         Task {
             await self.ensureTrackingSession()
             await self.tracker.checkpointIfDue(position: pos, duration: dur)
+        }
+    }
+
+    func recordSeek(to target: Double, from position: Double) {
+        guard !isIncognito, settings.historyState == .enabled, duration > 0 else { return }
+        let dur = duration
+        Task {
+            await self.ensureTrackingSession()
+            await self.tracker.recordSeek(to: target, from: position, duration: dur)
         }
     }
 

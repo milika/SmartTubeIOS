@@ -69,6 +69,8 @@ final class TOSPlayerViewModel: NSObject {
     var currentTime: Double = 0
     var duration: Double = 0
     var isReady: Bool = false
+    /// Single in-flight history-session resolution; tick callbacks can arrive rapidly.
+    var trackingSessionTask: Task<Void, Never>?
     /// Non-nil when the player encounters an error that requires falling back.
     var playerError: TOSPlayerError? = nil
 

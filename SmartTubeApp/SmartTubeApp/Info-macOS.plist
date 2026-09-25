@@ -37,9 +37,9 @@
 	<false/>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.entertainment</string>
-	<key>NSHumanReadableCopyright</key>
-	<string>None</string>
 	<key>NSApplicationCrashOnExceptions</key>
 	<true/>
+	<key>NSHumanReadableCopyright</key>
+	<string>None</string>
 </dict>
 </plist>

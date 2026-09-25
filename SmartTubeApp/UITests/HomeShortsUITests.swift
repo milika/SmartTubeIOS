@@ -1,4 +1,5 @@
 import XCTest
+import UITestHelpers
 
 // MARK: - HomeShortsUITests
 //
@@ -305,3 +306,4 @@ final class HomeShortsUITests: XCTestCase {
         )
     }
 }
+

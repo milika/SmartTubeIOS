@@ -26,13 +26,12 @@ import Testing
 //    endpoint (postWebSafari) — which is what the IFrame player and
 //    youtube.com use — reliably returns playbackTracking.
 //
-// B. The constructed fallback URLs (`fallbackPlaybackURL`,
-//    `fallbackWatchtimeURL`) are missing the `c=<clientName>` parameter that
-//    the official videostatsPlaybackUrl / videostatsWatchtimeUrl URLs carry.
-//    YouTube's stats server uses `c=` to attribute the view to a specific
-//    client+session — without it, the ping returns 200 but is not credited
-//    to the user's history. Adding `c=TVHTML5` makes the fallback pings
-//    recognisable as legitimate TOS-player pings.
+// B. The stats pings reused the server-supplied `baseUrl`, which frequently
+//    points at `s.youtube.com`. Android rebuilds every ping against
+//    `https://www.youtube.com/api/stats/…` — that prefix is exactly what its
+//    OkHttp interceptor matches when attaching the Bearer token and
+//    X-Goog-Visitor-Id, so the rebuild is what makes a ping attributable at all.
+//    Pings without `ei`/`vm`/`of` are now skipped instead of fired blindly.
 //
 // The auth context is already in place: AuthService.fetchYouTubeWebCookies()
 // (called from AuthService+DeviceFlow.swift:71 after every sign-in) obtains
@@ -232,24 +231,61 @@ struct AuthenticatedTrackingURLsTests {
         )
     }
 
-    // MARK: - Safety net: fallback URL c= parameter
+    // MARK: - Stats URL construction (Android parity)
 
-    @Test("fallback stats URLs include c=TVHTML5 client identifier")
-    func fallbackURLsIncludeClientParam() async {
-        // Red test for #291: the current fallbackPlaybackURL / fallbackWatchtimeURL
-        // produce URLs like `?ns=yt&el=detailpage&docid=…` — missing the `c=TVHTML5`
-        // parameter that YouTube's stats server uses to attribute the view. Without
-        // `c=`, pings return 200 but are not credited to the user's history. Adding
-        // `c=TVHTML5` makes fallback pings recognisable as legitimate TOS-player pings.
-        let playback = InnerTubeAPI.fallbackPlaybackURLForTesting(videoId: "abc123")
-        let watchtime = InnerTubeAPI.fallbackWatchtimeURLForTesting(videoId: "abc123")
-        let playbackComps = URLComponents(url: playback, resolvingAgainstBaseURL: false)
-        let watchtimeComps = URLComponents(url: watchtime, resolvingAgainstBaseURL: false)
-        #expect(
-            playbackComps?.queryItems?.contains(where: { $0.name == "c" && $0.value == "TVHTML5" }) == true,
-            "fallbackPlaybackURL must include c=TVHTML5. Actual: \(playback.absoluteString)")
-        #expect(
-            watchtimeComps?.queryItems?.contains(where: { $0.name == "c" && $0.value == "TVHTML5" }) == true,
-            "fallbackWatchtimeURL must include c=TVHTML5. Actual: \(watchtime.absoluteString)")
+    private static func session() -> InnerTubeAPI.TrackingSession {
+        InnerTubeAPI.TrackingSession(
+            eventId: "EVENT", visitorMonitoring: "VM", ofParam: "OF", playlistId: nil)
+    }
+
+    @Test("stats pings are rebuilt against www.youtube.com")
+    func statsURLUsesWWWHost() {
+        // The server-supplied baseUrl often points at s.youtube.com, which is not the
+        // host YouTube attributes authenticated pings on (Android rebuilds it too).
+        let url = InnerTubeAPI.statsURLForTesting("watchtime", session: Self.session(), params: ["docid": "abc123"])
+        #expect(url?.host == "www.youtube.com", "Stats ping must target www.youtube.com. Actual: \(url?.host ?? "nil")")
+        #expect(url?.path == "/api/stats/watchtime")
+    }
+
+    @Test("stats pings carry ns, ver and the ei/vm/of session params")
+    func statsURLCarriesSessionParams() {
+        let url = InnerTubeAPI.statsURLForTesting("playback", session: Self.session(), params: ["docid": "abc123"])
+        let items = URLComponents(url: url!, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        func value(_ name: String) -> String? { items.first { $0.name == name }?.value }
+        #expect(value("ns") == "yt")
+        #expect(value("ver") == "2")
+        #expect(value("ei") == "EVENT")
+        #expect(value("vm") == "VM")
+        #expect(value("of") == "OF")
+        #expect(value("docid") == "abc123")
+    }
+
+    @Test("tracking session is only derived when ei, vm and of are all present")
+    func trackingSessionRequiresAllParams() {
+        func urls(_ query: String) -> PlaybackTrackingURLs {
+            PlaybackTrackingURLs(
+                playbackURL: URL(string: "https://s.youtube.com/api/stats/playback?\(query)")!,
+                watchtimeURL: URL(string: "https://s.youtube.com/api/stats/watchtime?\(query)")!)
+        }
+        #expect(InnerTubeAPI.trackingSession(from: urls("ei=E&vm=V&of=O")) != nil)
+        #expect(InnerTubeAPI.trackingSession(from: urls("ei=E&vm=V")) == nil, "Missing of must bail out")
+        #expect(InnerTubeAPI.trackingSession(from: urls("vm=V&of=O")) == nil, "Missing ei must bail out")
+        #expect(InnerTubeAPI.trackingSession(from: urls("ei=E&vm=&of=O")) == nil, "Empty vm must bail out")
+        #expect(InnerTubeAPI.trackingSession(from: nil) == nil)
+    }
+
+    @Test("playlist id is forwarded when the tracking URL carries one")
+    func trackingSessionForwardsPlaylistId() {
+        let urls = PlaybackTrackingURLs(
+            playbackURL: URL(string: "https://s.youtube.com/api/stats/playback?ei=E&vm=V&of=O&plid=PL1")!,
+            watchtimeURL: URL(string: "https://s.youtube.com/api/stats/watchtime?ei=E&vm=V&of=O&plid=PL1")!)
+        #expect(InnerTubeAPI.trackingSession(from: urls)?.playlistId == "PL1")
+    }
+
+    @Test("durations are formatted with millisecond precision")
+    func secondsAreFormattedLikeAndroid() {
+        #expect(InnerTubeAPI.formatSeconds(119.4053) == "119.405")
+        #expect(InnerTubeAPI.formatSeconds(0) == "0.000")
+        #expect(InnerTubeAPI.formatSeconds(-5) == "0.000", "Negative positions must clamp to zero")
     }
 }

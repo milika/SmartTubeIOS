@@ -13,6 +13,17 @@ import SmartTubeIOSCore
 
 extension TOSPlayerViewModel {
 
+    /// Completes authentication propagation before the embed can report `ready`.
+    /// The player can reach `ready` immediately after appearing, so fire-and-forget
+    /// actor updates can otherwise leave the first tracking-URL request anonymous.
+    func prepareAuthentication(token: String?, sapisid: String?) async {
+        await api.setAuthToken(token)
+        await api.setSAPISID(sapisid)
+        await VideoPreloadCache.shared.setAuthToken(token)
+        await VideoPreloadCache.shared.setSAPISID(sapisid)
+        tracker.setTrackingURLs(nil)
+    }
+
     /// Propagates the auth token to this view model's own API instance so
     /// WatchtimeTracker sends authenticated watch-time pings.
     public func updateAuthToken(_ token: String?) {

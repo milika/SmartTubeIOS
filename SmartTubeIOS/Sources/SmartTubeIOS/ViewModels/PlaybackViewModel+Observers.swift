@@ -33,6 +33,9 @@ extension PlaybackViewModel {
                 self.checkSponsorSkip(at: seconds)
                 self.updateCaptionCue(for: seconds)
                 if self.statsForNerdsVisible { self.updateStatsSnapshot() }
+                if self.isPlaying, self.settings.historyState == .enabled, self.duration > 0 {
+                    await self.tracker.checkpointIfDue(position: seconds, duration: self.duration)
+                }
             }
         }
     }

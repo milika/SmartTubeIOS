@@ -241,7 +241,7 @@ public struct SettingsView: View {
             Text("General")
         } footer: {
             Text(
-                "Watch history is saved on this device. SmartTube can't add videos to your YouTube account's watch history, so videos watched here won't appear on youtube.com or in the YouTube app."
+                "Watch history is saved on this device. SmartTube also tries to report watches to your YouTube account, but YouTube may not always record them."
             )
         }
     }

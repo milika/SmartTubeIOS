@@ -4617,6 +4617,9 @@
         }
       }
     },
+    "Clear Watch History on This Device" : {
+
+    },
     "Close" : {
       "comment" : "tvOS sheet dismiss button",
       "extractionState" : "manual",
@@ -26036,6 +26039,9 @@
           }
         }
       }
+    },
+    "Watch history is saved on this device. SmartTube can't add videos to your YouTube account's watch history, so videos watched here won't appear on youtube.com or in the YouTube app." : {
+
     },
     "Watched threshold: %lld%%" : {
 

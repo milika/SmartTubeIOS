@@ -40,6 +40,6 @@
 	<key>NSApplicationCrashOnExceptions</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>None</string>
+	<string>DeadPixels</string>
 </dict>
 </plist>

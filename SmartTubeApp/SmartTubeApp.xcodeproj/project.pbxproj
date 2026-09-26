@@ -1028,6 +1028,10 @@
 				"INFOPLIST_FILE[sdk=macosx*]" = "SmartTubeApp/Info-macOS.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Smart Tube";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
+				INFOPLIST_KEY_NSHumanReadableCopyright = DeadPixels;
+				INFOPLIST_KEY_UILaunchStoryboardName = "Launch Screen";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				"INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad" = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				"LAUNCH_STORYBOARD_NAME[sdk=iphoneos*]" = "Launch Screen";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1510,6 +1514,10 @@
 				"INFOPLIST_FILE[sdk=macosx*]" = "SmartTubeApp/Info-macOS.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Smart Tube";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
+				INFOPLIST_KEY_NSHumanReadableCopyright = DeadPixels;
+				INFOPLIST_KEY_UILaunchStoryboardName = "Launch Screen";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				"INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad" = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				"LAUNCH_STORYBOARD_NAME[sdk=iphoneos*]" = "Launch Screen";
 				LD_RUNPATH_SEARCH_PATHS = (

@@ -296,6 +296,11 @@ final class TOSPlayerViewModel: NSObject {
         // part of #283 (background play/PiP support); does not by itself enable PiP
         // or background audio — see task-283 for what was actually tried and learned.
         config.allowsPictureInPictureMediaPlayback = true
+        // #149 (unverified mitigation): on iPad WKWebView defaults to *desktop-class*
+        // content mode, which changes how taps reach the page (synthesized mouse events).
+        // The player works on iPhone (mobile mode) but its own YouTube controls were
+        // reported unresponsive on an iPad Pro; force iPhone-style handling everywhere.
+        config.defaultWebpagePreferences.preferredContentMode = .mobile
         #endif
 
         let contentController = WKUserContentController()
@@ -352,6 +357,10 @@ final class TOSPlayerViewModel: NSObject {
         // WKWebView's default white rendering doesn't flash through before the
         // YouTube embed's content paints during the fullscreen transition.
         self.webView.isOpaque = true
+        // #144 (unverified attempt): the player surface is always black, but YouTube's own
+        // in-player settings sheet rendered white in system Dark Mode. Force the web
+        // view's appearance dark so its prefers-color-scheme matches the black surface.
+        self.webView.overrideUserInterfaceStyle = .dark
         self.webView.backgroundColor = .black
         self.webView.scrollView.backgroundColor = .black
         #endif

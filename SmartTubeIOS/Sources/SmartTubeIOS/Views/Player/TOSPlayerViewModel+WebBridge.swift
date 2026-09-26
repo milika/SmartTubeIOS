@@ -184,6 +184,7 @@ extension TOSPlayerViewModel {
                 setDurationIfNewlyKnown(tickDuration)
             }
             let newState = YTPlayerState(raw: s)
+            if newState == .playing { checkpointIfDue() }
             if !hasReceivedFirstTick {
                 hasReceivedFirstTick = true
                 tosLog.notice("[ytCallback] first tick — state=\(s) t=\(t, format: .fixed(precision: 2))s")

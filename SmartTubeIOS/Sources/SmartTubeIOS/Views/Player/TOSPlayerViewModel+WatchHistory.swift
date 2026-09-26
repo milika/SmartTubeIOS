@@ -25,6 +25,26 @@ private let tosLog = Logger(subsystem: "com.void.smarttube.app", category: "TOSP
 
 extension TOSPlayerViewModel {
 
+    func ensureTrackingSession() async {
+        guard !tracker.hasTrackingSession else { return }
+        if let task = trackingSessionTask {
+            await task.value
+            return
+        }
+        let videoId = videoId
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.trackingSessionTask = nil }
+            do {
+                let urls = await self.api.fetchHistoryTrackingURLs(videoId: videoId)
+                self.tracker.setTrackingURLs(urls)
+            } catch {
+            }
+        }
+        trackingSessionTask = task
+        await task.value
+    }
+
     /// Opens a WatchtimeTracker session for this video once playback is ready (duration
     /// known) and resolves any cached account-bound tracking URLs. Mirrors the
     /// `tracker.transition(...)` + `tracker.setTrackingURLs(...)` calls in
@@ -78,15 +98,41 @@ extension TOSPlayerViewModel {
             let cached = await VideoPreloadCache.shared.consume(videoId: videoId)
             // Outer nil = not cached (treat as "no URLs yet"); inner nil = cached "no URLs".
             // `?? nil` flattens PlaybackTrackingURLs?? → PlaybackTrackingURLs? either way.
-            let urls = cached.trackingURLs ?? nil
+            let cachedURLs = cached.trackingURLs ?? nil
+            let urls: PlaybackTrackingURLs?
+            if let cachedURLs {
+                urls = cachedURLs
+            } else {
+                urls = await api.fetchHistoryTrackingURLs(videoId: videoId)
+            }
             self.tracker.setTrackingURLs(urls)
-            tosLog.notice("[watchtime] trackingURLs resolved from cache: \(urls != nil ? "account-bound" : "none")")
             if let status = cached.nextInfo?.likeStatus {
                 self.likeDislike.setLikeStatus(status)
                 tosLog.notice(
                     "[likeDislike] seeded likeStatus=\(String(describing: status), privacy: .public) from cached nextInfo"
                 )
             }
+        }
+    }
+
+    /// Throttled watch-history checkpoint driven by the player's tick, so progress
+    /// survives a crash or app kill instead of only being written on dismiss.
+    func checkpointIfDue() {
+        guard !isIncognito, settings.historyState == .enabled, duration > 0 else { return }
+        let pos = currentTime
+        let dur = duration
+        Task {
+            await self.ensureTrackingSession()
+            await self.tracker.checkpointIfDue(position: pos, duration: dur)
+        }
+    }
+
+    func recordSeek(to target: Double, from position: Double) {
+        guard !isIncognito, settings.historyState == .enabled, duration > 0 else { return }
+        let dur = duration
+        Task {
+            await self.ensureTrackingSession()
+            await self.tracker.recordSeek(to: target, from: position, duration: dur)
         }
     }
 
@@ -98,9 +144,6 @@ extension TOSPlayerViewModel {
     /// wrote one back, so progress was lost on every close.
     func saveProgress() {
         guard !isIncognito, settings.historyState == .enabled, duration > 0 else {
-            tosLog.debug(
-                "[watchtime] saveProgress skipped — historyState=\(self.settings.historyState.rawValue, privacy: .public) duration=\(self.duration, format: .fixed(precision: 1))s"
-            )
             return
         }
         let pos = currentTime
@@ -112,8 +155,8 @@ extension TOSPlayerViewModel {
         // `Task { await self.tracker.checkpoint(...) }` (also a strong capture, for
         // the same reason: the checkpoint must outlive the call site).
         Task {
+            await self.ensureTrackingSession()
             await self.tracker.checkpoint(position: pos, duration: dur)
-            tosLog.notice("[watchtime] checkpoint saved — videoId=\(self.videoId) pos=\(Int(pos))s dur=\(Int(dur))s")
         }
     }
 }

@@ -69,7 +69,7 @@ struct PlaylistPickerSheet: View {
                     : String(localized: "Move to Playlist", bundle: .module)
             )
             #if !os(macOS)
-                .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

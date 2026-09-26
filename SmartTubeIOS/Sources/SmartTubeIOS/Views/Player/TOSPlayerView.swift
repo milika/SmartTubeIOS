@@ -288,7 +288,8 @@ public struct TOSPlayerView: View {
                             showControls()
                         },
                         onVerticalDragChanged: { isLeftHalf, translationY, viewHeight in
-                            handleVerticalDrag(isLeftHalf: isLeftHalf, translationY: translationY, viewHeight: viewHeight)
+                            handleVerticalDrag(
+                                isLeftHalf: isLeftHalf, translationY: translationY, viewHeight: viewHeight)
                         },
                         onVerticalDragEnded: {
                             endVerticalDrag()
@@ -378,8 +379,12 @@ public struct TOSPlayerView: View {
                 // player (the iOS default since 4.6) never registers in YouTube's
                 // watch history — same root cause already fixed for PlaybackViewModel
                 // in PlayerView+Lifecycle.swift, never ported to TOS.
-                vm.updateAuthToken(authService.accessToken)
-                vm.updateSAPISID(authService.sapisid)
+                let accessToken = authService.accessToken
+                let sapisid = authService.sapisid
+                Task { @MainActor in
+                    await vm.prepareAuthentication(token: accessToken, sapisid: sapisid)
+                    vm.startIfNeeded()
+                }
                 // The IFrame load is deferred to YouTubeWebPlayerView's window-ready
                 // callback (see UIViewRepresentable Coordinator in this file), which
                 // fires once the WKWebView is in a key window after the cover-present
@@ -390,7 +395,6 @@ public struct TOSPlayerView: View {
                 // inside the view model, which isn't subject to view-lifecycle
                 // cancellation. startIfNeeded() (without "WhenWindowReady") is a
                 // no-op fallback kept for safety in case the callback is missed.
-                vm.startIfNeeded()
                 #if os(iOS)
                 // Show controls briefly on first appear so the back button is tappable
                 // without the user having to tap the player area first. The 4s auto-hide
@@ -925,9 +929,13 @@ public struct TOSPlayerView: View {
         Task {
             let ok = await vm.reportIncorrectSegment(segment)
             reportSegmentAlert = DownloadAlertItem(
-                title: ok ? String(localized: "Reported", bundle: .module) : String(localized: "Could Not Report", bundle: .module),
+                title: ok
+                    ? String(localized: "Reported", bundle: .module)
+                    : String(localized: "Could Not Report", bundle: .module),
                 message: ok
-                    ? String(localized: "Thanks for the feedback — this segment has been reported to SponsorBlock.", bundle: .module)
+                    ? String(
+                        localized: "Thanks for the feedback — this segment has been reported to SponsorBlock.",
+                        bundle: .module)
                     : String(localized: "The report couldn't be sent. Please try again later.", bundle: .module)
             )
         }

@@ -702,6 +702,10 @@ extension InnerTubeAPI {
             request.setValue(InnerTubeAPI.sapisidhash(sapisid: sid), forHTTPHeaderField: "Authorization")
             request.setValue("1", forHTTPHeaderField: "X-Origin")
             authStatus = "SAPISIDHASH"
+        } else if let token = authToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.setValue("0", forHTTPHeaderField: "X-Goog-AuthUser")
+            authStatus = "Bearer"
         } else {
             authStatus = "unauthenticated"
         }

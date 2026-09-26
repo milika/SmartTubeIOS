@@ -9,7 +9,7 @@ private let trackerLog = Logger(subsystem: appSubsystem, category: "WatchtimeTra
 // position saving (VideoStateStore), playback-started ping, and
 // watchtime segment reporting (InnerTubeAPI).
 //
-// Mirrors Android's VideoStateController + WatchHistory reporting.
+// Mirrors Android's TrackingService in MediaServiceCore.
 //
 // Lifecycle per video:
 //   transition(to:cpn:flushPosition:flushDuration:)
@@ -20,12 +20,21 @@ private let trackerLog = Logger(subsystem: appSubsystem, category: "WatchtimeTra
 //     → called once authenticated tracking URLs resolve in loadAsync.
 //
 //   checkpoint(position:duration:)
-//     → called from suspend(), stop().
+//     → called periodically while playing and from suspend(), stop().
 //       The segment start is recorded lazily on the first call,
 //       which also fires reportPlaybackStarted.
 
 @MainActor
 public final class WatchtimeTracker {
+
+    /// Android marks a video fully watched once less than 5% remains.
+    private nonisolated static let endThresholdFraction = 0.05
+    /// Android starts the watch record at 0 for anything below this position.
+    private nonisolated static let startThreshold: TimeInterval = 180
+    /// Android opens a fresh watch record when the previous one is older than this.
+    private static let recordRenewInterval: TimeInterval = 30 * 60
+    /// Minimum spacing between periodic checkpoints driven by the players' time observers.
+    public static let checkpointInterval: TimeInterval = 30
 
     // MARK: - Private state
 
@@ -37,6 +46,12 @@ public final class WatchtimeTracker {
     /// Nil until the first checkpoint() — the lazy segment start.
     /// First checkpoint sets this and fires reportPlaybackStarted.
     private var segmentStart: TimeInterval?
+    /// When the playback record for the current video was last opened.
+    private var recordOpenedAt: Date?
+    /// Set once the final=1 pings have been sent, so they fire only once per session.
+    private var didReportFinal = false
+    /// Throttle state for `checkpointIfDue`.
+    private var lastCheckpointAt: Date?
 
     // MARK: - Init
 
@@ -68,6 +83,7 @@ public final class WatchtimeTracker {
         let oldCPN = cpn
         let oldURLs = trackingURLs
         let oldSegStart = segmentStart
+        let oldDidReportFinal = didReportFinal
         let api = self.api
 
         // Reset to new session synchronously — no race with the returned closure.
@@ -75,29 +91,33 @@ public final class WatchtimeTracker {
         cpn = newCPN
         trackingURLs = nil
         segmentStart = nil
+        recordOpenedAt = nil
+        didReportFinal = false
+        lastCheckpointAt = nil
 
         trackerLog.notice(
             "transition: \(oldVideoId, privacy: .public) → \(newVideoId, privacy: .public) cpn=\(newCPN.prefix(8), privacy: .public)…"
         )
 
         return {
-            guard !oldVideoId.isEmpty, flushDuration > 0 else { return }
-            if oldSegStart == nil {
-                // Playback started but checkpoint was never reached — fire ping now.
-                await api.reportPlaybackStarted(videoId: oldVideoId, cpn: oldCPN, trackingURLs: oldURLs)
-            }
-            // Use 0 when no prior checkpoint set a segment start so that the reported
-            // interval is [0, flushPosition] rather than [flushPosition, flushPosition].
-            // YouTube ignores zero-length watchtime segments (st == et), which would
-            // prevent cmt from being recorded and leave the watch-progress bar stale.
-            let segStart = oldSegStart ?? 0
+            guard !oldVideoId.isEmpty, flushDuration > 0, !oldDidReportFinal else { return }
+            let segStart = oldSegStart ?? Self.initialSegmentStart(for: flushPosition)
+            let isFinal = Self.isNearEnd(position: flushPosition, duration: flushDuration)
             trackerLog.notice(
-                "transition flush: videoId=\(oldVideoId, privacy: .public) st=\(Int(segStart))s et=\(Int(flushPosition))s"
+                "transition flush: videoId=\(oldVideoId, privacy: .public) st=\(Int(segStart))s et=\(Int(flushPosition))s final=\(isFinal, privacy: .public)"
             )
             await VideoStateStore.shared.save(videoId: oldVideoId, position: flushPosition, duration: flushDuration)
+            // The playback ping must precede the watchtime ping — YouTube ignores
+            // standalone watchtime pings.
+            await api.reportPlaybackStarted(
+                videoId: oldVideoId, cpn: oldCPN, trackingURLs: oldURLs,
+                lengthSeconds: flushDuration, startPosition: isFinal ? flushDuration : segStart, final: isFinal)
             await api.reportWatchtime(
                 videoId: oldVideoId, cpn: oldCPN, trackingURLs: oldURLs,
-                segmentStart: segStart, segmentEnd: flushPosition)
+                lengthSeconds: flushDuration,
+                segmentStart: isFinal ? flushDuration : segStart,
+                segmentEnd: isFinal ? flushDuration : flushPosition,
+                final: isFinal)
         }
     }
 
@@ -107,42 +127,127 @@ public final class WatchtimeTracker {
     /// Safe to call any time between `transition` and the first `checkpoint`.
     public func setTrackingURLs(_ urls: PlaybackTrackingURLs?) {
         trackingURLs = urls
-        trackerLog.notice("setTrackingURLs: \(urls != nil ? "account-bound" : "nil", privacy: .public)")
+        let hasSession = InnerTubeAPI.trackingSession(from: urls) != nil
+        trackerLog.notice(
+            "setTrackingURLs: \(urls != nil ? "received" : "nil", privacy: .public) accountBound=\(hasSession, privacy: .public)"
+        )
     }
 
-    // MARK: - Checkpoint (suspend / stop)
+    /// Indicates whether the tracker has the session parameters required by YouTube.
+    public var hasTrackingSession: Bool {
+        InnerTubeAPI.trackingSession(from: trackingURLs) != nil
+    }
+
+    // MARK: - Checkpoint (periodic / suspend / stop)
+
+    /// Throttled entry point for the players' time observers: forwards to `checkpoint`
+    /// at most once per `checkpointInterval`, so a tick can be wired up directly.
+    /// The near-end final ping is never throttled.
+    public func checkpointIfDue(position: TimeInterval, duration: TimeInterval) async {
+        guard !didReportFinal else {
+            return
+        }
+        guard duration > 0 else {
+            return
+        }
+        let isFinal = Self.isNearEnd(position: position, duration: duration)
+        guard isFinal || position > 0 else {
+            return
+        }
+        if !isFinal, let last = lastCheckpointAt, Date().timeIntervalSince(last) < Self.checkpointInterval {
+            return
+        }
+        await checkpoint(position: position, duration: duration)
+        lastCheckpointAt = Date()
+    }
 
     /// Records the current watch position and reports the watched interval.
     ///
     /// The first call is the lazy playback-start: it fires `reportPlaybackStarted`
     /// and records the segment start. Subsequent calls save the position and
-    /// report the interval [segmentStart, position].
+    /// report the interval [segmentStart, position]. Once less than 5% of the
+    /// video remains, the final=1 pings mark it fully watched.
     public func checkpoint(position: TimeInterval, duration: TimeInterval) async {
-        guard !videoId.isEmpty, duration > 0 else { return }
+        guard !videoId.isEmpty else {
+            return
+        }
+        guard duration > 0 else {
+            return
+        }
+        guard !didReportFinal else {
+            return
+        }
 
         let vid = videoId
         let localCPN = cpn
         let localURLs = trackingURLs
+        let isFinal = Self.isNearEnd(position: position, duration: duration)
+        let needsNewRecord =
+            segmentStart == nil
+            || recordOpenedAt.map { Date().timeIntervalSince($0) > Self.recordRenewInterval } ?? true
 
         if segmentStart == nil {
-            // Use 0 as the segment start so the reported interval is [0, position]
-            // rather than [position, position]. YouTube ignores zero-length watchtime
-            // segments (st == et), which would prevent cmt from being recorded and
-            // leave the watch-progress bar stuck at a stale value.
-            segmentStart = 0
-            trackerLog.notice(
-                "checkpoint (first): videoId=\(vid, privacy: .public) pos=\(Int(position))s — firing playbackStarted")
-            await api.reportPlaybackStarted(videoId: vid, cpn: localCPN, trackingURLs: localURLs)
+            segmentStart = Self.initialSegmentStart(for: position)
+        }
+        let segStart = segmentStart ?? 0
+
+        // A zero-length segment (st == et) is discarded by YouTube, which would leave
+        // cmt unrecorded and the watch-progress bar stale.
+        guard isFinal || segStart < position else {
+            trackerLog.notice("checkpoint skipped: videoId=\(vid, privacy: .public) empty segment at \(Int(position))s")
+            return
         }
 
-        let segStart = segmentStart ?? 0
-        trackerLog.notice(
-            "checkpoint: videoId=\(vid, privacy: .public) st=\(Int(segStart))s et=\(Int(position))s dur=\(Int(duration))s"
-        )
         await VideoStateStore.shared.save(videoId: vid, position: position, duration: duration)
+
+        if needsNewRecord || isFinal {
+            trackerLog.notice(
+                "checkpoint: opening watch record videoId=\(vid, privacy: .public) cmt=\(Int(position))s final=\(isFinal, privacy: .public)"
+            )
+            await api.reportPlaybackStarted(
+                videoId: vid, cpn: localCPN, trackingURLs: localURLs,
+                lengthSeconds: duration, startPosition: isFinal ? duration : segStart, final: isFinal)
+            recordOpenedAt = Date()
+        }
+
+        trackerLog.notice(
+            "checkpoint: videoId=\(vid, privacy: .public) st=\(Int(segStart))s et=\(Int(position))s dur=\(Int(duration))s final=\(isFinal, privacy: .public)"
+        )
         await api.reportWatchtime(
             videoId: vid, cpn: localCPN, trackingURLs: localURLs,
-            segmentStart: segStart, segmentEnd: position)
-        segmentStart = position
+            lengthSeconds: duration,
+            segmentStart: isFinal ? duration : segStart,
+            segmentEnd: isFinal ? duration : position,
+            final: isFinal)
+
+        if isFinal {
+            didReportFinal = true
+        } else {
+            segmentStart = position
+        }
+    }
+
+    /// Flushes the segment before a seek and starts the next segment at the target.
+    /// This mirrors Android SmartTube's onSeekPositionChanged history update.
+    public func recordSeek(to targetPosition: TimeInterval, from currentPosition: TimeInterval, duration: TimeInterval) async {
+        guard !videoId.isEmpty, duration > 0, !didReportFinal else { return }
+        guard currentPosition > 0 else {
+            segmentStart = max(0, min(duration, targetPosition))
+            return
+        }
+
+        await checkpoint(position: currentPosition, duration: duration)
+        segmentStart = max(0, min(duration, targetPosition))
+        lastCheckpointAt = nil
+    }
+
+    // MARK: - Android parity helpers
+
+    private nonisolated static func isNearEnd(position: TimeInterval, duration: TimeInterval) -> Bool {
+        duration > 0 && duration - position < duration * endThresholdFraction
+    }
+
+    private nonisolated static func initialSegmentStart(for position: TimeInterval) -> TimeInterval {
+        position < startThreshold ? 0 : position
     }
 }

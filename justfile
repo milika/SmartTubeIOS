@@ -4,7 +4,7 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 root      := justfile_directory()
 workspace := root + "/SmartTube.xcworkspace"
 package   := root + "/SmartTubeIOS"
-derived   := env_var_or_default("SMARTTUBE_DERIVED_DATA", "/Volumes/main/tempMac/DerivedData/SmartTube")
+derived   := env_var_or_default("SMARTTUBE_DERIVED_DATA", env_var("HOME") + "/DevTemp/smarttube/derived-data/xcode")
 # Single source of truth for the target simulator. Override: `just sim="iPhone 17" test-ui`.
 sim       := env_var_or_default("SMARTTUBE_SIM", "iPhone 17")
 tv_sim    := env_var_or_default("SMARTTUBE_TV_SIM", "Apple TV")
@@ -48,13 +48,16 @@ test-unit-filter name:
 
 # temporary until WS3-T3.4 adds the Smoke/Live test plans
 test-ui-legacy:
-    xcodebuild test -workspace {{workspace}} -scheme SmartTube -destination "platform=iOS Simulator,name={{sim}}" -derivedDataPath {{derived}} -parallel-testing-enabled YES -maximum-parallel-testing-workers {{workers}} -only-testing:SmartTubeUITests 2>&1 | tee /Volumes/main/tempMac/smarttube-parallel-test.log | grep -E "Test Case|TEST SUCCEEDED|TEST FAILED|error:" | tail -40
+    mkdir -p "$HOME/DevTemp/smarttube/logs"
+    xcodebuild test -workspace {{workspace}} -scheme SmartTube -destination "platform=iOS Simulator,name={{sim}}" -derivedDataPath {{derived}} -parallel-testing-enabled YES -maximum-parallel-testing-workers {{workers}} -only-testing:SmartTubeUITests 2>&1 | tee $HOME/DevTemp/smarttube/logs/smarttube-parallel-test.log | grep -E "Test Case|TEST SUCCEEDED|TEST FAILED|error:" | tail -40
 
 test-smoke:
-    xcodebuild test -workspace {{workspace}} -scheme SmartTube -testPlan Smoke -destination "platform=iOS Simulator,name={{sim}}" -derivedDataPath {{derived}} -parallel-testing-enabled YES -maximum-parallel-testing-workers {{workers}} -resultBundlePath /Volumes/main/tempMac/smarttube-smoke.xcresult CODE_SIGNING_ALLOWED=NO 2>&1 | tee /Volumes/main/tempMac/smarttube-smoke.log | grep -E "Test Case|TEST SUCCEEDED|TEST FAILED|error:" | tail -40
+    mkdir -p "$HOME/DevTemp/smarttube/logs"
+    xcodebuild test -workspace {{workspace}} -scheme SmartTube -testPlan Smoke -destination "platform=iOS Simulator,name={{sim}}" -derivedDataPath {{derived}} -parallel-testing-enabled YES -maximum-parallel-testing-workers {{workers}} -resultBundlePath $HOME/DevTemp/smarttube/logs/smarttube-smoke.xcresult CODE_SIGNING_ALLOWED=NO 2>&1 | tee $HOME/DevTemp/smarttube/logs/smarttube-smoke.log | grep -E "Test Case|TEST SUCCEEDED|TEST FAILED|error:" | tail -40
 
 test-ui:
-    xcodebuild test -workspace {{workspace}} -scheme SmartTube -testPlan Live -destination "platform=iOS Simulator,name={{sim}}" -derivedDataPath {{derived}} -parallel-testing-enabled YES -maximum-parallel-testing-workers {{workers}} -resultBundlePath /Volumes/main/tempMac/smarttube-live.xcresult 2>&1 | tee /Volumes/main/tempMac/smarttube-live.log | grep -E "Test Case|TEST SUCCEEDED|TEST FAILED|error:" | tail -60
+    mkdir -p "$HOME/DevTemp/smarttube/logs"
+    xcodebuild test -workspace {{workspace}} -scheme SmartTube -testPlan Live -destination "platform=iOS Simulator,name={{sim}}" -derivedDataPath {{derived}} -parallel-testing-enabled YES -maximum-parallel-testing-workers {{workers}} -resultBundlePath $HOME/DevTemp/smarttube/logs/smarttube-live.xcresult 2>&1 | tee $HOME/DevTemp/smarttube/logs/smarttube-live.log | grep -E "Test Case|TEST SUCCEEDED|TEST FAILED|error:" | tail -60
 
 # run one UI test: `just test-ui-one SmartTubeUITests/PlayerControlsUITests/testPlayPause`
 test-ui-one id:

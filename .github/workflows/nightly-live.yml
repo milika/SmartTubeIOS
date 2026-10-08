@@ -19,4 +19,4 @@ jobs:
         if: always()
         with:
           name: live-xcresult
-          path: /Volumes/main/tempMac/smarttube-live.xcresult
+          path: ~/DevTemp/smarttube/logs/smarttube-live.xcresult

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		03863DDC82B3DC452E915BF7 /* DownloadLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46FAE8C7AB41057B392DF731 /* DownloadLiveActivity.swift */; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* HomeFeedWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F3 /* HomeFeedWidget.swift */; };
 		06412259452CCFBF300F2D4B /* SmartTubeIOS in Frameworks */ = {isa = PBXBuildFile; productRef = B8401470D9A590E7F3685830 /* SmartTubeIOS */; };
 		1A2B3C4D5E6F1A2B3C4D5E63 /* TVFocusChainUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F1A2B3C4D5E62 /* TVFocusChainUITests.swift */; };
 		494A17316084B602873D7C05 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AE55B486AFD7F51FEF1874FF /* Assets.xcassets */; };
@@ -170,6 +171,8 @@
 		29446E9C8CE04B2FBCDD8A2E /* FallbackVideoPlaybackUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FallbackVideoPlaybackUITests.swift; sourceTree = "<group>"; };
 		43AC502830145DD05002B5A2 /* PlaylistsNavigationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistsNavigationUITests.swift; sourceTree = "<group>"; };
 		46FAE8C7AB41057B392DF731 /* DownloadLiveActivity.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DownloadLiveActivity.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F3 /* HomeFeedWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeFeedWidget.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F4 /* SmartTubeDownloadWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SmartTubeDownloadWidget.entitlements; sourceTree = "<group>"; };
 		4CD3DC338DC0106A0F179BC1 /* SpinnerDismissalUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpinnerDismissalUITests.swift; sourceTree = "<group>"; };
 		52716A7F61A547A0959DAF30 /* HomeShortsCountUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeShortsCountUITests.swift; sourceTree = "<group>"; };
 		673C1D002F7F20340021583B /* Launch Screen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
@@ -460,6 +463,8 @@
 			isa = PBXGroup;
 			children = (
 				46FAE8C7AB41057B392DF731 /* DownloadLiveActivity.swift */,
+				A1B2C3D4E5F6A7B8C9D0E1F3 /* HomeFeedWidget.swift */,
+				A1B2C3D4E5F6A7B8C9D0E1F4 /* SmartTubeDownloadWidget.entitlements */,
 				CA34C2AD8A70726C11C5F851 /* Info.plist */,
 			);
 			path = DownloadWidget;
@@ -974,6 +979,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				03863DDC82B3DC452E915BF7 /* DownloadLiveActivity.swift in Sources */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* HomeFeedWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1370,6 +1376,7 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = DownloadWidget/SmartTubeDownloadWidget.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 5A4JA438MW;
@@ -1395,6 +1402,7 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = DownloadWidget/SmartTubeDownloadWidget.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 5A4JA438MW;

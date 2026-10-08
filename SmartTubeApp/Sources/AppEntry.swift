@@ -68,7 +68,8 @@ struct AppEntry: App {
         let api = InnerTubeAPI(authToken: nil, poTokenProvider: poTokenProvider)
         _api = State(initialValue: api)
         _authService = State(initialValue: AuthService())
-        _browseViewModel = State(initialValue: BrowseViewModel(api: api))
+        let browseViewModel = BrowseViewModel(api: api)
+        _browseViewModel = State(initialValue: browseViewModel)
         _settingsStore = State(initialValue: settingsStore)
         #if os(iOS)
         let playerStateStore = PlayerStateStore(api: api)
@@ -83,6 +84,10 @@ struct AppEntry: App {
             ))
         #endif
         _cardDownloadService = State(initialValue: VideoDownloadService(api: api))
+        #if os(iOS)
+        // Task #353: keep the Home Screen widget's snapshot in step with the Home page.
+        HomeWidgetPublisher.attach(to: browseViewModel)
+        #endif
 
         // --uitesting-force-stream-method=<method>: restricts exhaustiveRetry to a
         // single named stream-fetching client.  Written here (main thread, before any

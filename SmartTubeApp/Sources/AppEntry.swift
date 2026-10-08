@@ -324,7 +324,22 @@ struct AppEntry: App {
         // has non-empty text and is visible to XCTest in the AX tree from the moment
         // the player opens, before the API call returns the real title.
         let isUITesting = ProcessInfo.processInfo.arguments.contains("--uitesting")
-        browseViewModel.deepLinkedVideo = Video(id: videoID, title: isUITesting ? videoID : "", channelTitle: "")
+        let video = Video(id: videoID, title: isUITesting ? videoID : "", channelTitle: "")
+        os.Logger(subsystem: "com.void.smarttube.app", category: "DeepLink")
+            .notice("handleOpenURL videoId=\(videoID, privacy: .public)")
+        #if os(iOS)
+        // While a full-screen player is up, UIKit has removed the main SwiftUI view from the
+        // window and its updates are paused, so MainTabView's onChange(of: deepLinkedVideo)
+        // would not run until the player closed: a widget / Share Extension link opened
+        // while watching did nothing. Route straight to the player instead.
+        if playerStateStore.presentation == .fullScreen || tosPlayerStateStore.presentation == .fullScreen {
+            playerRouter.open(video: video, api: api)
+        } else {
+            browseViewModel.deepLinkedVideo = video
+        }
+        #else
+        browseViewModel.deepLinkedVideo = video
+        #endif
 
         // Clear the App Group pending key so consumePendingVideoID() does not replay
         // this video on the next cold start. When the app is already active, scenePhase

@@ -155,6 +155,10 @@ public final class TOSPlayerStateStore {
         tosStoreLog.notice(
             "[TOSPlayerStateStore] play — id=\(video.id) currentPresentation=\(String(describing: self.presentation))")
 
+        // Whether the full-screen player is already showing (swipe navigation, or a deep
+        // link / widget tap while watching): its view is not re-created for the new vm.
+        let playerAlreadyOnScreen = presentation == .fullScreen && vm != nil
+
         if vm?.videoId == video.id, presentation == .miniPlayer {
             // Same video minimized — just re-expand.
             expand()
@@ -205,12 +209,15 @@ public final class TOSPlayerStateStore {
         self.presentation = .fullScreen
         setActive()
         tosStoreLog.notice("[TOSPlayerStateStore] play — presentation set to .fullScreen, vm created for \(video.id)")
-        // When swipe navigation creates a new vm while the fullscreen player is
-        // already on screen, TOSPlayerView's .onAppear does NOT re-fire (it fires
-        // only once per view lifetime). Call startIfNeeded() here so the new
-        // vm's embed loads immediately. The .onAppear guard (hasStartedLoading)
-        // makes this idempotent for the first-open case.
-        newVM.startIfNeeded()
+        // When a new vm replaces the one on an already-presented full-screen player,
+        // YouTubeWebPlayerView is not re-created, so its window-ready callback (the only
+        // trigger that loads the embed since startIfNeeded() became a no-op) never fires
+        // for the new vm, leaving a black player. Start it directly; the method's own
+        // delay and hasStartedLoading guard keep this safe. A first open still waits for
+        // the window-ready callback (the cover animation must finish first).
+        if playerAlreadyOnScreen {
+            newVM.startIfNeededWhenWindowReady()
+        }
     }
 
     /// Pops and returns the most recent video from the swipe-navigation history,

@@ -264,6 +264,9 @@ extension TOSPlayerViewModel {
             case 153:
                 errName = "player-config-error"
                 playerError = .iframeError(code)
+            case -2:
+                errName = "sign-in-required"
+                playerError = .signInRequired
             default:
                 errName = "unknown(\(code))"
                 playerError = .iframeError(code)

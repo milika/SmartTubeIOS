@@ -190,6 +190,8 @@ struct ShortsEmbedPlayerViewModelTests {
         #expect(vm.errorMessage?.isEmpty == false)
         vm.playerError = .webViewLoadFailed
         #expect(vm.errorMessage?.isEmpty == false)
+        vm.playerError = .signInRequired
+        #expect(vm.errorMessage?.isEmpty == false)
     }
 
     @Test("togglePlayPause replays from start when the video has ended")

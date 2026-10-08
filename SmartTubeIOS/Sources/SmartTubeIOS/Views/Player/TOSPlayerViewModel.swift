@@ -39,10 +39,14 @@ enum TOSPlayerError: Equatable {
     case iframeError(Int)
     /// WKWebView failed to load the player page.
     case webViewLoadFailed
+    /// YouTube asked for a sign-in inside the embed ("Sign in to confirm you're not a bot",
+    /// #158). The embed only has the TV session cookies, and Google sign-in can't complete
+    /// inside it, so the standard player (authenticated InnerTube) takes over.
+    case signInRequired
 
     var isFatal: Bool {
         switch self {
-        case .embeddingDisabled, .notFound, .webViewLoadFailed: return true
+        case .embeddingDisabled, .notFound, .webViewLoadFailed, .signInRequired: return true
         case .iframeError(153): return true  // Video player configuration error
         default: return false
         }
@@ -198,7 +202,7 @@ final class TOSPlayerViewModel: NSObject {
     /// `checkSponsorSkip` logs once per segment rather than on every tick until
     /// the video naturally ends.
     var lastLoggedNearEndSegment: SponsorSegment? = nil
-    /// Strong reference to the WKWebView's navigation delegate (WKWebView retains it weakly).
+    /// Strong reference to the WKWebView's navigation and UI delegate (WKWebView retains it weakly).
     private var navigationDelegate: TOSNavigationDelegate?
     /// Fires the "tickstarted" Darwin notification on the first tick received.
     /// Mutated by `handleScriptMessage(_:)` in TOSPlayerViewModel+WebBridge.swift.
@@ -372,7 +376,15 @@ final class TOSPlayerViewModel: NSObject {
         // Separate NSObject navigation delegate avoids Swift 6 @MainActor isolation
         // interfering with Objective-C WKNavigationDelegate dispatch.
         let navDel = TOSNavigationDelegate()
+        navDel.onSignInRequested = { [weak self] url in
+            guard let self, self.playerError == nil else { return }
+            tosLog.notice("[nav] embed requested sign-in (\(url.host ?? "?", privacy: .public)) — falling back")
+            self.playerError = .signInRequired
+        }
         self.webView.navigationDelegate = navDel
+        // #158: without a UI delegate, links the embed opens in a new window (its bot-check
+        // "Sign in" button) were dropped silently.
+        self.webView.uiDelegate = navDel
         self.navigationDelegate = navDel
 
         // loadEmbed is NOT called here — SwiftUI calls View.init() many times during
@@ -841,16 +853,26 @@ final class TOSPlayerViewModel: NSObject {
             // asynchronously on DOM changes, not inside the pollVideo hot-path.
             var _errorReported = false;
             function checkErrorOverlay(node) {
-                if (_errorReported) return;
-                var errEl = node.nodeType === 1 && (
-                    (node.classList && node.classList.contains('ytp-error')) ||
-                    node.querySelector && node.querySelector('.ytp-error')
-                );
+                if (_errorReported || node.nodeType !== 1) return;
+                var errEl = null;
+                if (node.classList && node.classList.contains('ytp-error')) {
+                    errEl = node;
+                } else if (node.querySelector && node.querySelector('.ytp-error')) {
+                    errEl = node.querySelector('.ytp-error');
+                } else if (node.closest) {
+                    // Content filled into an overlay that was already in the DOM (#158).
+                    errEl = node.closest('.ytp-error');
+                }
                 if (!errEl) return;
                 _errorReported = true;
-                var txt = (typeof errEl === 'object' ? (errEl.textContent || '') : (node.textContent || ''));
-                var m = txt.match(/Error\\s+(\\d+)/i);
-                postMsg({type: 'error', code: m ? parseInt(m[1], 10) : 153, text: txt.trim().substring(0, 200)});
+                // Let the overlay finish filling in before reading its text.
+                setTimeout(function() {
+                    var txt = (errEl.textContent || '').trim();
+                    var m = txt.match(/Error\\s+(\\d+)/i);
+                    // -2 = sign-in / bot check (#158), handled as signInRequired natively.
+                    var code = m ? parseInt(m[1], 10) : (/sign in|not a bot/i.test(txt) ? -2 : 153);
+                    postMsg({type: 'error', code: code, text: txt.substring(0, 200)});
+                }, 300);
             }
             var _observer = new MutationObserver(function(mutations) {
                 for (var i = 0; i < mutations.length; i++) {
@@ -975,12 +997,70 @@ final class TOSPlayerViewModel: NSObject {
         """
 }
 
+// MARK: - Sign-in URL detection (#158)
+
+extension TOSPlayerViewModel {
+    /// Whether `url` is a Google / YouTube sign-in page — what the embed's bot-check
+    /// "Sign in" button opens. Only sign-in paths count: YouTube pages also load hidden
+    /// accounts.google.com / accounts.youtube.com frames (cookie rotation, connection
+    /// checks) during normal playback.
+    nonisolated static func isSignInURL(_ url: URL) -> Bool {
+        guard let host = url.host?.lowercased() else { return false }
+        let isGoogleOrYouTube =
+            host == "youtube.com" || host.hasSuffix(".youtube.com")
+            || host == "google.com" || host.hasSuffix(".google.com")
+        guard isGoogleOrYouTube else { return false }
+        let path = url.path.lowercased()
+        if host.hasPrefix("accounts.") {
+            return path.contains("signin") || path.contains("servicelogin")
+        }
+        return path.hasPrefix("/signin") || path.hasPrefix("/servicelogin")
+    }
+}
+
 // MARK: - TOSNavigationDelegate
 
 /// Separate NSObject navigation delegate to ensure Objective-C dispatch works correctly
 /// when the view model is a `@MainActor @Observable` actor-isolated class.
 /// WKWebView holds a weak reference — TOSPlayerViewModel retains this strongly.
-private final class TOSNavigationDelegate: NSObject, WKNavigationDelegate {
+private final class TOSNavigationDelegate: NSObject, WKNavigationDelegate, WKUIDelegate {
+
+    /// Called when the embed tries to open a Google / YouTube sign-in page (#158).
+    var onSignInRequested: (@MainActor (URL) -> Void)?
+
+    private func routeSignIn(_ url: URL) -> Bool {
+        guard TOSPlayerViewModel.isSignInURL(url) else { return false }
+        MainActor.assumeIsolated { onSignInRequested?(url) }
+        return true
+    }
+
+    func webView(
+        _ webView: WKWebView,
+        decidePolicyFor navigationAction: WKNavigationAction,
+        decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void
+    ) {
+        // Only taps: background frames the page loads itself must never trigger a fallback.
+        if navigationAction.navigationType == .linkActivated,
+            let url = navigationAction.request.url, routeSignIn(url)
+        {
+            decisionHandler(.cancel)
+            return
+        }
+        decisionHandler(.allow)
+    }
+
+    /// New-window requests (`target=_blank` / `window.open`) from the embed.
+    func webView(
+        _ webView: WKWebView,
+        createWebViewWith configuration: WKWebViewConfiguration,
+        for navigationAction: WKNavigationAction,
+        windowFeatures: WKWindowFeatures
+    ) -> WKWebView? {
+        let url = navigationAction.request.url
+        tosLog.notice("[nav] embed requested new window: \(url?.absoluteString ?? "nil", privacy: .public)")
+        if let url { _ = routeSignIn(url) }
+        return nil
+    }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
         // Post navfinished at didCommit (document committed, before resources load).

@@ -32,6 +32,8 @@ extension ShortsEmbedPlayerViewModel {
             return "This video can't be played right now."
         case .webViewLoadFailed:
             return "Couldn't load this video."
+        case .signInRequired:
+            return "YouTube asked to sign in before playing this video."
         }
     }
 

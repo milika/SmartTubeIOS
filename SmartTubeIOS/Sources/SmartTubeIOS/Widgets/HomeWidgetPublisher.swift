@@ -26,8 +26,15 @@ public enum HomeWidgetPublisher {
             return
         }
         let widgetVideos = HomeWidgetStore.widgetVideos(from: videos)
-        guard !widgetVideos.isEmpty else { return }
         saveTask?.cancel()
+        guard !widgetVideos.isEmpty else {
+            // Signed out: show the widget's empty state instead of a stale personal feed.
+            guard store.load() != nil else { return }
+            store.clear()
+            widgetLog.notice("no Home videos (signed out) — snapshot cleared")
+            WidgetCenter.shared.reloadTimelines(ofKind: HomeWidgetStore.widgetKind)
+            return
+        }
         saveTask = Task.detached(priority: .utility) {
             do {
                 guard try await store.save(widgetVideos) else { return }

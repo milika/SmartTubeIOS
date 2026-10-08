@@ -49,8 +49,8 @@ public final class BrowseViewModel {
     /// A video to open immediately via deeplink / URL interception.
     /// Cleared by the UI after the player is presented.
     public var deepLinkedVideo: Video?
-    /// Called with the Home page's videos after each successful Home load. The iOS app
-    /// uses it to refresh the Home Screen widget's snapshot (task #353).
+    /// Called with the Home page's videos after each successful Home load (empty when
+    /// signed out). The iOS app uses it to refresh the Home Screen widget (task #353).
     @ObservationIgnored public var onHomeLoaded: (@MainActor ([Video]) -> Void)?
 
     // MARK: - Dependencies
@@ -345,7 +345,9 @@ public final class BrowseViewModel {
                     }.filter { !$0.videos.isEmpty }
                     videoGroups = dedupedRows
                 }
-                onHomeLoaded?(videoGroups.flatMap(\.videos))
+                // Signed out, Home shows a sign-in prompt over a "popular" search fallback;
+                // the widget gets nothing (and clears) rather than those search results.
+                onHomeLoaded?(isAuthRequired ? [] : videoGroups.flatMap(\.videos))
             }
 
         case .recommended:

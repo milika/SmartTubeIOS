@@ -542,6 +542,34 @@ struct BrowseViewModelTests {
         #expect(vm.videoGroups[0].videos[0].id == "subvid_AAAA")
     }
 
+    @Test("Home load hands its videos to onHomeLoaded (#353 widget)")
+    func homeLoadNotifiesWidgetHook() async {
+        let mock = MockInnerTubeAPI()
+        mock.homeRowsResult = [VideoGroup(title: "Rec", videos: [makeVideo("vid_0000001"), makeVideo("vid_0000002")])]
+        let section = BrowseSection(id: "home", title: "Home", type: .home)
+        let vm = BrowseViewModel(api: mock, initialSection: section)
+        var received: [String]?
+        vm.onHomeLoaded = { received = $0.map(\.id) }
+        vm.loadContent(for: section, refresh: true, source: "test")
+        await waitForTasks(until: { received != nil })
+        #expect(received == ["vid_0000001", "vid_0000002"])
+    }
+
+    @Test("signed-out Home gives onHomeLoaded nothing, not the popular-search fallback (#353)")
+    func signedOutHomeGivesWidgetNothing() async {
+        let mock = MockInnerTubeAPI()
+        mock.homeRowsResult = []
+        mock.searchResult = VideoGroup(title: "Search", videos: [makeVideo("popular_001")])
+        let section = BrowseSection(id: "home", title: "Home", type: .home)
+        let vm = BrowseViewModel(api: mock, initialSection: section)
+        var received: [String]?
+        vm.onHomeLoaded = { received = $0.map(\.id) }
+        vm.loadContent(for: section, refresh: true, source: "test")
+        await waitForTasks(until: { received != nil })
+        #expect(vm.isAuthRequired)
+        #expect(received == [])
+    }
+
     @Test("loadContent for .history calls fetchHistory")
     func loadHistoryCallsFetch() async {
         let mock = MockInnerTubeAPI()

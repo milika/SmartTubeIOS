@@ -41,6 +41,13 @@ extension TOSPlayerViewModel {
             )
 
         case "ready":
+            // UI testing (#158): simulate YouTube's "Sign in to confirm you're not a bot"
+            // check, which needs a flagged IP to reproduce for real.
+            if playerError == nil,
+                ProcessInfo.processInfo.arguments.contains("--uitesting-simulate-signin-required")
+            {
+                playerError = .signInRequired
+            }
             // CAPTURE the embed iframe's frame info — exactly once, from the message
             // GUARANTEED to originate inside it: `stateDetectionJS` only posts "ready"
             // after `document.querySelector('video')` actually found the `<video>`

@@ -158,7 +158,7 @@ public struct HomeWidgetStore: Sendable {
 
     /// Decodes `data` at reduced size and re-encodes it as JPEG. Widgets have a ~30 MB
     /// memory limit, so full-size thumbnails must not reach them.
-    static func downscaledJPEG(_ data: Data, maxWidth: CGFloat) -> Data? {
+    public static func downscaledJPEG(_ data: Data, maxWidth: CGFloat) -> Data? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,

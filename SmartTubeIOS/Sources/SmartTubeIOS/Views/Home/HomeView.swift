@@ -121,6 +121,18 @@ public struct HomeView: View {
             guard let channelId = note.userInfo?["channelId"] as? String, !channelId.isEmpty else { return }
             channelDestination = ChannelDestination(channelId: channelId)
         }
+        #if os(iOS)
+        // App Intents ("Open Subscriptions in SmartTube"): RootView switches to this tab.
+        // A section hidden in Settings still opens, just without a chip.
+        .onReceive(NotificationCenter.default.publisher(for: .smartTubeOpenSection)) { note in
+            guard let raw = note.userInfo?["section"] as? String,
+                let type = BrowseSection.SectionType(rawValue: raw)
+            else { return }
+            selectedSection =
+                visibleSections.first { $0.type == type }
+                ?? BrowseSection(id: type.rawValue, title: type.defaultTitle, type: type)
+        }
+        #endif
         .onChange(of: visibleSections) { _, newSections in
             if !newSections.contains(selectedSection), let first = newSections.first {
                 selectedSection = first

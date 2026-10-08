@@ -215,6 +215,17 @@ struct MainTabView: View {
             selectedTab = .search
         }
         #if os(iOS)
+        // App Intents / Spotlight (see AppEntry.handleOpenURL).
+        .onReceive(NotificationCenter.default.publisher(for: .smartTubeOpenSearch)) { note in
+            guard let query = note.userInfo?["query"] as? String else { return }
+            selectedTab = .search
+            searchVM.query = query
+            searchVM.search()
+        }
+        // HomeView picks the section itself (it owns the chip selection).
+        .onReceive(NotificationCenter.default.publisher(for: .smartTubeOpenSection)) { _ in
+            selectedTab = .home
+        }
         // Reserve vertical space so scrollable tab content is not hidden under the
         // mini player. Uses a transparent placeholder rather than the real MiniPlayerView
         // to avoid duplicating the PersistentPlayerHostView UIKit layer across tabs.

@@ -133,7 +133,7 @@ public final class PlayerStateStore {
     }
 
     /// Collapse the full-screen player to the mini-player bar. Playback continues.
-    func minimize() {
+    public func minimize() {
         storeLog.notice("[PlayerStateStore] minimize — currentPresentation=\(String(describing: self.presentation))")
         presentation = .miniPlayer
         let action = dismissPlayerAction

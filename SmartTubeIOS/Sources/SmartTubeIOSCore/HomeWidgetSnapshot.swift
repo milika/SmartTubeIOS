@@ -145,6 +145,17 @@ public struct HomeWidgetStore: Sendable {
         }
     }
 
+    /// YouTube's 4:3 thumbnails (hqdefault, sddefault) carry the 16:9 frame with black bars
+    /// baked in above and below. The widget fills its tiles edge to edge, so keep only the
+    /// centre 16:9 band.
+    static func cropLetterbox(_ image: CGImage) -> CGImage {
+        let width = CGFloat(image.width), height = CGFloat(image.height)
+        guard height > 0, abs(width / height - 4.0 / 3.0) < 0.02 else { return image }
+        let band = (width * 9 / 16).rounded()
+        let rect = CGRect(x: 0, y: ((height - band) / 2).rounded(), width: width, height: band)
+        return image.cropping(to: rect) ?? image
+    }
+
     /// Decodes `data` at reduced size and re-encodes it as JPEG. Widgets have a ~30 MB
     /// memory limit, so full-size thumbnails must not reach them.
     static func downscaledJPEG(_ data: Data, maxWidth: CGFloat) -> Data? {
@@ -154,7 +165,10 @@ public struct HomeWidgetStore: Sendable {
             kCGImageSourceCreateThumbnailWithTransform: true,
             kCGImageSourceThumbnailMaxPixelSize: maxWidth,
         ]
-        guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+        guard let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+            return nil
+        }
+        let image = cropLetterbox(thumbnail)
         let output = NSMutableData()
         guard
             let destination = CGImageDestinationCreateWithData(

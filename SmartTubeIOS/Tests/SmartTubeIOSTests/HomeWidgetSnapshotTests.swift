@@ -68,6 +68,19 @@ struct HomeWidgetSnapshotTests {
         #expect(width <= 400)
     }
 
+    @Test("4:3 thumbnails lose their baked-in letterbox bars; 16:9 ones are untouched")
+    func letterboxCropped() throws {
+        func size(_ data: Data) throws -> (Int, Int) {
+            let source = try #require(CGImageSourceCreateWithData(data as CFData, nil))
+            let props = try #require(CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any])
+            return (props[kCGImagePropertyPixelWidth] as? Int ?? 0, props[kCGImagePropertyPixelHeight] as? Int ?? 0)
+        }
+        let fourThree = try #require(HomeWidgetStore.downscaledJPEG(makePNG(width: 480, height: 360), maxWidth: 400))
+        #expect(try size(fourThree) == (400, 225))
+        let sixteenNine = try #require(HomeWidgetStore.downscaledJPEG(makePNG(width: 1280, height: 720), maxWidth: 400))
+        #expect(try size(sixteenNine) == (400, 225))
+    }
+
     @Test("saving the same videos again reports no change and skips the download")
     func unchangedSaveIsNoOp() async throws {
         let store = tempStore()

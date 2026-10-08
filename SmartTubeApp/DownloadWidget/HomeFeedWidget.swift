@@ -82,26 +82,28 @@ struct HomeFeedWidgetView: View {
         } else {
             switch family {
             case .systemSmall:
-                VideoTile(item: entry.items[0], showsChannel: false)
+                // Full-bleed: the thumbnail is the widget.
+                VideoTile(item: entry.items[0], size: .large)
                     .widgetURL(entry.items[0].video.watchURL)
             case .systemMedium:
-                grid(columns: 2, rows: 1)
+                grid(columns: 2, rows: 1, size: .medium)
             default:
-                grid(columns: 2, rows: 3)
+                grid(columns: 2, rows: 3, size: .small)
             }
         }
     }
 
-    private func grid(columns: Int, rows: Int) -> some View {
+    private func grid(columns: Int, rows: Int, size: VideoTile.Size) -> some View {
         let items = Array(entry.items.prefix(columns * rows))
-        return Grid(horizontalSpacing: 6, verticalSpacing: 6) {
+        return Grid(horizontalSpacing: 4, verticalSpacing: 4) {
             ForEach(0..<rows, id: \.self) { row in
                 GridRow {
                     ForEach(0..<columns, id: \.self) { column in
                         let index = row * columns + column
                         if index < items.count {
                             Link(destination: items[index].video.watchURL) {
-                                VideoTile(item: items[index], showsChannel: rows == 1)
+                                VideoTile(item: items[index], size: size)
+                                    .clipShape(ContainerRelativeShape())
                             }
                         } else {
                             Color.clear
@@ -110,7 +112,7 @@ struct HomeFeedWidgetView: View {
                 }
             }
         }
-        .padding(8)
+        .padding(4)
     }
 
     private var emptyState: some View {
@@ -127,41 +129,67 @@ struct HomeFeedWidgetView: View {
     }
 }
 
+/// A thumbnail filling the whole tile, with the title and channel on a dark gradient at the
+/// bottom (photo-widget style).
 private struct VideoTile: View {
+    enum Size { case large, medium, small }
+
     let item: HomeFeedEntry.Item
-    let showsChannel: Bool
+    let size: Size
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            thumbnail
-                .aspectRatio(16 / 9, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-                .overlay(alignment: .bottomTrailing) { badge }
-            Text(item.video.title)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.white)
-                .lineLimit(2)
-            if showsChannel {
-                Text(item.video.channelTitle)
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.6))
-                    .lineLimit(1)
+        Color.black
+            .overlay { thumbnail }
+            .overlay {
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0.35),
+                        .init(color: .black.opacity(0.8), location: 1),
+                    ],
+                    startPoint: .top, endPoint: .bottom)
             }
-            Spacer(minLength: 0)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(widgetFamily == .systemSmall ? 8 : 0)
+            .overlay(alignment: .bottomLeading) { caption }
+            .overlay(alignment: .topTrailing) { badge }
+            .clipped()
     }
 
-    @Environment(\.widgetFamily) private var widgetFamily
+    private var caption: some View {
+        VStack(alignment: .leading, spacing: size == .small ? 0 : 2) {
+            Text(item.video.title)
+                .font(titleFont)
+                .foregroundStyle(.white)
+                .lineLimit(1)
+            Text(item.video.channelTitle)
+                .font(channelFont)
+                .foregroundStyle(.white.opacity(0.85))
+                .lineLimit(1)
+        }
+        .shadow(color: .black.opacity(0.5), radius: 2)
+        .padding(.horizontal, size == .large ? 14 : 8)
+        .padding(.bottom, size == .large ? 14 : 7)
+    }
+
+    private var titleFont: Font {
+        switch size {
+        case .large: return .system(size: 17, weight: .bold)
+        case .medium: return .system(size: 14, weight: .bold)
+        case .small: return .system(size: 12, weight: .bold)
+        }
+    }
+
+    private var channelFont: Font {
+        switch size {
+        case .large: return .system(size: 15)
+        case .medium: return .system(size: 12)
+        case .small: return .system(size: 10)
+        }
+    }
 
     @ViewBuilder private var thumbnail: some View {
         if let image = item.thumbnail {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
-                .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
-                .clipped()
         } else {
             Rectangle().fill(.white.opacity(0.12))
         }
@@ -182,7 +210,7 @@ private struct VideoTile: View {
             .padding(.horizontal, 4)
             .padding(.vertical, 1)
             .background(background, in: RoundedRectangle(cornerRadius: 3))
-            .padding(3)
+            .padding(size == .large ? 10 : 6)
     }
 
     static func format(_ duration: TimeInterval) -> String {

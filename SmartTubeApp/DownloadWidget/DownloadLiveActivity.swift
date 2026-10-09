@@ -141,7 +141,7 @@ struct SmartTubeDownloadWidgetBundle: WidgetBundle {
         HomeFeedWidget()
         // Experimental: self-contained package Widgets/CasioClockWidget — remove this line
         // and the package dependency to drop it.
-        CasioClockWidget()
+        CasioF91WWidget()
         #if ENABLE_DOWNLOADS
         DownloadLiveActivityWidget()
         #endif

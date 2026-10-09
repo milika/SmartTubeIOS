@@ -27,7 +27,8 @@ struct GMWB5000Face: View {
                 .fill(CasioGMWB5000.steel)
                 .overlay(
                     CutCornerRect(cut: Self.bezelCut, bottomCut: Self.bezelBottomCut, radius: 45)
-                        .stroke(CasioGMWB5000.steelEdge, lineWidth: 1.5))
+                        .stroke(CasioGMWB5000.steelEdge, lineWidth: 1.5)
+                )
                 .frame(width: 569, height: 526 + e)
                 .offset(x: 18, y: 19)
             engraved("PROTECTION", size: 23.6, tracking: 6.3).place(centerX: 308.5, centerY: 59.25)
@@ -124,7 +125,9 @@ struct GMWB5000Face: View {
         }
     }
 
-    private func vertical(_ text: String, centerX: CGFloat, centerY: CGFloat, angle: Double, tracking: CGFloat)
+    private func vertical(
+        _ text: String, centerX: CGFloat, centerY: CGFloat, angle: Double, tracking: CGFloat
+    )
         -> some View
     {
         Text(text)

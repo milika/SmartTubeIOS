@@ -16,7 +16,8 @@ struct FaceCanvas<Content: View>: View {
                 .scaleEffect(scale, anchor: .topLeading)
                 .offset(
                     x: (geo.size.width - area.width * scale) / 2 - area.minX * scale,
-                    y: (geo.size.height - area.height * scale) / 2 - area.minY * scale)
+                    y: (geo.size.height - area.height * scale) / 2 - area.minY * scale
+                )
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
         }
     }
@@ -51,7 +52,9 @@ extension View {
     }
 
     /// LCD text starting at `leading` with its baseline at `baseline`.
-    func place(leading: CGFloat, baseline: CGFloat, glyphHeight: CGFloat, font: LCDFont, width: CGFloat)
+    func place(
+        leading: CGFloat, baseline: CGFloat, glyphHeight: CGFloat, font: LCDFont, width: CGFloat
+    )
         -> some View
     {
         let em = glyphHeight / font.glyphToEm
@@ -61,7 +64,9 @@ extension View {
     }
 
     /// LCD text ending at `trailing` with its baseline at `baseline`.
-    func place(trailing: CGFloat, baseline: CGFloat, glyphHeight: CGFloat, font: LCDFont, width: CGFloat)
+    func place(
+        trailing: CGFloat, baseline: CGFloat, glyphHeight: CGFloat, font: LCDFont, width: CGFloat
+    )
         -> some View
     {
         let em = glyphHeight / font.glyphToEm

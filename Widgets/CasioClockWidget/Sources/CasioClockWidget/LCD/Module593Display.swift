@@ -48,7 +48,9 @@ struct Module593Display: View {
     /// The display in a model's glass (canvas coordinates): scaled to the glass's width and centred
     /// vertically, so a taller glass (a case extended to fill the widget) gets even margins.
     /// `shift` moves it down: each case's window frames the same LCD at a slightly different spot.
-    static func placed(in glass: CGRect, shift: CGFloat = 0, context: CasioFaceContext, style: LCDStyle)
+    static func placed(
+        in glass: CGRect, shift: CGFloat = 0, context: CasioFaceContext, style: LCDStyle
+    )
         -> some View
     {
         let s = glass.width / Self.glass.width

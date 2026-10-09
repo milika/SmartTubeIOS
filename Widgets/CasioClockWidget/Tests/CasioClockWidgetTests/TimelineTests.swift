@@ -34,7 +34,8 @@ struct TimelineTests {
     @Test("backlight: a lit entry now, unlit when the light ends, then the hour entries")
     func backlightEntries() {
         let now = date(2026, 5, 2, 16, 20, 37)
-        let entries = CasioClockProvider.entries(from: now, backlightUntil: now.addingTimeInterval(3), calendar: calendar)
+        let entries = CasioClockProvider.entries(
+            from: now, backlightUntil: now.addingTimeInterval(3), calendar: calendar)
         #expect(entries[0].backlit && entries[0].date == now)
         #expect(!entries[1].backlit && entries[1].date == now.addingTimeInterval(3))
         #expect(entries[2].date == date(2026, 5, 2, 17, 0))
@@ -47,7 +48,8 @@ struct TimelineTests {
     func backlightLateReload() {
         // The tap set the light until now + 1 s, but WidgetKit only rebuilt the timeline 2 s later.
         let now = date(2026, 5, 2, 16, 20, 37)
-        let entries = CasioClockProvider.entries(from: now, backlightUntil: now.addingTimeInterval(1), calendar: calendar)
+        let entries = CasioClockProvider.entries(
+            from: now, backlightUntil: now.addingTimeInterval(1), calendar: calendar)
         #expect(entries[0].backlit && entries[0].date == now)
         #expect(!entries[1].backlit && entries[1].date == now.addingTimeInterval(CasioBacklightIntent.duration))
     }
@@ -55,7 +57,8 @@ struct TimelineTests {
     @Test("backlight: an expired light time gives the plain hour entries")
     func backlightExpired() {
         let now = date(2026, 5, 2, 16, 20, 37)
-        let entries = CasioClockProvider.entries(from: now, backlightUntil: now.addingTimeInterval(-1), calendar: calendar)
+        let entries = CasioClockProvider.entries(
+            from: now, backlightUntil: now.addingTimeInterval(-1), calendar: calendar)
         #expect(entries.first?.date == date(2026, 5, 2, 16, 0))
         #expect(entries.allSatisfy { !$0.backlit })
     }

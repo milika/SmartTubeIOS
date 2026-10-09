@@ -43,7 +43,8 @@ struct InkText: Shape {
             let runFont = attributes[kCTFontAttributeName] as! CTFont  // swiftlint:disable:this force_cast
             for (glyph, position) in zip(glyphs, positions) {
                 guard let glyphPath = CTFontCreatePathForGlyph(runFont, glyph, nil) else { continue }
-                path.addPath(glyphPath, transform: CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: position.x, ty: -position.y))
+                path.addPath(
+                    glyphPath, transform: CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: position.x, ty: -position.y))
             }
         }
         return Path(path)

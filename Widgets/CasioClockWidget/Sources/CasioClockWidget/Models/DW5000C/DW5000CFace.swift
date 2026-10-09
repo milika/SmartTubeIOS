@@ -56,7 +56,8 @@ struct DW5000CFace: View {
     private var topPrint: some View {
         ZStack(alignment: .topLeading) {
             ink("CASIO", CaseFont.michroma, tracking: 0.02)
-                .placed(in: CGRect(x: 181.5, y: 63.5, width: 100, height: 18), color: CasioDW5000C.printWhite, bold: 0.7)
+                .placed(
+                    in: CGRect(x: 181.5, y: 63.5, width: 100, height: 18), color: CasioDW5000C.printWhite, bold: 0.7)
             ink("Lithium", CaseFont.saira)
                 .placed(in: CGRect(x: 305, y: 66.5, width: 66.5, height: 14.5), color: CasioDW5000C.gold)
             BatteryMark()
@@ -67,10 +68,13 @@ struct DW5000CFace: View {
                 .frame(width: 59, height: 40.5)
                 .offset(x: 196.5, y: 109)
             ink("ALM. ON·OFF", CaseFont.michroma)
-                .placed(in: CGRect(x: 336.5, y: 114.5, width: 100.5, height: 10.5), color: CasioDW5000C.labelWhite, bold: 0.3)
+                .placed(
+                    in: CGRect(x: 336.5, y: 114.5, width: 100.5, height: 10.5), color: CasioDW5000C.labelWhite,
+                    bold: 0.3)
             pointer(x: 444.5, y: 115.5, width: 17.5, height: 8.5)
             ink("LAP·RESET/REPEAT", CaseFont.michroma)
-                .placed(in: CGRect(x: 288.5, y: 132.5, width: 148, height: 10), color: CasioDW5000C.labelWhite, bold: 0.3)
+                .placed(
+                    in: CGRect(x: 288.5, y: 132.5, width: 148, height: 10), color: CasioDW5000C.labelWhite, bold: 0.3)
             pointer(x: 444.5, y: 133, width: 18, height: 9.5)
         }
     }
@@ -115,7 +119,8 @@ struct DW5000CFace: View {
             ink("200M", CaseFont.archivoBlack)
                 .placed(in: CGRect(x: 186, y: 390.5, width: 103.5, height: 17.5), color: CasioDW5000C.teal)
             ink("START·STOP", CaseFont.michroma)
-                .placed(in: CGRect(x: 342.5, y: 374, width: 93.5, height: 10), color: CasioDW5000C.labelWhite, bold: 0.3)
+                .placed(
+                    in: CGRect(x: 342.5, y: 374, width: 93.5, height: 10), color: CasioDW5000C.labelWhite, bold: 0.3)
             pointer(x: 443.5, y: 375, width: 17, height: 9)
             ink("SIG. ON·OFF", CaseFont.michroma)
                 .placed(in: CGRect(x: 342.5, y: 392, width: 93, height: 9.5), color: CasioDW5000C.labelWhite, bold: 0.3)

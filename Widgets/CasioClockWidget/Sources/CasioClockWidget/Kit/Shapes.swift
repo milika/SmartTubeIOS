@@ -21,7 +21,8 @@ struct CutCornerRect: Shape {
         var p = Path()
         p.move(to: CGPoint(x: rect.midX, y: rect.minY))
         for i in 1...corners.count {
-            p.addArc(tangent1End: corners[i % corners.count], tangent2End: corners[(i + 1) % corners.count], radius: radius)
+            p.addArc(
+                tangent1End: corners[i % corners.count], tangent2End: corners[(i + 1) % corners.count], radius: radius)
         }
         p.closeSubpath()
         return p

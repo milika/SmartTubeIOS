@@ -31,7 +31,7 @@ struct CasioClockProvider: TimelineProvider {
         let until = max(requested, now.addingTimeInterval(CasioBacklightIntent.duration))
         return [CasioClockEntry(date: now, backlit: true), CasioClockEntry(date: until)]
             + hourEntries(from: until, count: litTimelineHours + 1, calendar: calendar).filter { $0.date > until }
-                .prefix(litTimelineHours)
+            .prefix(litTimelineHours)
     }
 
     /// One entry at the start of the current hour and at each of the next 11 (minutes and seconds

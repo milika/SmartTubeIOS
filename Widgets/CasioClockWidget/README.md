@@ -14,6 +14,8 @@ published together as `CasioWidgets.homeScreen`:
 - **G-Shock DW-5000C** (`CasioDW5000C`): the first G-Shock (1983): black face with a red
   octagon line and bricks, gold and teal print, beige LCD in a silver frame, month-first date in
   a box; its bulb lights the display warm yellow.
+- **W-59** (`CasioW59`): black resin, a blue band between two white lines, gold and red print,
+  the module-590 display (its own layout of 24H, weekday, date, H:MM and seconds).
 
 Self-contained Swift package — no
 dependencies on any app code. Its resources are fonts, all under the SIL Open Font License 1.1
@@ -37,7 +39,8 @@ are wider than tall, so their case is extended to fill the square widget (every 
 its measured size; the groups spread apart). F-91W: Wikimedia Commons `Casio_F-91W_5051.jpg`;
 typefaces per Fonts In Use (fontsinuse.com/uses/74290). A158W: Wikimedia Commons `A158W.jpg`.
 GMW-B5000: Wikimedia Commons `Wikipedia-Casio-G-Shock-Edelstahl-800.jpg`. DW-5000C:
-Wikimedia Commons `DW-5000.jpg`; its printed labels are `InkText`, glyph outlines stretched to
+Wikimedia Commons `DW-5000.jpg`; W-59: Wikimedia Commons `Casio W-59 digital watch.jpg`
+(public domain); its printed labels are `InkText`, glyph outlines stretched to
 the ink boxes measured on the photo. Known difference: the DW-5000C draws a double-width W in
 the weekday; DSEG14's W is single width.
 
@@ -100,13 +103,14 @@ Sources/CasioClockWidget/
                      DotMatrixText (5×7 dot-matrix characters, drawn as shapes), and the module
                      displays (LCDModuleDisplay): Module593Display (F-91W, A158W, A168W…) and its
                      compact Module593Complication, Module3459Display (GMW-B5000, GW-B5600…),
-                     Module240Display (DW-5000C)
+                     Module240Display (DW-5000C), Module590Display (W-59)
   Kit/               FaceCanvas + place(...) modifiers, CaseFont, BundledFonts, shapes (incl. the
                      G-Shock BrickPattern), text effects, InkText (a label filling a measured ink box)
   Models/F91W/       the F-91W: model (palette, LCD style, Xcode previews), face, complication
   Models/A158W/      the A158W: model, face
   Models/GMWB5000/   the G-Shock GMW-B5000: model, face
   Models/DW5000C/    the G-Shock DW-5000C: model, face
+  Models/W59/        the W-59: model, face
   Resources/         fonts and their licences (all models)
 ```
 

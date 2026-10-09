@@ -10,9 +10,12 @@ struct InkText: Shape {
     let font: String
     /// Extra space between letters, in ems.
     var tracking: CGFloat = 0
+    /// Italic slant for fonts without an italic face (0.2 leans the tops 0.2 × height right).
+    var slant: CGFloat = 0
 
     func path(in rect: CGRect) -> Path {
         let outline = Self.outline(text, font: font, tracking: tracking)
+            .applying(CGAffineTransform(a: 1, b: 0, c: -slant, d: 1, tx: 0, ty: 0))
         let bounds = outline.boundingRect
         guard bounds.width > 0, bounds.height > 0 else { return Path() }
         return outline.applying(

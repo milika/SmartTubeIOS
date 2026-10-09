@@ -1,0 +1,84 @@
+included:
+  - ../Widgets/CasioClockWidget/Sources
+  - ../Widgets/CasioClockWidget/Tests
+excluded:
+  - SmartTubeIOS/.build
+  - "**/Resources"
+strict: true
+disabled_rules:            # owned by swift-format
+  - trailing_whitespace
+  - line_length
+  - vertical_whitespace
+  - opening_brace
+  - colon
+  - comma
+  - trailing_comma
+  - statement_position
+  - todo                   # replaced by the custom rule below
+opt_in_rules:
+  - force_unwrapping
+  - empty_count
+  - empty_string
+  - first_where
+  - contains_over_first_not_nil
+  - unused_private_declaration
+  - unhandled_throwing_task
+  - async_without_await
+  - fatal_error_message
+  - modifier_order
+  - toggle_bool
+  - xct_specific_matcher
+  - balanced_xctest_lifecycle
+  - empty_xctest_method
+  - private_unit_test
+  - closure_spacing
+  - explicit_init
+  - redundant_type_annotation
+analyzer_rules: []
+file_length:
+  warning: 600
+  error: 1200
+  ignore_comment_only_lines: true
+type_body_length:
+  warning: 400
+  error: 600
+function_body_length:
+  warning: 80
+  error: 150
+cyclomatic_complexity:
+  warning: 15
+  error: 30
+  ignores_case_statements: true
+identifier_name:
+  min_length: { warning: 2 }
+  excluded: [id, x, y, vm, tv, ui, ok]
+nesting:
+  type_level: 3
+custom_rules:
+  bare_todo:
+    name: "Bare TODO/FIXME"
+    regex: '//\s*(TODO|FIXME)(?!\(#\d+\)|\(WS\d)'
+    message: "Use // TODO(#task-or-issue): … so it is traceable"
+    severity: warning
+  raw_accessibility_identifier:
+    name: "Raw accessibility identifier"
+    regex: 'accessibilityIdentifier\("'
+    message: "Use AccessibilityID constants (WS3-T3.3)"
+    severity: warning
+  print_in_sources:
+    name: "print() in production code"
+    included: "SmartTubeIOS/Sources/.*\\.swift"
+    regex: '(^|\s)print\('
+    message: "Use os.Logger"
+    severity: warning
+  task_sleep_in_tests:
+    name: "Task.sleep in unit tests"
+    included: "SmartTubeIOS/Tests/.*\\.swift"
+    regex: 'Task\.sleep'
+    message: "Use confirmation/continuations or fakes; tests must be time-independent"
+    severity: warning
+  verbatim_text_without_reason:
+    name: "Text(verbatim:) without justification"
+    regex: 'Text\(verbatim:(?!.*//\s*verbatim:)'
+    message: "Add `// verbatim: <reason>` or use a localized key"
+    severity: warning

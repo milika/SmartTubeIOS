@@ -11,7 +11,7 @@ let package = Package(
         .library(name: "CasioClockWidget", targets: ["CasioClockWidget"])
     ],
     targets: [
-        .target(name: "CasioClockWidget", resources: [.copy("Resources/F91WSegment.ttf")]),
+        .target(name: "CasioClockWidget", resources: [.process("Resources")]),
         .testTarget(name: "CasioClockWidgetTests", dependencies: ["CasioClockWidget"]),
     ]
 )

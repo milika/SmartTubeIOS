@@ -55,21 +55,69 @@ struct CasioClockProvider: TimelineProvider {
     }
 }
 
-// MARK: - LCD font
+// MARK: - LCD fonts
+//
+// DSEG7 / DSEG14 Classic by Keshikan (SIL OFL 1.1, Resources/DSEG-LICENSE.txt) for digits and
+// letters; F91WSegment is the earlier hand-drawn font (Tools/make_segment_font.py).
 
-enum F91WFont {
-    static let postScriptName = "F91WSegment-Regular"
+struct LCDFont: Equatable {
+    let postScriptName: String
+    /// Glyph height as a fraction of the em.
+    let glyphToEm: CGFloat
+    /// Baseline position from the top of the line box, in ems.
+    let baselineFromTop: CGFloat
+    /// Advance of one digit, in ems.
+    let digitAdvance: CGFloat
+    /// A character with every segment lit ("8" / "~"), for the faint unlit segments; nil if none.
+    let allSegments: Character?
+    /// A digit-wide blank ("!" in DSEG), for an empty leading hour digit.
+    let blankDigit: String
+
+    static func dseg7(_ style: String) -> LCDFont {
+        LCDFont(
+            postScriptName: "DSEG7Classic-\(style)", glyphToEm: 1, baselineFromTop: 1, digitAdvance: 0.816,
+            allSegments: "8", blankDigit: "!")
+    }
+    static func dseg14(_ style: String) -> LCDFont {
+        LCDFont(
+            postScriptName: "DSEG14Classic-\(style)", glyphToEm: 1, baselineFromTop: 1, digitAdvance: 0.816,
+            allSegments: "~", blankDigit: "!")
+    }
+    static let handDrawn = LCDFont(
+        postScriptName: "F91WSegment-Regular", glyphToEm: 0.7, baselineFromTop: 0.8, digitAdvance: 0.5,
+        allSegments: nil, blankDigit: "\u{2007}")
 
     private static let registered: Bool = {
-        guard let url = Bundle.module.url(forResource: "F91WSegment", withExtension: "ttf") else { return false }
-        return CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+        for url in Bundle.module.urls(forResourcesWithExtension: "ttf", subdirectory: nil) ?? [] {
+            CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+        }
+        return true
     }()
 
-    /// The font whose glyphs are `height` points tall (glyph height is 0.7 em).
-    static func lcd(height: CGFloat) -> Font {
-        _ = registered
-        return .custom(postScriptName, fixedSize: height / 0.7)
+    /// The font whose glyphs are `height` points tall.
+    func font(height: CGFloat) -> Font {
+        _ = Self.registered
+        return .custom(postScriptName, fixedSize: height / glyphToEm)
     }
+
+    /// `text` with every character replaced by the all-segments glyph (digits by `allSegments`,
+    /// keeping colons), for the unlit-segment layer.
+    func allLit(_ text: String) -> String? {
+        guard let allSegments else { return nil }
+        return String(text.map { $0 == ":" ? ":" : allSegments })
+    }
+}
+
+/// Look options for the face (prototyping; the widget uses `.standard`).
+struct CasioFaceStyle {
+    var digits: LCDFont = .dseg7("Italic")
+    var letters: LCDFont = .dseg14("Italic")
+    /// Opacity of the unlit segments behind the digits; 0 = off.
+    var unlitOpacity: Double = 0.08
+    var glass: Color = Color(red: 0.77, green: 0.79, blue: 0.75)
+    var ink: Color = Color(red: 0.12, green: 0.15, blue: 0.13)
+
+    static let standard = CasioFaceStyle()
 }
 
 // MARK: - Watch face
@@ -84,6 +132,10 @@ struct CasioWatchFace: View {
     let date: Date
     var calendar: Calendar = .current
     var uses12HourClock: Bool = CasioWatchFace.localeUses12HourClock
+    var style: CasioFaceStyle = .standard
+    /// Fixed seconds instead of the live timer (static previews; the timer only animates
+    /// inside a widget).
+    var previewSeconds: Int? = nil
 
     static let canvas = CGSize(width: 594, height: 530)
 
@@ -94,8 +146,6 @@ struct CasioWatchFace: View {
     static let gold = Color(red: 0.91, green: 0.76, blue: 0.29)
     static let printWhite = Color(white: 0.94)
     static let red = Color(red: 0.89, green: 0.15, blue: 0.17)
-    static let lcdGlass = Color(red: 0.77, green: 0.79, blue: 0.75)
-    static let lcdInk = Color(red: 0.12, green: 0.15, blue: 0.13)
 
     static var localeUses12HourClock: Bool {
         DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: .current)?.contains("a") ?? true
@@ -205,7 +255,8 @@ struct CasioWatchFace: View {
     // MARK: LCD
 
     private var lcd: some View {
-        let parts = Self.displayParts(for: date, calendar: calendar, twelveHour: uses12HourClock)
+        let parts = Self.displayParts(
+            for: date, calendar: calendar, twelveHour: uses12HourClock, blankDigit: style.digits.blankDigit)
         return ZStack(alignment: .topLeading) {
             // Silver frame, dark surround, grey-green glass.
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -219,33 +270,46 @@ struct CasioWatchFace: View {
             RoundedRectangle(cornerRadius: 11, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [Self.lcdGlass, Self.lcdGlass.opacity(0.9)],
+                        colors: [style.glass, style.glass.opacity(0.9)],
                         startPoint: .top, endPoint: .bottom)
                 )
                 .frame(width: 389, height: 184)
                 .offset(x: 98, y: 186)
 
-            Group {
-                // PM in the afternoon on a 12-hour clock; 24H on a 24-hour clock, like the watch.
-                if let marker = parts.marker {
-                    Text(marker)
-                        .font(.system(size: 22, weight: .bold))
-                        .place(centerX: 140, centerY: 241)
-                }
-                // Day of week and date share the top row.
-                Text(parts.weekday)
-                    .font(F91WFont.lcd(height: 35))
-                    .place(leading: 232, baseline: 240, glyphHeight: 35)
-                Text(parts.day)
-                    .font(F91WFont.lcd(height: 42))
-                    .place(trailing: 474, baseline: 247, glyphHeight: 42, width: 110)
-                // H:MM
-                Text(parts.hoursMinutes)
-                    .font(F91WFont.lcd(height: 84))
-                    .place(trailing: 380, baseline: 352, glyphHeight: 84, width: 300)
-                seconds
+            // PM in the afternoon on a 12-hour clock; 24H on a 24-hour clock, like the watch.
+            if let marker = parts.marker {
+                Text(marker)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(style.ink)
+                    .place(centerX: 140, centerY: 241)
             }
-            .foregroundStyle(Self.lcdInk)
+            // Day of week and date share the top row.
+            lcdText(parts.weekday, font: style.letters, glyph: 35, leading: 232, baseline: 240)
+            lcdText(parts.day, font: style.digits, glyph: 42, trailing: 474, baseline: 247, width: 110)
+            // H:MM
+            lcdText(parts.hoursMinutes, font: style.digits, glyph: 76, trailing: 384, baseline: 352, width: 300)
+            seconds
+        }
+    }
+
+    /// LCD text with its unlit segments faintly behind it.
+    @ViewBuilder
+    private func lcdText(
+        _ text: String, font: LCDFont, glyph: CGFloat, leading: CGFloat? = nil, trailing: CGFloat? = nil,
+        baseline: CGFloat, width: CGFloat = 200
+    ) -> some View {
+        let layers: [(String, Double)] =
+            [(font.allLit(text), style.unlitOpacity), (text, 1)].compactMap { item in
+                guard let t = item.0, item.1 > 0 else { return nil }
+                return (t, item.1)
+            }
+        ForEach(Array(layers.enumerated()), id: \.offset) { _, layer in
+            let view = Text(layer.0).font(font.font(height: glyph)).foregroundStyle(style.ink.opacity(layer.1))
+            if let leading {
+                view.place(leading: leading, baseline: baseline, glyphHeight: glyph, font: font, width: width)
+            } else if let trailing {
+                view.place(trailing: trailing, baseline: baseline, glyphHeight: glyph, font: font, width: width)
+            }
         }
     }
 
@@ -253,16 +317,27 @@ struct CasioWatchFace: View {
     /// through a right-aligned window that keeps only the last two digits.
     private var seconds: some View {
         let minuteStart = calendar.dateInterval(of: .minute, for: date)?.start ?? date
-        let glyph: CGFloat = 60
-        let digitAdvance = glyph / 0.7 * 0.5
-        return Text(minuteStart, style: .timer)
-            .font(F91WFont.lcd(height: glyph))
-            .multilineTextAlignment(.trailing)
-            .lineLimit(1)
-            .frame(width: digitAdvance * 6, alignment: .trailing)
-            .frame(width: digitAdvance * 2, alignment: .trailing)
-            .clipped()
-            .place(trailing: 476, baseline: 352, glyphHeight: glyph, width: digitAdvance * 2)
+        let glyph: CGFloat = 54
+        let font = style.digits
+        let digitAdvance = glyph / font.glyphToEm * font.digitAdvance
+        let live: Text =
+            previewSeconds.map { Text(String(format: "%02d", $0)) } ?? Text(minuteStart, style: .timer)
+        return ZStack(alignment: .topLeading) {
+            if style.unlitOpacity > 0, let lit = font.allLit("00") {
+                Text(lit).font(font.font(height: glyph))
+                    .foregroundStyle(style.ink.opacity(style.unlitOpacity))
+                    .place(trailing: 476, baseline: 352, glyphHeight: glyph, font: font, width: digitAdvance * 2.2)
+            }
+            live
+                .font(font.font(height: glyph))
+                .foregroundStyle(style.ink)
+                .multilineTextAlignment(.trailing)
+                .lineLimit(1)
+                .frame(width: digitAdvance * 6, alignment: .trailing)
+                .frame(width: digitAdvance * 2.2, alignment: .trailing)
+                .clipped()
+                .place(trailing: 476, baseline: 352, glyphHeight: glyph, font: font, width: digitAdvance * 2.2)
+        }
     }
 
     // MARK: Formatting
@@ -281,12 +356,14 @@ struct CasioWatchFace: View {
     static let weekdays = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"]
     static let figureSpace = "\u{2007}"
 
-    static func displayParts(for date: Date, calendar: Calendar, twelveHour: Bool) -> DisplayParts {
+    static func displayParts(
+        for date: Date, calendar: Calendar, twelveHour: Bool, blankDigit: String = figureSpace
+    ) -> DisplayParts {
         let c = calendar.dateComponents([.hour, .minute, .weekday, .day], from: date)
         let hour24 = c.hour ?? 0
         let hour = twelveHour ? (hour24 % 12 == 0 ? 12 : hour24 % 12) : hour24
         // Like the watch, a 12-hour time has no leading zero ("6:04", not "06:04").
-        let hourText = hour < 10 ? (twelveHour ? figureSpace : "0") + "\(hour)" : "\(hour)"
+        let hourText = hour < 10 ? (twelveHour ? blankDigit : "0") + "\(hour)" : "\(hour)"
         let minute = c.minute ?? 0
         let dayOfMonth = c.day ?? 1
         return DisplayParts(
@@ -294,7 +371,7 @@ struct CasioWatchFace: View {
             isPM: twelveHour && hour24 >= 12,
             marker: twelveHour ? (hour24 >= 12 ? "PM" : nil) : "24H",
             weekday: weekdays[((c.weekday ?? 1) - 1) % 7],
-            day: (dayOfMonth < 10 ? figureSpace : "") + "\(dayOfMonth)"
+            day: (dayOfMonth < 10 ? blankDigit : "") + "\(dayOfMonth)"
         )
     }
 }
@@ -353,24 +430,23 @@ extension View {
             .position(x: trailing - width / 2, y: centerY)
     }
 
-    /// LCD text (F91WSegment: line box = 1 em, baseline 0.8 em from the top) starting at
-    /// `leading` with its baseline at `baseline`.
-    fileprivate func place(leading: CGFloat, baseline: CGFloat, glyphHeight: CGFloat, width: CGFloat = 200)
+    /// LCD text starting at `leading` with its baseline at `baseline`.
+    fileprivate func place(leading: CGFloat, baseline: CGFloat, glyphHeight: CGFloat, font: LCDFont, width: CGFloat)
         -> some View
     {
-        let em = glyphHeight / 0.7
+        let em = glyphHeight / font.glyphToEm
         return self.lineLimit(1)
             .frame(width: width, height: em, alignment: .leading)
-            .position(x: leading + width / 2, y: baseline - 0.8 * em + em / 2)
+            .position(x: leading + width / 2, y: baseline - font.baselineFromTop * em + em / 2)
     }
 
     /// LCD text ending at `trailing` with its baseline at `baseline`.
-    fileprivate func place(trailing: CGFloat, baseline: CGFloat, glyphHeight: CGFloat, width: CGFloat)
+    fileprivate func place(trailing: CGFloat, baseline: CGFloat, glyphHeight: CGFloat, font: LCDFont, width: CGFloat)
         -> some View
     {
-        let em = glyphHeight / 0.7
+        let em = glyphHeight / font.glyphToEm
         return self.lineLimit(1)
             .frame(width: width, height: em, alignment: .trailing)
-            .position(x: trailing - width / 2, y: baseline - 0.8 * em + em / 2)
+            .position(x: trailing - width / 2, y: baseline - font.baselineFromTop * em + em / 2)
     }
 }

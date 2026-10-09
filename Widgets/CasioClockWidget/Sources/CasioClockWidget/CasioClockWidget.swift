@@ -344,14 +344,14 @@ struct CasioWatchFace: View {
             for: date, calendar: calendar, twelveHour: uses12HourClock, blankDigit: style.digits.blankDigit)
         return ZStack(alignment: .topLeading) {
             // Silver frame, dark surround, grey-green glass.
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(Color.black)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Self.silver, lineWidth: 2)
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .strokeBorder(Self.silver, lineWidth: 1.75)
                 )
-                .frame(width: 409, height: 204)
-                .offset(x: 88, y: 176)
+                .frame(width: 414.5, height: 214)
+                .offset(x: 89, y: 174)
             RoundedRectangle(cornerRadius: 11, style: .continuous)
                 .fill(
                     LinearGradient(
@@ -370,30 +370,35 @@ struct CasioWatchFace: View {
                             )
                     }
                 }
-                .frame(width: 389, height: 184)
-                .offset(x: 98, y: 186)
+                .frame(width: 389.5, height: 184.5)
+                .offset(x: 104, y: 191.5)
 
             // PM in the afternoon on a 12-hour clock; 24H on a 24-hour clock, like the watch.
             if let marker = parts.marker {
                 Text(marker)
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.system(size: 29.3, weight: .bold))
                     .foregroundStyle(style.ink)
-                    .place(centerX: 140, centerY: 241)
+                    .place(centerX: 141, centerY: 243.5)
             }
             // Day of week and date share the top row.
-            lcdText(parts.weekday, font: style.letters, glyph: 35, leading: 232, baseline: 240)
-            lcdText(parts.day, font: style.digits, glyph: 42, trailing: 474, baseline: 247, width: 110)
-            // H:MM
-            lcdText(parts.hoursMinutes, font: style.digits, glyph: 76, trailing: 384, baseline: 352, width: 300)
+            lcdText(parts.weekday, font: style.letters, glyph: 43, leading: 234, baseline: 247, tracking: 7.5)
+            lcdText(parts.day, font: style.digits, glyph: 47.5, trailing: 484.7, baseline: 251.5, width: 120, tracking: 4.5)
+            // H:MM; the watch's digits are narrower than DSEG's.
+            lcdText(
+                parts.hoursMinutes, font: style.digits, glyph: 88.5, trailing: 383, baseline: 357.5, width: 320,
+                xScale: Self.digitSqueeze)
             seconds
         }
     }
+
+    /// Width of the big digits relative to DSEG's (measured from the photo).
+    static let digitSqueeze: CGFloat = 0.9
 
     /// LCD text with its unlit segments faintly behind it.
     @ViewBuilder
     private func lcdText(
         _ text: String, font: LCDFont, glyph: CGFloat, leading: CGFloat? = nil, trailing: CGFloat? = nil,
-        baseline: CGFloat, width: CGFloat = 200
+        baseline: CGFloat, width: CGFloat = 200, tracking: CGFloat = 0, xScale: CGFloat = 1
     ) -> some View {
         let layers: [(String, Double)] =
             [(font.allLit(text), style.unlitOpacity), (text, 1)].compactMap { item in
@@ -401,7 +406,9 @@ struct CasioWatchFace: View {
                 return (t, item.1)
             }
         ForEach(Array(layers.enumerated()), id: \.offset) { _, layer in
-            let view = Text(layer.0).font(font.font(height: glyph)).foregroundStyle(style.ink.opacity(layer.1))
+            let view = Text(layer.0).font(font.font(height: glyph)).tracking(tracking)
+                .foregroundStyle(style.ink.opacity(layer.1))
+                .scaleEffect(x: xScale, y: 1, anchor: leading != nil ? .leading : .trailing)
             if let leading {
                 view.place(leading: leading, baseline: baseline, glyphHeight: glyph, font: font, width: width)
             } else if let trailing {
@@ -414,7 +421,7 @@ struct CasioWatchFace: View {
     /// through a right-aligned window that keeps only the last two digits.
     private var seconds: some View {
         let minuteStart = calendar.dateInterval(of: .minute, for: date)?.start ?? date
-        let glyph: CGFloat = 54
+        let glyph: CGFloat = 67
         let font = style.digits
         let digitAdvance = glyph / font.glyphToEm * font.digitAdvance
         let live: Text =
@@ -423,7 +430,8 @@ struct CasioWatchFace: View {
             if style.unlitOpacity > 0, let lit = font.allLit("00") {
                 Text(lit).font(font.font(height: glyph))
                     .foregroundStyle(style.ink.opacity(style.unlitOpacity))
-                    .place(trailing: 476, baseline: 352, glyphHeight: glyph, font: font, width: digitAdvance * 2.02)
+                    .scaleEffect(x: Self.digitSqueeze, y: 1, anchor: .trailing)
+                    .place(trailing: 486, baseline: 357.5, glyphHeight: glyph, font: font, width: digitAdvance * 2.02)
             }
             live
                 .font(font.font(height: glyph))
@@ -433,7 +441,8 @@ struct CasioWatchFace: View {
                 .frame(width: digitAdvance * 6, alignment: .trailing)
                 .frame(width: digitAdvance * 2.02, alignment: .trailing)
                 .clipped()
-                .place(trailing: 476, baseline: 352, glyphHeight: glyph, font: font, width: digitAdvance * 2.02)
+                .scaleEffect(x: Self.digitSqueeze, y: 1, anchor: .trailing)
+                .place(trailing: 486, baseline: 357.5, glyphHeight: glyph, font: font, width: digitAdvance * 2.02)
         }
     }
 

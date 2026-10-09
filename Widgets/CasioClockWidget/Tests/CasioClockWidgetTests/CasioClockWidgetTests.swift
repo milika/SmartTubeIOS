@@ -48,9 +48,12 @@ struct CasioClockWidgetTests {
         #expect(parts.day == "26")
     }
 
-    @Test("the bundled LCD font is found and registers")
+    @Test("the bundled LCD and case fonts are found")
     func fontIsBundled() {
-        for name in ["DSEG7Classic-BoldItalic", "DSEG14Classic-BoldItalic"] {
+        for name in [
+            "DSEG7Classic-BoldItalic", "DSEG14Classic-BoldItalic", "Michroma-Regular", "ArchivoExpanded-Black",
+            "Saira-Medium", "SairaExpanded-SemiBold",
+        ] {
             #expect(Bundle.module.url(forResource: name, withExtension: "ttf") != nil)
         }
     }

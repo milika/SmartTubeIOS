@@ -76,6 +76,15 @@ struct CasioClockWidgetTests {
         #expect(entries.dropFirst().allSatisfy { !$0.backlit })
     }
 
+    @Test("backlight: a late reload still lights the LCD for the full duration")
+    func backlightLateReload() {
+        // The tap set the light until now + 1 s, but WidgetKit only rebuilt the timeline 2 s later.
+        let now = date(2026, 5, 2, 16, 20, 37)
+        let entries = CasioClockProvider.entries(from: now, backlightUntil: now.addingTimeInterval(1), calendar: calendar)
+        #expect(entries[0].backlit && entries[0].date == now)
+        #expect(!entries[1].backlit && entries[1].date == now.addingTimeInterval(CasioBacklightIntent.duration))
+    }
+
     @Test("backlight: an expired light time gives the plain minute entries")
     func backlightExpired() {
         let now = date(2026, 5, 2, 16, 20, 37)

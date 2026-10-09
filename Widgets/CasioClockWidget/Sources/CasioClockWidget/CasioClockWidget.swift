@@ -80,9 +80,12 @@ struct CasioClockProvider: TimelineProvider {
         completion(Timeline(entries: entries, policy: .atEnd))
     }
 
-    /// The minute entries, preceded by a lit entry while the light is on.
+    /// The minute entries, preceded by a lit entry while the light is on. WidgetKit can take a
+    /// second or two to rebuild the timeline after the tap, so the light lasts its full duration
+    /// from now rather than from the tap.
     static func entries(from now: Date, backlightUntil: Date?, calendar: Calendar = .current) -> [CasioClockEntry] {
-        guard let until = backlightUntil, until > now else { return minuteEntries(from: now, calendar: calendar) }
+        guard let requested = backlightUntil, requested > now else { return minuteEntries(from: now, calendar: calendar) }
+        let until = max(requested, now.addingTimeInterval(CasioBacklightIntent.duration))
         return [CasioClockEntry(date: now, backlit: true), CasioClockEntry(date: until)]
             + minuteEntries(from: until, calendar: calendar).filter { $0.date > until }
     }

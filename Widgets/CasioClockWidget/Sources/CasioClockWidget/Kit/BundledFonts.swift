@@ -5,8 +5,11 @@ import Foundation
 enum BundledFonts {
     static func register() { _ = registered }
 
+    /// The font files in Resources/.
+    static var fileURLs: [URL] { Bundle.module.urls(forResourcesWithExtension: "ttf", subdirectory: nil) ?? [] }
+
     private static let registered: Bool = {
-        for url in Bundle.module.urls(forResourcesWithExtension: "ttf", subdirectory: nil) ?? [] {
+        for url in fileURLs {
             CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
         }
         return true

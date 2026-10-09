@@ -17,7 +17,6 @@ enum CasioGMWB5000: CasioModel {
     static let canvas = CGSize(width: 630, height: 560 + caseExtension)
     /// The black face plate (its rounded corners match the widget's).
     static let widgetArea = CGRect(x: 81, y: 87, width: 451, height: 451)
-    static let fonts = [lcd.digits.postScriptName, lcd.letters.postScriptName, CaseFont.michroma, CaseFont.saira]
 
     /// Behind the face: the plate's black.
     static let caseBackground = Color(white: 0.09)

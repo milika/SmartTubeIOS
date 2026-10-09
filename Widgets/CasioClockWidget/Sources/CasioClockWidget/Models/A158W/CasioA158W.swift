@@ -15,10 +15,6 @@ enum CasioA158W: CasioModel {
     static let canvas = CGSize(width: 600, height: 600)
     /// The face plate plus a strip of the chrome case around it.
     static let widgetArea = CGRect(x: 19, y: 8.5, width: 572.5, height: 572.5)
-    static let fonts = [
-        lcd.digits.postScriptName, lcd.letters.postScriptName, CaseFont.michroma, CaseFont.saira,
-        CaseFont.sairaExpanded,
-    ]
 
     /// Polished steel.
     static let caseBackground = LinearGradient(

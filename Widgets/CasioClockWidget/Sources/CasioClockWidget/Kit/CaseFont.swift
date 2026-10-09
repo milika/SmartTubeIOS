@@ -8,6 +8,7 @@ enum CaseFont {
     static let saira = "Saira-Medium"
     static let sairaExpanded = "SairaExpanded-SemiBold"
     static let archivoBlack = "ArchivoExpanded-Black"
+    static let all = [michroma, saira, sairaExpanded, archivoBlack]
 
     static func custom(_ postScriptName: String, _ size: CGFloat) -> Font {
         BundledFonts.register()

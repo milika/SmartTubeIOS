@@ -57,14 +57,22 @@ struct ModelTests {
         #expect(CasioF91W.widgetArea.width == CasioF91W.widgetArea.height)
     }
 
-    @Test("every model's fonts are bundled and register")
-    func fonts() {
+    @Test("the bundled font files are exactly the fonts the package draws with, and they register")
+    func fonts() throws {
         BundledFonts.register()
-        for model in CasioModels.all {
-            for name in model.fonts {
-                let font = CTFontCreateWithName(name as CFString, 12, nil)
-                #expect(CTFontCopyPostScriptName(font) as String == name, "\(model.kind): \(name)")
+        let used = Set(CaseFont.all + [LCDStyle().digits.postScriptName, LCDStyle().letters.postScriptName])
+        var bundled = Set<String>()
+        for url in BundledFonts.fileURLs {
+            let descriptors = try #require(
+                CTFontManagerCreateFontDescriptorsFromURL(url as CFURL) as? [CTFontDescriptor])
+            for descriptor in descriptors {
+                bundled.insert(try #require(CTFontDescriptorCopyAttribute(descriptor, kCTFontNameAttribute) as? String))
             }
+        }
+        #expect(bundled == used)
+        for name in used {
+            let font = CTFontCreateWithName(name as CFString, 12, nil)
+            #expect(CTFontCopyPostScriptName(font) as String == name)
         }
     }
 

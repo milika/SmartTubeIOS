@@ -15,8 +15,6 @@ protocol CasioModel {
     static var canvas: CGSize { get }
     /// The part of the canvas the widget shows (default: all of it).
     static var widgetArea: CGRect { get }
-    /// PostScript names of the fonts the model uses (all bundled in Resources/).
-    static var fonts: [String] { get }
     /// Fills the widget behind the face (the case colour).
     static var caseBackground: CaseBackground { get }
     @ViewBuilder static func face(_ context: CasioFaceContext) -> Face
@@ -53,7 +51,7 @@ struct CasioFaceContext {
     var previewSeconds: Int?
 }
 
-/// Every model (and every model with a complication), for tests: unique kinds, bundled fonts.
+/// Every model (and every model with a complication), for tests: unique kinds, renders.
 /// Add new models here.
 enum CasioModels {
     static let all: [any CasioModel.Type] = [CasioF91W.self, CasioA158W.self, CasioGMWB5000.self, CasioDW5000C.self]

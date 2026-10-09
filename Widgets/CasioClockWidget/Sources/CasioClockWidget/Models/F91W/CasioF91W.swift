@@ -21,10 +21,6 @@ enum CasioF91W: CasioComplicationModel {
     static let canvas = CGSize(width: 594, height: 530 + caseExtension)
     /// The square around the bezel (its outer line plus ~3 pt).
     static let widgetArea = CGRect(x: 19, y: 28, width: 557, height: 557)
-    static let fonts = [
-        lcd.digits.postScriptName, lcd.letters.postScriptName, CaseFont.michroma, CaseFont.archivoBlack,
-        CaseFont.saira, CaseFont.sairaExpanded,
-    ]
 
     static let caseBackground = LinearGradient(
         colors: [Color(white: 0.13), Color(white: 0.05)], startPoint: .top, endPoint: .bottom)

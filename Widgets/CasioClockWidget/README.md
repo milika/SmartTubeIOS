@@ -97,7 +97,7 @@ Sources/CasioClockWidget/
                      DotMatrixText (5×7 dot-matrix characters, drawn as shapes)
   Kit/               FaceCanvas + place(...) modifiers, CaseFont, BundledFonts, shapes (incl. the
                      G-Shock BrickPattern), text effects, InkText (a label filling a measured ink box)
-  Models/F91W/       the F-91W: model (palette, fonts, LCD style), face, complication, public widgets
+  Models/F91W/       the F-91W: model (palette, LCD style), face, complication, public widgets
   Models/A158W/      the A158W: model, face, public widget
   Models/GMWB5000/   the G-Shock GMW-B5000: model, face, public widget
   Models/DW5000C/    the G-Shock DW-5000C: model, face, public widget
@@ -108,7 +108,7 @@ Sources/CasioClockWidget/
 
 1. Measure a front-on photo of the watch and pick its canvas size. Add
    `Models/<Name>/Casio<Name>.swift`, an `enum` implementing `CasioModel` (kind, gallery name
-   and description, canvas, fonts, case background, `face(_:)`, optionally `widgetArea`: the part
+   and description, canvas, case background, `face(_:)`, optionally `widgetArea`: the part
    of the canvas the square widget shows), and its face view drawn with
    `place(...)`, the case-font helpers (`Casio<Name>.michroma(size)`, …), `InkText`, the shapes
    and the LCD parts (`LCDWindow`, `LCDText`, `LiveHoursMinutes`, `LiveSeconds`,
@@ -122,7 +122,7 @@ Sources/CasioClockWidget/
        public var body: some WidgetConfiguration { CasioWatchWidget<Casio<Name>>().body }
    }
    ```
-3. Add the model to `CasioModels.all` (tests check unique kinds and bundled fonts), and copy the
+3. Add the model to `CasioModels.all` (tests check unique kinds and that it renders), and copy the
    `#Preview` from `CasioF91WWidget.swift` to tune the face live in Xcode's canvas.
 4. List `Casio<Name>Widget()` in the app's `WidgetBundle`.
 5. Optional Apple Watch complication: conform to `CasioComplicationModel` (complication kind,
@@ -151,5 +151,6 @@ F-91W's is `"CasioClockWidget"`, from when it was the only model.)
 
 ## Tests
 
-`swift test` in this folder: formatting, timeline entries, and models (unique kinds, every
-model's fonts bundled, the light per model).
+`swift test` in this folder: formatting, timeline entries, models (unique kinds, the light per
+model), fonts (the bundled files are exactly `CaseFont.all` plus DSEG, and they register), and
+rendering (every model draws its face and its light changes it).

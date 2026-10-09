@@ -165,8 +165,8 @@ struct CasioFaceStyle {
     var letters: LCDFont = .dseg14("BoldItalic")
     /// Opacity of the unlit segments behind the digits; 0 = off.
     var unlitOpacity: Double = 0.055
-    var glass: Color = Color(red: 0.77, green: 0.79, blue: 0.75)
-    var ink: Color = Color(red: 0.12, green: 0.15, blue: 0.13)
+    var glass: Color = Color(red: 0.67, green: 0.74, blue: 0.68)
+    var ink: Color = Color(red: 0.11, green: 0.16, blue: 0.19)
 
     static let standard = CasioFaceStyle()
 }
@@ -196,11 +196,12 @@ struct CasioWatchFace: View {
 
     static let resin = LinearGradient(
         colors: [Color(white: 0.13), Color(white: 0.05)], startPoint: .top, endPoint: .bottom)
-    static let blue = Color(red: 0.13, green: 0.40, blue: 0.86)
-    static let silver = Color(white: 0.80)
-    static let gold = Color(red: 0.91, green: 0.76, blue: 0.29)
+    // Colours sampled from the photo, white-balanced so the white print is neutral.
+    static let blue = Color(red: 0.04, green: 0.45, blue: 0.95)
+    static let silver = Color(white: 0.86)
+    static let gold = Color(red: 0.90, green: 0.78, blue: 0.40)
     static let printWhite = Color(white: 0.94)
-    static let red = Color(red: 0.89, green: 0.15, blue: 0.17)
+    static let red = Color(red: 0.95, green: 0.13, blue: 0.13)
     static let backlight = Color(red: 0.36, green: 0.86, blue: 0.62)
 
     static var localeUses12HourClock: Bool {
@@ -225,17 +226,22 @@ struct CasioWatchFace: View {
 
     private var bezel: some View {
         ZStack(alignment: .topLeading) {
-            // The bright blue ring.
-            RoundedRectangle(cornerRadius: 46, style: .continuous)
-                .strokeBorder(Self.blue, lineWidth: 9)
-                .frame(width: 550, height: 470)
-                .offset(x: 22, y: 30)
-            // The thin silver line framing the printed face.
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(Self.silver, lineWidth: 2.5)
-                .frame(width: 493, height: 412)
-                .offset(x: 52, y: 58)
+            // Thin outer blue line, wide blue band, white line framing the printed face; all three
+            // are octagons with the watch's cut corners.
+            frameLine(x: 23.5, y: 31.5, width: 548.5, height: 472, lineWidth: 3, radius: 24, color: Self.blue)
+            frameLine(x: 36, y: 45.5, width: 520.5, height: 445, lineWidth: 10.5, radius: 22, color: Self.blue)
+            frameLine(x: 50, y: 60, width: 492, height: 417, lineWidth: 2, radius: 18, color: Self.silver)
         }
+    }
+
+    /// A frame line stroked along the given centerline rectangle.
+    private func frameLine(
+        x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat, lineWidth: CGFloat, radius: CGFloat, color: Color
+    ) -> some View {
+        CutCornerRect(cut: CGSize(width: 40, height: 64), radius: radius)
+            .stroke(color, lineWidth: lineWidth)
+            .frame(width: width, height: height)
+            .offset(x: x, y: y)
     }
 
     // MARK: Printed text and bars
@@ -446,6 +452,30 @@ struct CasioWatchFace: View {
             weekday: weekdays[((c.weekday ?? 1) - 1) % 7],
             day: (dayOfMonth < 10 ? blankDigit : "") + "\(dayOfMonth)"
         )
+    }
+}
+
+/// A rectangle with its four corners cut off diagonally (`cut` across and down) and the joints
+/// rounded, like the frame lines printed on the F-91W.
+struct CutCornerRect: Shape {
+    let cut: CGSize
+    let radius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let dx = min(cut.width, rect.width / 2), dy = min(cut.height, rect.height / 2)
+        let corners = [
+            CGPoint(x: rect.minX + dx, y: rect.minY), CGPoint(x: rect.maxX - dx, y: rect.minY),
+            CGPoint(x: rect.maxX, y: rect.minY + dy), CGPoint(x: rect.maxX, y: rect.maxY - dy),
+            CGPoint(x: rect.maxX - dx, y: rect.maxY), CGPoint(x: rect.minX + dx, y: rect.maxY),
+            CGPoint(x: rect.minX, y: rect.maxY - dy), CGPoint(x: rect.minX, y: rect.minY + dy),
+        ]
+        var p = Path()
+        p.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        for i in 1...corners.count {
+            p.addArc(tangent1End: corners[i % corners.count], tangent2End: corners[(i + 1) % corners.count], radius: radius)
+        }
+        p.closeSubpath()
+        return p
     }
 }
 

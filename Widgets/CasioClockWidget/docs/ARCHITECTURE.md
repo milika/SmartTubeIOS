@@ -1,0 +1,102 @@
+# Architecture
+
+## Layout
+
+```
+Sources/CasioClockWidget/
+  CasioCatalogue.swift  the catalogue: CasioModels (registry), CasioWidgets (the public widgets),
+                        CasioComplicationGallery. Registering a model happens only here.
+  CasioModel.swift      CasioModel / CasioComplicationModel protocols, CasioFaceContext
+  Widget/               the generic Home Screen widget and watch complication, the timeline
+                        provider (a thin WidgetKit adapter), the light intent
+  LiveClock/            the live clock: entry schedule, timer start, LiveHoursMinutes,
+                        LiveSeconds, TimerDigit
+  LCD/                  LCDStyle (fonts, glass, ink, light, shadow), LCDText, LCDWindow, LCDFont,
+                        DisplayParts (the strings a display shows), DotMatrixText, LCDMarks, and
+                        the module displays (LCDModuleDisplay)
+  Kit/                  FaceCanvas + place(...) modifiers, InkText, CaseFont, BundledFonts,
+                        shapes (CutCornerRect, Pointer, BrickPattern), text effects
+  Models/<Name>/        one folder per watch: the model (palette, LCD style, preview) and its face
+  Resources/            the fonts and their licences
+Tests/CasioClockWidgetTests/   unit, contract, catalogue, font and render tests; the opt-in
+                               reference render (docs/ADDING-A-MODEL.md)
+tools/casio_measure.py          measuring faces against their reference images
+```
+
+Vocabulary (also in the repository's `CONTEXT.md`): a **watch model** is one Casio watch the
+package draws; the **catalogue** is the one list of what the package publishes; an **LCD module**
+is Casio's numbered display, shared by several watches, and its **module display** is that LCD's
+layout, drawn once; the **face** draws the case around it; the **live clock** is how the time
+stays live.
+
+## Faces and canvases
+
+Each model draws its face on its own canvas, in points measured from its reference image
+([REFERENCES.md](REFERENCES.md)). `FaceCanvas` scales the model's `widgetArea` (a square part of
+the canvas) to the widget. Faces that are wider than tall extend their case (`caseExtension`) so
+the square widget is filled without stretching anything.
+
+Printed labels are `InkText`: the label's glyph outlines in a free stand-in font, stretched to
+fill the ink box measured on the reference, so font metrics don't move them.
+
+## Displays (LCD modules)
+
+A face draws only the case and an `LCDWindow`; the characters come from its module's display,
+an `LCDModuleDisplay` measured once in a glass of `glass` size and `placed(in:)` any watch's glass
+(scaled to its width, centred vertically). The F-91W and A158W share `Module593Display`; the F-91W
+complication uses `Module593Complication`, a compact layout of the same module for the
+200 × 80 complication slot.
+
+`LCDStyle` holds a display's look: DSEG segment fonts, glass and ink colours, the light
+(colour and left-to-right falloff), an optional faint unlit-segment layer (off on every model), the
+shadow (`LCDShadow`: the frame's shadow on the glass edge and the segments' faint shadow on the
+reflector), and `litInk` for **inverted (negative) displays** (W-738H): lit, the segments take
+that colour and the dark glass stays dark.
+
+## How the time stays live
+
+WidgetKit only redraws a widget at its timeline entries, so `LiveClock/` combines two things
+(the contract is written out at the top of `LiveClock.swift`):
+
+- **Hours, date, weekday, PM / 24H** come from the entry on screen. The timeline has one entry at
+  every hour start, 12 at a time; then WidgetKit asks for more.
+- **Minutes and seconds** come from one WidgetKit timer text, `Text(start, style: .timer)`, which
+  animates itself. It starts 10 hours before the entry's hour, so it always reads "10:MM:SS" with
+  the current minutes and seconds; `LiveHoursMinutes` and `LiveSeconds` show the digits they need
+  through clipped windows.
+- **Digit spacing:** when a module's digits sit closer or further apart than DSEG's cells
+  (`tracking`), each live digit is its own `TimerDigit` window onto the untracked timer text, so
+  the clipping stays exact. Digits switch instantly (`contentTransition(.identity)`), like
+  segments, instead of WidgetKit's rolling-digit animation.
+- **Why not a minute timeline:** WidgetKit stores each entry fully drawn; a minute timeline of a
+  detailed face reached 36 MB and was rejected. Hourly entries keep it to a few MB.
+- **The light:** tapping a widget runs `CasioBacklightIntent` for that model only; the provider
+  returns a lit entry now, an unlit one 3 s later and two hourly entries, then reloads (a short
+  timeline renders quickly, so the light shows right after the tap).
+- **12- or 24-hour** follows the device setting, as the watches do (PM, P or 24H marks).
+
+## The catalogue
+
+`CasioCatalogue.swift` is the only place a model is registered: `CasioModels.all` (tests iterate
+it) and `CasioWidgets.homeScreen` (a `WidgetBundleBuilder` the app's widget extension lists). Watch
+complications: `CasioModels.complications` and `CasioWidgets.complications`, listed by the watch
+extension; `CasioComplicationGallery` previews them in the watch app. `CatalogueTests` fails if the
+two lists disagree. A model's `kind` is permanent: it identifies the widgets people placed (the
+F-91W's is `"CasioClockWidget"`, from when it was the only model).
+
+## Tests
+
+`swift test` in the package folder:
+
+- display strings (`DisplayPartsTests`), dot-matrix glyphs, weekday letters;
+- the live-clock contract (`TimelineTests`): at every minute of a plain and a lit timeline, across
+  a DST change and a half-hour UTC offset, the right hour and "10:MM:SS"; timer frames fit
+  "10:59:59"; timer-digit window offsets;
+- models: unique kinds, the light per model; fonts: the bundled files are exactly the fonts in use
+  and all register; catalogue: every registered model is published;
+- rendering: every model draws its face and its light changes it; every module display renders
+  alone and differs between 12- and 24-hour time.
+
+Faces themselves are checked against their reference images while they are made
+([ADDING-A-MODEL.md](ADDING-A-MODEL.md)); the repository's `.improve/` holds a golden-render
+harness used when refactoring shared code (the existing faces must render pixel-identical).

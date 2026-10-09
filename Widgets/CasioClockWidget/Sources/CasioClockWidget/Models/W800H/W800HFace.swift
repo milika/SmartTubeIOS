@@ -49,16 +49,16 @@ struct W800HFace: View {
                 InkText(text: "ILLUMINATOR", font: CaseFont.archivoBlack, slant: 0.22)
                     .placed(
                         in: CGRect(x: 195.5, y: 77, width: 195, height: 16), color: CasioW800H.resinLight.opacity(0.9))
-                Arrow(left: true).fill(CasioW800H.resinLight.opacity(0.9)).frame(width: 25, height: 10.5).offset(
+                Pointer(left: true).fill(CasioW800H.resinLight.opacity(0.9)).frame(width: 25, height: 10.5).offset(
                     x: 169.5, y: 81)
-                Arrow(left: false).fill(CasioW800H.resinLight.opacity(0.9)).frame(width: 26.5, height: 10.5).offset(
+                Pointer(left: false).fill(CasioW800H.resinLight.opacity(0.9)).frame(width: 26.5, height: 10.5).offset(
                     x: 392, y: 80)
             }
             .offset(y: 1.2)
             InkText(text: "ILLUMINATOR", font: CaseFont.archivoBlack, slant: 0.22)
                 .placed(in: CGRect(x: 195.5, y: 77, width: 195, height: 16), color: CasioW800H.engraved)
-            Arrow(left: true).fill(CasioW800H.engraved).frame(width: 25, height: 10.5).offset(x: 169.5, y: 81)
-            Arrow(left: false).fill(CasioW800H.engraved).frame(width: 26.5, height: 10.5).offset(x: 392, y: 80)
+            Pointer(left: true).fill(CasioW800H.engraved).frame(width: 25, height: 10.5).offset(x: 169.5, y: 81)
+            Pointer(left: false).fill(CasioW800H.engraved).frame(width: 26.5, height: 10.5).offset(x: 392, y: 80)
         }
     }
 
@@ -106,25 +106,5 @@ struct W800HFace: View {
                 glass: glass, glassRadius: 18, backlit: context.backlit, style: style)
             W800HDisplay.placed(in: glass, context: context, style: style)
         }
-    }
-}
-
-/// The thin arrows either side of the moulded ILLUMINATOR.
-private struct Arrow: Shape {
-    let left: Bool
-
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        if left {
-            path.move(to: CGPoint(x: rect.minX, y: rect.midY))
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-        } else {
-            path.move(to: CGPoint(x: rect.maxX, y: rect.midY))
-            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
-            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        }
-        path.closeSubpath()
-        return path
     }
 }

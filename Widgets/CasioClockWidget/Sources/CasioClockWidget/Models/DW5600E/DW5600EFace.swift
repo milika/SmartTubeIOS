@@ -47,10 +47,10 @@ struct DW5600EFace: View {
         return ZStack(alignment: .topLeading) {
             ink("CASIO", CaseFont.michroma)
                 .placed(in: CGRect(x: 373.5, y: 147, width: 126.5, height: 23), color: white, bold: 0.8)
-            Arrow(left: true).fill(CasioDW5600E.blue).frame(width: 30, height: 10).offset(x: 286, y: 183)
+            Pointer(left: true).fill(CasioDW5600E.blue).frame(width: 30, height: 10).offset(x: 286, y: 183)
             ink("ILLUMINATOR", CaseFont.archivoBlack, slant: 0.22)
                 .placed(in: CGRect(x: 318, y: 179.5, width: 236, height: 17.5), color: CasioDW5600E.blue)
-            Arrow(left: false).fill(CasioDW5600E.blue).frame(width: 32, height: 10).offset(x: 558.5, y: 183)
+            Pointer(left: false).fill(CasioDW5600E.blue).frame(width: 32, height: 10).offset(x: 558.5, y: 183)
             ink("WATER 200M RESIST", CaseFont.michroma)
                 .placed(in: CGRect(x: 302.5, y: 207.5, width: 272, height: 14), color: white, bold: 0.5)
         }
@@ -98,7 +98,7 @@ struct DW5600EFace: View {
         return ZStack(alignment: .topLeading) {
             ink("ELECTRO LUMINESCENT BACKLIGHT", CaseFont.archivoBlack, slant: 0.22)
                 .placed(in: CGRect(x: 258.5, y: 513.5, width: 330, height: 13.5), color: white)
-            Arrow(left: false).fill(white).frame(width: 16, height: 9).offset(x: 594.5, y: 516)
+            Pointer(left: false).fill(white).frame(width: 16, height: 9).offset(x: 594.5, y: 516)
             ink("ALARM", CaseFont.michroma)
                 .placed(in: CGRect(x: 258.5, y: 555.5, width: 89, height: 18), color: CasioDW5600E.gold, bold: 0.6)
             ink("CHRONO", CaseFont.michroma)
@@ -157,26 +157,6 @@ private struct Badge: Shape {
         path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
         path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + rect.height * 0.62))
         path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + cut))
-        path.closeSubpath()
-        return path
-    }
-}
-
-/// The small arrow heads beside ILLUMINATOR and after BACKLIGHT.
-private struct Arrow: Shape {
-    let left: Bool
-
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        if left {
-            path.move(to: CGPoint(x: rect.minX, y: rect.midY))
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-        } else {
-            path.move(to: CGPoint(x: rect.maxX, y: rect.midY))
-            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
-            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        }
         path.closeSubpath()
         return path
     }

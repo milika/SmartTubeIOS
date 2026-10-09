@@ -30,6 +30,8 @@ compares the face with its reference again in one step (see [ADDING-A-MODEL.md](
 | W-738H | product image, front (1200 px) | supplied by the owner; measured only | canvas = image − (280, 180) |
 | W-800H | W-800H-2AV (navy) product image (1000 px) | supplied by the owner; measured only (three more W-800H images archived for comparison) | canvas = image − (180, 160) |
 | G-Shock GW-B5600 | GW-B5600MG-1 (Midnight Green) product image (1200 px) | supplied by the owner; measured only | canvas = image − (270, 420), before the case extension |
+| A700W | A700WE-1A product image (1000 px) | supplied by the owner (2026-10-09); measured only | image px = (240, 205) + 0.8 × canvas, before the case extension |
+| A700W Negative | negative display, cyan print, mesh band (1100 px) | supplied by the owner (2026-10-09); measured only | image px = (299.8, 250.5) + 0.8134 × canvas (the A700W canvas), before the case extension |
 | A178W | A178WA-1A product image (1000 px) | supplied by the owner (2026-10-09); measured only | image px = (250, 215) + 0.8 × canvas |
 | LA680W | LA680WA-1 product image (1200 px) | supplied by the owner (2026-10-09); measured only | image px = (360, 300) + 0.75 × canvas, before the case extension |
 | G-Shock DW-5600E | DW-5600E-1V product image (2000 px, TACEQ) | supplied by the owner; measured only (an angled Amazon image archived for colours) | canvas = image − (540, 580), before the case extension |
@@ -46,8 +48,6 @@ folder with "(queued)" in the name.
 
 | Watch | Image | Notes |
 |---|---|---|
-| A700W | A700WE-1A, 1000 px | slim chrome; coloured ALARM / SIG / SPL / CHRONO labels above the LCD |
-| A700W (negative) | A700W with negative display, cyan print, mesh band, 1100 px | inverted LCD (`litInk`, as the W-738H) |
 | F-105W | F-105W-1A, 1000 px | black resin, blue face, ILLUMINATOR band, EL BACKLIGHT/RESET |
 
 ## Typefaces
@@ -89,6 +89,7 @@ at hand, the display is named after the watch.
 | `W86Display` | not checked | W-86 | — |
 | `LA680WDisplay` | not checked | LA680W | — |
 | `A178WDisplay` | not checked | A178W | — |
+| `A700WDisplay`, `A700WNegativeDisplay` | not checked | A700W, A700W Negative | one layout (`A700WLayout`) measured on each version's image |
 
 ## Finding new references
 

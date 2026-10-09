@@ -29,15 +29,14 @@ extension LCDModuleDisplay {
 
     /// The display in a model's glass (canvas coordinates): scaled to the glass's width and centred
     /// vertically, so a taller glass (a case extended to fill the widget) gets even margins.
-    /// `shift` moves it down: each case's window frames the same LCD at a slightly different spot.
     static func placed(
-        in glass: CGRect, shift: CGFloat = 0, context: CasioFaceContext, style: LCDStyle
+        in glass: CGRect, context: CasioFaceContext, style: LCDStyle
     )
         -> some View
     {
         let scale = glass.width / Self.glass.width
         return Self(context: context, style: style)
             .scaleEffect(scale, anchor: .topLeading)
-            .offset(x: glass.minX, y: glass.minY + (glass.height - Self.glass.height * scale) / 2 + shift)
+            .offset(x: glass.minX, y: glass.minY + (glass.height - Self.glass.height * scale) / 2)
     }
 }

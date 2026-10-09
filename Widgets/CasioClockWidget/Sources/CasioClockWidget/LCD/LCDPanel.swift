@@ -14,9 +14,6 @@ struct LCDPanel<Display: LCDModuleDisplay>: View {
     var outlineWidth: CGFloat = 1.75
     let glass: CGRect
     var glassRadius: CGFloat = 11
-    /// Moves the display down within the glass (each case's window frames the module a little
-    /// differently; see Module593Display).
-    var displayShift: CGFloat = 0
     let context: CasioFaceContext
     let style: LCDStyle
 
@@ -27,7 +24,7 @@ struct LCDPanel<Display: LCDModuleDisplay>: View {
                 frame: frame, frameRadius: frameRadius, surround: surround, outline: outline,
                 outlineWidth: outlineWidth, glass: glass, glassRadius: glassRadius, backlit: context.backlit,
                 style: lit)
-            Display.placed(in: glass, shift: displayShift, context: context, style: lit)
+            Display.placed(in: glass, context: context, style: lit)
         }
     }
 }

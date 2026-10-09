@@ -96,6 +96,7 @@ struct RenderTests {
             Module590Display.self,
             Module3208Display.self, Module3298Display.self, Module3229Display.self, W738HDisplay.self,
             W800HDisplay.self, GWB5600Display.self, W86Display.self, LA680WDisplay.self, A178WDisplay.self,
+            A700WDisplay.self, A700WNegativeDisplay.self,
         ]
         for display in displays {
             let glass = CGRect(origin: display.canvasOrigin, size: display.glass)

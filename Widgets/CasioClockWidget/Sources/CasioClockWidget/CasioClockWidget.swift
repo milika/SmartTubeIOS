@@ -151,6 +151,7 @@ enum CaseFont {
     static func michroma(_ size: CGFloat) -> Font { custom("Michroma-Regular", size) }
     static func archivoBlack(_ size: CGFloat) -> Font { custom("ArchivoExpanded-Black", size) }
     static func saira(_ size: CGFloat) -> Font { custom("Saira-Medium", size) }
+    static func sairaExpanded(_ size: CGFloat) -> Font { custom("SairaExpanded-SemiBold", size) }
 
     private static func custom(_ name: String, _ size: CGFloat) -> Font {
         LCDFont.registerBundledFonts()
@@ -179,7 +180,8 @@ struct CasioFaceStyle {
 // Neue Helvetica Extended Black; "ALARM CHRONOGRAPH" regular-width Medium; the other labels
 // Eurostile Extended Regular / Medium. Free look-alikes (SIL OFL, Google Fonts) stand in:
 // Michroma for Microgramma / Eurostile Extended, Archivo Expanded Black (an instance of
-// Archivo's variable font) for Neue Helvetica Extended Black, Saira Medium for Eurostile Medium.
+// Archivo's variable font) for Neue Helvetica Extended Black, Saira Medium for Eurostile Medium,
+// Saira Expanded SemiBold (an instance of Saira's variable font) for the WR mark.
 
 struct CasioWatchFace: View {
     let date: Date
@@ -251,67 +253,83 @@ struct CasioWatchFace: View {
             // CASIO / F-91W
             Text("CASIO")
                 .font(CaseFont.michroma(28))
+                .tracking(1.7)
                 .foregroundStyle(Self.printWhite)
-                .emboldened(1.3)
-                .place(centerX: 195, centerY: 91)
+                .emboldened(0.6)
+                .place(centerX: 198.5, centerY: 91.5)
             Text("F-91W")
                 .font(CaseFont.archivoBlack(25))
+                .tracking(4.7)
                 .foregroundStyle(Self.gold)
                 .oblique()
-                .place(centerX: 397, centerY: 91)
-            bar(x: 70, y: 124, width: 450)
+                .place(centerX: 398, centerY: 93.5)
+            bar(x: 70, y: 125, width: 453)
 
-            // ◀ LIGHT   ALARM CHRONOGRAPH
-            Pointer(left: true).fill(Self.red).frame(width: 16, height: 7).position(x: 96, y: 155)
+            // ◀ LIGHT   ALARM  CHRONOGRAPH
+            Pointer(left: true).fill(Self.red).frame(width: 21, height: 7).position(x: 96.75, y: 157.75)
             Text("LIGHT")
-                .font(CaseFont.michroma(11.5))
+                .font(CaseFont.michroma(12.8))
+                .tracking(0.6)
                 .foregroundStyle(Self.printWhite)
-                .place(leading: 116, centerY: 155)
-            Text("ALARM CHRONOGRAPH")
-                .font(CaseFont.saira(23))
+                .place(leading: 116.5, centerY: 157)
+            Text("ALARM")
+                .font(CaseFont.saira(22.3))
+                .tracking(1)
                 .foregroundStyle(Self.gold)
-                .place(trailing: 497, centerY: 154, width: 290)
+                .place(leading: 227.5, centerY: 154.75, width: 100)
+            Text("CHRONOGRAPH")
+                .font(CaseFont.saira(22.3))
+                .tracking(1.2)
+                .foregroundStyle(Self.gold)
+                .place(trailing: 503.2, centerY: 154.75, width: 200)
 
-            // ◀ MODE   ALARM ON·OFF/24HR ▶
-            Pointer(left: true).fill(Self.red).frame(width: 18, height: 7).position(x: 97, y: 400)
+            // ◀ MODE   ALARM  ON · OFF / 24HR ▶
+            Pointer(left: true).fill(Self.red).frame(width: 20, height: 6.5).position(x: 98, y: 404.5)
             Text("MODE")
-                .font(CaseFont.michroma(13))
+                .font(CaseFont.michroma(13.7))
                 .foregroundStyle(Self.printWhite)
-                .place(leading: 116, centerY: 400)
-            Text("ALARM ON·OFF/24HR")
-                .font(CaseFont.michroma(13))
+                .place(leading: 116.5, centerY: 402.75)
+            Text("ALARM")
+                .font(CaseFont.michroma(13.7))
                 .foregroundStyle(Self.printWhite)
-                .place(trailing: 472, centerY: 400, width: 240)
-            Pointer(left: false).fill(Self.red).frame(width: 18, height: 7).position(x: 491, y: 400)
+                .place(leading: 242.75, centerY: 402.75, width: 90)
+            Text("ON · OFF / 24HR")
+                .font(CaseFont.michroma(13.7))
+                .foregroundStyle(Self.printWhite)
+                .place(trailing: 476.3, centerY: 402.75, width: 170)
+            Pointer(left: false).fill(Self.red).frame(width: 20.5, height: 7).position(x: 497.25, y: 404.25)
 
             // WATER [WR] RESIST
-            bar(x: 70, y: 417, width: 152, height: 5)
-            bar(x: 365, y: 417, width: 155, height: 5)
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Self.blue, lineWidth: 4)
-                .frame(width: 143, height: 48)
-                .offset(x: 222, y: 412)
+            bar(x: 70, y: 419, width: 144.5, height: 5.5)
+            bar(x: 375, y: 419, width: 148.5, height: 5.5)
+            // The WR box: round top corners, cut bottom corners.
+            CutCornerRect(cut: CGSize(width: 11, height: 11), bottomCut: CGSize(width: 15, height: 15), radius: 8)
+                .stroke(Self.blue, lineWidth: 3.75)
+                .frame(width: 140.6, height: 47)
+                .offset(x: 226.6, y: 417.6)
+            // The watch's WR is wider than any free extended face; Saira Expanded is stretched.
             Text("WR")
-                .font(CaseFont.archivoBlack(31))
+                .font(CaseFont.sairaExpanded(33.8))
                 .foregroundStyle(Self.red)
                 .oblique()
-                .place(centerX: 294, centerY: 437)
+                .scaleEffect(x: 1.6, y: 1)
+                .place(centerX: 295.25, centerY: 441.75)
             Text("WATER")
-                .font(CaseFont.michroma(19.5))
-                .tracking(0.8)
+                .font(CaseFont.michroma(18.3))
+                .tracking(1.75)
                 .foregroundStyle(Self.printWhite)
                 .emboldened(0.75)
-                .place(centerX: 155, centerY: 438, width: 120)
+                .place(centerX: 157, centerY: 441, width: 130)
             Text("RESIST")
-                .font(CaseFont.michroma(19.5))
-                .tracking(0.8)
+                .font(CaseFont.michroma(18.3))
+                .tracking(3)
                 .foregroundStyle(Self.printWhite)
                 .emboldened(0.75)
-                .place(centerX: 435, centerY: 438, width: 130)
+                .place(centerX: 440, centerY: 441, width: 130)
             Text("u")
-                .font(.system(size: 8, weight: .medium))
+                .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(Self.printWhite.opacity(0.85))
-                .place(centerX: 455, centerY: 461)
+                .place(centerX: 459.5, centerY: 463)
         }
     }
 
@@ -459,15 +477,19 @@ struct CasioWatchFace: View {
 /// rounded, like the frame lines printed on the F-91W.
 struct CutCornerRect: Shape {
     let cut: CGSize
+    /// The bottom corners' cut, if different from the top ones.
+    var bottomCut: CGSize? = nil
     let radius: CGFloat
 
     func path(in rect: CGRect) -> Path {
-        let dx = min(cut.width, rect.width / 2), dy = min(cut.height, rect.height / 2)
+        let top = CGSize(width: min(cut.width, rect.width / 2), height: min(cut.height, rect.height / 2))
+        let b = bottomCut ?? cut
+        let bottom = CGSize(width: min(b.width, rect.width / 2), height: min(b.height, rect.height / 2))
         let corners = [
-            CGPoint(x: rect.minX + dx, y: rect.minY), CGPoint(x: rect.maxX - dx, y: rect.minY),
-            CGPoint(x: rect.maxX, y: rect.minY + dy), CGPoint(x: rect.maxX, y: rect.maxY - dy),
-            CGPoint(x: rect.maxX - dx, y: rect.maxY), CGPoint(x: rect.minX + dx, y: rect.maxY),
-            CGPoint(x: rect.minX, y: rect.maxY - dy), CGPoint(x: rect.minX, y: rect.minY + dy),
+            CGPoint(x: rect.minX + top.width, y: rect.minY), CGPoint(x: rect.maxX - top.width, y: rect.minY),
+            CGPoint(x: rect.maxX, y: rect.minY + top.height), CGPoint(x: rect.maxX, y: rect.maxY - bottom.height),
+            CGPoint(x: rect.maxX - bottom.width, y: rect.maxY), CGPoint(x: rect.minX + bottom.width, y: rect.maxY),
+            CGPoint(x: rect.minX, y: rect.maxY - bottom.height), CGPoint(x: rect.minX, y: rect.minY + top.height),
         ]
         var p = Path()
         p.move(to: CGPoint(x: rect.midX, y: rect.minY))

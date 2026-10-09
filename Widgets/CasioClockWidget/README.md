@@ -10,7 +10,8 @@ dependencies on any app code. Its resources are fonts, all under the SIL Open Fo
 - Printed text, free look-alikes of the watch's typefaces (Google Fonts): Michroma for
   Microgramma / Eurostile Extended, Archivo Expanded Black (a static instance of Archivo's
   variable font, wght 900 / wdth 125) for Neue Helvetica Extended Black, Saira Medium for
-  Eurostile Medium. Subset to the characters the face uses.
+  Eurostile Medium, and Saira Expanded SemiBold (a static instance of Saira's variable font,
+  wght 600 / wdth 125, stretched) for the "WR" mark. Subset to the characters the face uses.
 
 Tap the widget for the backlight (an `AppIntent`, iOS 17 interactive widgets): the LCD glows
 green from the left for 3 seconds, like the watch's LED.

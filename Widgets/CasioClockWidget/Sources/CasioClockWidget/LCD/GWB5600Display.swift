@@ -20,7 +20,7 @@ struct GWB5600Display: LCDModuleDisplay {
             InkText(text: "PS LT RCVD", font: CaseFont.michroma)
                 .placed(in: CGRect(x: 140.5, y: 165, width: 156, height: 17), color: style.ink, bold: 0.6)
             LCDText(
-                text: DisplayParts.sevenSegmentLetters(parts.weekday), font: style.letters, glyph: Self.weekdayGlyph,
+                text: parts.weekday, font: style.letters, glyph: Self.weekdayGlyph,
                 edge: .leading(Self.weekdayLeading), baseline: Self.weekdayBaseline, tracking: Self.weekdayTracking,
                 xScale: Self.weekdayScale, style: style)
             RoundedRectangle(cornerRadius: 9).stroke(style.ink, lineWidth: 2.5)

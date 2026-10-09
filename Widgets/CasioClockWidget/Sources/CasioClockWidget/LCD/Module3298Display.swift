@@ -23,7 +23,7 @@ struct Module3298Display: LCDModuleDisplay {
                     .placed(in: CGRect(x: 156.5, y: 204.5, width: 27, height: 14.5), color: style.ink, bold: 0.6)
             }
             LCDText(
-                text: DisplayParts.sevenSegmentLetters(parts.weekday), font: style.letters, glyph: Self.weekdayGlyph,
+                text: parts.weekday, font: style.letters, glyph: Self.weekdayGlyph,
                 edge: .leading(Self.weekdayLeading), baseline: Self.weekdayBaseline, tracking: Self.weekdayTracking,
                 style: style)
             LCDText(

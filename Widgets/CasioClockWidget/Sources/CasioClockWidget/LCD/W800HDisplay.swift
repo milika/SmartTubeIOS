@@ -22,8 +22,7 @@ struct W800HDisplay: LCDModuleDisplay {
             RoundedRectangle(cornerRadius: 7).stroke(style.ink, lineWidth: 2.5)
                 .frame(width: 143, height: 62).offset(x: 165.25, y: 224.25)
             LCDText(
-                text: DisplayParts.sevenSegmentLetters(
-                    DisplayParts.weekday3(for: context.date, calendar: context.calendar)),
+                text: DisplayParts.weekday3(for: context.date, calendar: context.calendar),
                 font: style.letters, glyph: Self.weekdayGlyph, edge: .leading(Self.weekdayLeading),
                 baseline: Self.weekdayBaseline, tracking: Self.weekdayTracking, xScale: Self.weekdayScale, style: style)
             label("SNZ", CGRect(x: 325.5, y: 227.5, width: 49.5, height: 12))

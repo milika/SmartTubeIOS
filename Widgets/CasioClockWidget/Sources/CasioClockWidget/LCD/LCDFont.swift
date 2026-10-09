@@ -29,6 +29,10 @@ struct LCDFont: Equatable {
             allSegments: "~", blankDigit: "!")
     }
 
+    /// A 7-segment font (DSEG7): LCDText draws its letters in Casio's shapes
+    /// (DisplayParts.sevenSegmentLetters).
+    var isSevenSegment: Bool { postScriptName.hasPrefix("DSEG7") }
+
     /// The font whose glyphs are `height` points tall.
     func font(height: CGFloat) -> Font {
         BundledFonts.register()

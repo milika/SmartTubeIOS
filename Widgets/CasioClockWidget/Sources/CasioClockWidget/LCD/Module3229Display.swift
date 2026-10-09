@@ -19,7 +19,7 @@ struct Module3229Display: LCDModuleDisplay {
             SignalMark().fill(style.ink).frame(width: 35.5, height: 13.5).offset(x: 255, y: 286.5)
             BellMark().fill(style.ink).frame(width: 22, height: 27).offset(x: 261.5, y: 308)
             LCDText(
-                text: DisplayParts.sevenSegmentLetters(parts.weekday), font: style.letters, glyph: Self.weekdayGlyph,
+                text: parts.weekday, font: style.letters, glyph: Self.weekdayGlyph,
                 edge: .leading(Self.weekdayLeading), baseline: Self.weekdayBaseline, tracking: Self.weekdayTracking,
                 xScale: Self.weekdayScale, style: style)
             RoundedRectangle(cornerRadius: 9).stroke(style.ink, lineWidth: 2.5)

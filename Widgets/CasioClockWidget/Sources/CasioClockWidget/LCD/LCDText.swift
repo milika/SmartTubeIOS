@@ -16,6 +16,8 @@ struct LCDText: View {
     let style: LCDStyle
 
     var body: some View {
+        // DSEG7 draws S, U, O and N as small lower-case shapes; Casio's 7-segment LCDs don't.
+        let text = font.isSevenSegment ? DisplayParts.sevenSegmentLetters(text) : text
         let layers: [(String, Double)] =
             [(font.allLit(text), style.unlitOpacity), (text, 1)].compactMap { item in
                 guard let layerText = item.0, item.1 > 0 else { return nil }

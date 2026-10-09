@@ -25,7 +25,7 @@ struct W86Display: LCDModuleDisplay {
                         bold: 0.6)
             }
             LCDText(
-                text: DisplayParts.sevenSegmentLetters(parts.weekday), font: style.letters, glyph: Self.topGlyph,
+                text: parts.weekday, font: style.letters, glyph: Self.topGlyph,
                 edge: .leading(Self.weekdayLeading), baseline: Self.topBaseline, tracking: Self.weekdayTracking,
                 xScale: Self.weekdayScale, style: style)
             LCDText(

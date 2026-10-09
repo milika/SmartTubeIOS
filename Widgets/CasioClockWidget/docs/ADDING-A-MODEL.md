@@ -68,7 +68,8 @@ place that display: `Module593Display.placed(in: glass, context:, style:)`. Othe
 measured in the reference's canvas coordinates with a `canvasOrigin` at its glass:
 
 - strings from `context.displayParts(blankDigit:)`, `DisplayParts.weekday3`,
-  `DisplayParts.twoCells`, `DisplayParts.sevenSegmentLetters` (7-segment weekday letters);
+  `DisplayParts.twoCells`; `LCDText` in a DSEG7 font draws S, U, O and N in Casio's 7-segment
+  shapes by itself;
 - fixed characters with `LCDText`, live ones with `LiveHoursMinutes` and `LiveSeconds`;
 - marks from `LCD/LCDMarks.swift` or new shapes; printed LCD words with `InkText`.
 

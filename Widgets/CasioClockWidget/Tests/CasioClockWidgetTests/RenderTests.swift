@@ -51,6 +51,22 @@ struct RenderTests {
         }
     }
 
+    private func lcdTextPixels(_ text: String, font: LCDFont) throws -> [UInt8] {
+        let view = LCDText(text: text, font: font, glyph: 40, edge: .leading(0), baseline: 44, style: LCDStyle())
+            .frame(width: 120, height: 50, alignment: .topLeading)
+        let image = try #require(ImageRenderer(content: view).cgImage)
+        return [UInt8](try #require(image.dataProvider?.data as Data?))
+    }
+
+    @Test("LCD text in a DSEG7 font draws S, U, O, N in Casio's full-height shapes; DSEG14 letters are left alone")
+    func sevenSegmentLetters() throws {
+        let dseg7 = LCDFont.dseg7("BoldItalic")
+        #expect(try lcdTextPixels("SUN", font: dseg7) == lcdTextPixels("5VM", font: dseg7))
+        #expect(try lcdTextPixels("MO", font: dseg7) == lcdTextPixels("M0", font: dseg7))
+        let dseg14 = LCDFont.dseg14("BoldItalic")
+        #expect(try lcdTextPixels("SU", font: dseg14) != lcdTextPixels("5V", font: dseg14))
+    }
+
     @Test("every model draws its face, and the light changes it")
     func facesRender() throws {
         for model in CasioModels.all {

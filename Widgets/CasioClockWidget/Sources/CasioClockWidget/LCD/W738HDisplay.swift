@@ -31,7 +31,7 @@ struct W738HDisplay: LCDModuleDisplay {
             SignalMark().fill(style.ink).frame(width: 27.5, height: 14).offset(x: 411.5, y: 322)
             BellMark().fill(style.ink).frame(width: 20, height: 25.5).offset(x: 452, y: 316)
             LCDText(
-                text: DisplayParts.sevenSegmentLetters(parts.weekday), font: style.letters, glyph: Self.topGlyph,
+                text: parts.weekday, font: style.letters, glyph: Self.topGlyph,
                 edge: .leading(Self.weekdayLeading), baseline: Self.topBaseline, tracking: Self.weekdayTracking,
                 xScale: Self.weekdayScale, style: style)
             // Month, a narrow printed dash, day (the dash isn't a full digit cell on this display).

@@ -19,7 +19,7 @@ struct Module3208Display: LCDModuleDisplay {
                 Rectangle().fill(style.ink).frame(width: 9, height: 9).offset(x: 122, y: 130)
             }
             LCDText(
-                text: DisplayParts.sevenSegmentLetters(parts.weekday), font: style.letters, glyph: Self.weekdayGlyph,
+                text: parts.weekday, font: style.letters, glyph: Self.weekdayGlyph,
                 edge: .trailing(Self.weekdayTrailing),
                 baseline: Self.weekdayBaseline, tracking: Self.weekdayTracking, xScale: Self.weekdayScale, style: style)
             LiveHoursMinutes(

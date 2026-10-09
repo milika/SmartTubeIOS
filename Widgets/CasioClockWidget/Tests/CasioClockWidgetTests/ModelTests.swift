@@ -20,6 +20,15 @@ struct ModelTests {
         #expect(CasioF91W.complicationKind == "CasioF91WComplication")
     }
 
+    @Test("every model's widget area lies on its canvas")
+    func widgetAreas() {
+        for model in CasioModels.all {
+            #expect(CGRect(origin: .zero, size: model.canvas).contains(model.widgetArea), "\(model.kind)")
+        }
+        // The F-91W widget shows a square around the bezel (the case is extended to fill it).
+        #expect(CasioF91W.widgetArea.width == CasioF91W.widgetArea.height)
+    }
+
     @Test("every model's fonts are bundled and register")
     func fonts() {
         BundledFonts.register()

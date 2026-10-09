@@ -13,11 +13,17 @@ protocol CasioModel {
     static var summary: String { get }
     /// Canvas size in points (from the reference photo).
     static var canvas: CGSize { get }
+    /// The part of the canvas the widget shows (default: all of it).
+    static var widgetArea: CGRect { get }
     /// PostScript names of the fonts the model uses (all bundled in Resources/).
     static var fonts: [String] { get }
     /// Fills the widget behind the face (the case colour).
     static var caseBackground: CaseBackground { get }
     @ViewBuilder static func face(_ context: CasioFaceContext) -> Face
+}
+
+extension CasioModel {
+    static var widgetArea: CGRect { CGRect(origin: .zero, size: canvas) }
 }
 
 /// A model that also has a rectangular Apple Watch complication.

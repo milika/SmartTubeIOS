@@ -1,6 +1,6 @@
 import SwiftUI
 
-// Laid out on a fixed 594×530 canvas whose coordinates were measured from a front-on photo of
+// Laid out on a fixed canvas whose coordinates were measured from a front-on photo of
 // an F-91W (Wikimedia Commons, Casio_F-91W_5051.jpg), then scaled to the widget.
 // Typefaces per Fonts In Use (fontsinuse.com/uses/74290): CASIO logo Microgramma; "F-91W"
 // Neue Helvetica Extended Black; "ALARM CHRONOGRAPH" regular-width Medium; the other labels
@@ -13,7 +13,14 @@ enum CasioF91W: CasioComplicationModel {
     static let kind = "CasioClockWidget"
     static let displayName = "Casio F-91W"
     static let summary = "A live digital clock in the style of the Casio F-91W. Tap it for the light."
-    static let canvas = CGSize(width: 594, height: 530)
+    /// The real face is wider than tall, so in a square widget it left black bands. The case is
+    /// extended by this much (owner's choice, "taller case"): every element keeps its measured
+    /// size; the frame lines are taller and the groups spread apart. Coordinates above the LCD
+    /// are the photo's; the LCD and everything below it are shifted (see F91WFace).
+    static let caseExtension: CGFloat = 75
+    static let canvas = CGSize(width: 594, height: 530 + caseExtension)
+    /// The square around the bezel (its outer line plus ~3 pt).
+    static let widgetArea = CGRect(x: 19, y: 28, width: 557, height: 557)
     static let fonts = [
         "DSEG7Classic-BoldItalic", "DSEG14Classic-BoldItalic", "Michroma-Regular", "ArchivoExpanded-Black",
         "Saira-Medium", "SairaExpanded-SemiBold",

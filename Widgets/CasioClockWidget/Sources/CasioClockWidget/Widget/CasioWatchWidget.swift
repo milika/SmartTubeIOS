@@ -18,7 +18,7 @@ struct CasioWatchWidget<Model: CasioModel>: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: Model.kind, provider: CasioClockProvider(model: Model.kind)) { entry in
             Button(intent: CasioBacklightIntent(model: Model.kind)) {
-                FaceCanvas(size: Model.canvas) {
+                FaceCanvas(size: Model.canvas, visible: Model.widgetArea) {
                     Model.face(CasioFaceContext(date: entry.date, backlit: entry.backlit))
                 }
             }

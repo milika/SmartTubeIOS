@@ -16,7 +16,9 @@ dependencies on any app code. Its resources are fonts, all under the SIL Open Fo
 Tap a widget for the backlight (an `AppIntent`, iOS 17 interactive widgets): that model's LCD
 lights for 3 seconds (the F-91W glows green from the left, like its LED).
 
-Each face is laid out on a canvas measured from a front-on photo of the real watch. F-91W:
+Each face is laid out on a canvas measured from a front-on photo of the real watch. The F-91W's
+face is wider than tall, so its case is extended 75 pt to fill the square widget (every element
+keeps its measured size; the groups spread apart). F-91W:
 Wikimedia Commons `Casio_F-91W_5051.jpg`; typefaces per Fonts In Use (fontsinuse.com/uses/74290).
 
 ## Add to a project
@@ -78,7 +80,8 @@ Sources/CasioClockWidget/
 
 1. Measure a front-on photo of the watch and pick its canvas size. Add
    `Models/<Name>/Casio<Name>.swift`, an `enum` implementing `CasioModel` (kind, gallery name
-   and description, canvas, fonts, case background, `face(_:)`), and its face view drawn with
+   and description, canvas, fonts, case background, `face(_:)`, optionally `widgetArea`: the part
+   of the canvas the square widget shows), and its face view drawn with
    `place(...)`, `CaseFont`, the shapes and the LCD parts (`LCDWindow`, `LCDText`,
    `LiveSeconds`, `DisplayParts`, its own `LCDStyle`). Add its fonts and licences to `Resources/`.
 2. Add a public wrapper next to it, like `Models/F91W/CasioF91WWidget.swift`:

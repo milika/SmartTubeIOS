@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The F-91W face on its 594×530 canvas (see CasioF91W for where the numbers come from).
+/// The F-91W face on its canvas (see CasioF91W for where the numbers come from).
 struct F91WFace: View {
     let context: CasioFaceContext
 
@@ -10,6 +10,9 @@ struct F91WFace: View {
     private var backlit: Bool { context.backlit }
     private var previewSeconds: Int? { context.previewSeconds }
     private var style: LCDStyle { CasioF91W.lcd }
+    /// The case extension (see CasioF91W.caseExtension): the frame lines grow by it, the LCD
+    /// window by half of it, and the groups below move down to share the space evenly.
+    private var e: CGFloat { CasioF91W.caseExtension }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -25,9 +28,9 @@ struct F91WFace: View {
         ZStack(alignment: .topLeading) {
             // Thin outer blue line, wide blue band, white line framing the printed face; all three
             // are octagons with the watch's cut corners.
-            frameLine(x: 23.5, y: 31.5, width: 548.5, height: 472, lineWidth: 3, radius: 24, color: CasioF91W.blue)
-            frameLine(x: 36, y: 45.5, width: 520.5, height: 445, lineWidth: 10.5, radius: 22, color: CasioF91W.blue)
-            frameLine(x: 50, y: 60, width: 492, height: 417, lineWidth: 2, radius: 18, color: CasioF91W.silver)
+            frameLine(x: 23.5, y: 31.5, width: 548.5, height: 472 + e, lineWidth: 3, radius: 24, color: CasioF91W.blue)
+            frameLine(x: 36, y: 45.5, width: 520.5, height: 445 + e, lineWidth: 10.5, radius: 22, color: CasioF91W.blue)
+            frameLine(x: 50, y: 60, width: 492, height: 417 + e, lineWidth: 2, radius: 18, color: CasioF91W.silver)
         }
     }
 
@@ -82,6 +85,12 @@ struct F91WFace: View {
                 .emboldened(0.25)
                 .place(trailing: 504.5, centerY: 154.75, width: 200)
 
+        }
+        .overlay(alignment: .topLeading) { bottomPrint.offset(y: e) }
+    }
+
+    private var bottomPrint: some View {
+        ZStack(alignment: .topLeading) {
             // ◀ MODE   ALARM  ON · OFF / 24HR ▶
             Pointer(left: true).fill(CasioF91W.red).frame(width: 20, height: 6.5).position(x: 98, y: 404.5)
             Text("MODE")
@@ -150,8 +159,15 @@ struct F91WFace: View {
         return ZStack(alignment: .topLeading) {
             // Silver outline, dark surround, grey-green glass.
             LCDWindow(
-                frame: CGRect(x: 89, y: 174, width: 414.5, height: 214), outline: CasioF91W.silver,
-                glass: CGRect(x: 104, y: 191.5, width: 389.5, height: 184.5), backlit: backlit, style: style)
+                frame: CGRect(x: 89, y: 174 + e / 4, width: 414.5, height: 214 + e / 2), outline: CasioF91W.silver,
+                glass: CGRect(x: 104, y: 191.5 + e / 4, width: 389.5, height: 184.5 + e / 2), backlit: backlit, style: style)
+            lcdContent(parts).offset(y: e / 2)
+        }
+    }
+
+    @ViewBuilder
+    private func lcdContent(_ parts: DisplayParts) -> some View {
+        ZStack(alignment: .topLeading) {
 
             // PM in the afternoon on a 12-hour clock; 24H on a 24-hour clock, like the watch.
             if let marker = parts.marker {

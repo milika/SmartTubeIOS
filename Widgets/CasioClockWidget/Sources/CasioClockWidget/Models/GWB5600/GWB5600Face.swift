@@ -4,6 +4,9 @@ import SwiftUI
 struct GWB5600Face: View {
     let context: CasioFaceContext
 
+    /// This watch's proportions of the SHOCK RESIST shield.
+    private static let shield = ShockResistShield(cornerFraction: 0.1, shoulder: 0.68)
+
     private var style: LCDStyle { CasioGWB5600.lcd }
     /// The case extension: face and panel grow by it, the LCD window by half; side labels and the
     /// print below move down.
@@ -92,9 +95,11 @@ struct GWB5600Face: View {
                 .placed(in: CGRect(x: 159.5, y: 463, width: 82, height: 16.5), color: CasioGWB5600.mint, bold: 0.7)
             ink("CHRONO", CaseFont.michroma)
                 .placed(in: CGRect(x: 383, y: 463, width: 96, height: 15), color: CasioGWB5600.mint, bold: 0.7)
-            Badge().fill(CasioGWB5600.face).frame(width: 104, height: 53).offset(x: 260, y: 465.5)
-            Badge().stroke(CasioGWB5600.printWhite, lineWidth: 2.5).frame(width: 104, height: 53).offset(
-                x: 260, y: 465.5)
+            Self.shield.fill(CasioGWB5600.face).frame(width: 104, height: 53)
+                .offset(x: 260, y: 465.5)
+            Self.shield.stroke(CasioGWB5600.printWhite, lineWidth: 2.5)
+                .frame(width: 104, height: 53).offset(
+                    x: 260, y: 465.5)
             ink("SHOCK", CaseFont.michroma)
                 .placed(in: CGRect(x: 275, y: 474, width: 74, height: 9.5), color: CasioGWB5600.printWhite, bold: 0.4)
             ink("RESIST", CaseFont.michroma)
@@ -113,23 +118,6 @@ struct GWB5600Face: View {
                 glass: glass, glassRadius: 16, backlit: context.backlit, style: style)
             GWB5600Display.placed(in: glass, context: context, style: style)
         }
-    }
-}
-
-/// The SHOCK RESIST badge: cut top corners and a pointed bottom.
-private struct Badge: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let cut = rect.width * 0.1
-        path.move(to: CGPoint(x: rect.minX + cut, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX - cut, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + cut))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.68))
-        path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + rect.height * 0.68))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + cut))
-        path.closeSubpath()
-        return path
     }
 }
 

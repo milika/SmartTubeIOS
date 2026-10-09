@@ -72,3 +72,26 @@ struct BrickPattern: Shape {
         return path
     }
 }
+
+/// The G-Shock SHOCK RESIST shield: the top corners cut by `cornerPoints` plus `cornerFraction`
+/// of the width, straight sides down to `shoulder` (a fraction of the height), then a point at the
+/// bottom centre. Each watch prints it in its own proportions.
+struct ShockResistShield: Shape {
+    var cornerPoints: CGFloat = 0
+    var cornerFraction: CGFloat = 0
+    let shoulder: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let corner = cornerPoints + rect.width * cornerFraction
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + corner, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX - corner, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + corner))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * shoulder))
+        path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + rect.height * shoulder))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + corner))
+        path.closeSubpath()
+        return path
+    }
+}

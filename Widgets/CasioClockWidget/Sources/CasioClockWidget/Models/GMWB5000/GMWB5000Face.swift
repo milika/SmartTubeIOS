@@ -181,10 +181,13 @@ struct GMWB5000Face: View {
 
 /// The SHOCK RESIST shield: cut top corners, straight sides, a point at the bottom.
 private struct ShockResistBadge: View {
+    /// This watch's proportions of the SHOCK RESIST shield.
+    private static let shield = ShockResistShield(cornerFraction: 0.12, shoulder: 0.62)
+
     var body: some View {
         ZStack {
-            Shield().fill(CasioGMWB5000.plate)
-            Shield().stroke(CasioGMWB5000.printGrey, lineWidth: 1.4)
+            Self.shield.fill(CasioGMWB5000.plate)
+            Self.shield.stroke(CasioGMWB5000.printGrey, lineWidth: 1.4)
             VStack(spacing: 0) {
                 Text("SHOCK")
                 Text("RESIST")
@@ -195,19 +198,4 @@ private struct ShockResistBadge: View {
         }
     }
 
-    private struct Shield: Shape {
-        func path(in rect: CGRect) -> Path {
-            let corner = rect.width * 0.12
-            var path = Path()
-            path.move(to: CGPoint(x: rect.minX + corner, y: rect.minY))
-            path.addLine(to: CGPoint(x: rect.maxX - corner, y: rect.minY))
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + corner))
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.62))
-            path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
-            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + rect.height * 0.62))
-            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + corner))
-            path.closeSubpath()
-            return path
-        }
-    }
 }

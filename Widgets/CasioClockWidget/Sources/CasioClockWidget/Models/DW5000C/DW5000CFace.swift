@@ -170,8 +170,10 @@ private struct BatteryMark: Shape {
 private struct ShockResistBadge: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
-            Shield().stroke(CasioDW5000C.gold, style: StrokeStyle(lineWidth: 2.5, lineJoin: .round))
-                .padding(1.25)
+            ShockResistShield(cornerPoints: 4.5, shoulder: 0.64).stroke(
+                CasioDW5000C.gold, style: StrokeStyle(lineWidth: 2.5, lineJoin: .round)
+            )
+            .padding(1.25)
             InkText(text: "SHOCK", font: CaseFont.michroma)
                 .placed(in: CGRect(x: 5.5, y: 5.5, width: 47.5, height: 7), color: CasioDW5000C.gold, bold: 0.4)
             InkText(text: "RESIST", font: CaseFont.michroma)
@@ -179,22 +181,6 @@ private struct ShockResistBadge: View {
             Triangle().fill(CasioDW5000C.gold)
                 .frame(width: 41.5, height: 11)
                 .offset(x: 8.5, y: 24.5)
-        }
-    }
-
-    private struct Shield: Shape {
-        func path(in rect: CGRect) -> Path {
-            let corner: CGFloat = 4.5
-            var path = Path()
-            path.move(to: CGPoint(x: rect.minX + corner, y: rect.minY))
-            path.addLine(to: CGPoint(x: rect.maxX - corner, y: rect.minY))
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + corner))
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.64))
-            path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
-            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + rect.height * 0.64))
-            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + corner))
-            path.closeSubpath()
-            return path
         }
     }
 

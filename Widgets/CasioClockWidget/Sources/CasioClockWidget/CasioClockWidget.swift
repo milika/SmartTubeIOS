@@ -1,5 +1,4 @@
 import AppIntents
-import CoreText
 import SwiftUI
 import WidgetKit
 
@@ -132,18 +131,9 @@ struct LCDFont: Equatable {
             allSegments: "~", blankDigit: "!")
     }
 
-    static func registerBundledFonts() { _ = registered }
-
-    private static let registered: Bool = {
-        for url in Bundle.module.urls(forResourcesWithExtension: "ttf", subdirectory: nil) ?? [] {
-            CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
-        }
-        return true
-    }()
-
     /// The font whose glyphs are `height` points tall.
     func font(height: CGFloat) -> Font {
-        _ = Self.registered
+        BundledFonts.register()
         return .custom(postScriptName, fixedSize: height / glyphToEm)
     }
 
@@ -152,19 +142,6 @@ struct LCDFont: Equatable {
     func allLit(_ text: String) -> String? {
         guard let allSegments else { return nil }
         return String(text.map { $0 == ":" ? ":" : allSegments })
-    }
-}
-
-/// The printed case text fonts (registered with the LCD fonts).
-enum CaseFont {
-    static func michroma(_ size: CGFloat) -> Font { custom("Michroma-Regular", size) }
-    static func archivoBlack(_ size: CGFloat) -> Font { custom("ArchivoExpanded-Black", size) }
-    static func saira(_ size: CGFloat) -> Font { custom("Saira-Medium", size) }
-    static func sairaExpanded(_ size: CGFloat) -> Font { custom("SairaExpanded-SemiBold", size) }
-
-    private static func custom(_ name: String, _ size: CGFloat) -> Font {
-        LCDFont.registerBundledFonts()
-        return .custom(name, fixedSize: size)
     }
 }
 
@@ -220,18 +197,18 @@ struct CasioWatchFace: View {
     }
 
     var body: some View {
-        GeometryReader { geo in
-            let scale = min(geo.size.width / Self.canvas.width, geo.size.height / Self.canvas.height)
-            ZStack(alignment: .topLeading) {
-                bezel
-                printedFace
-                lcd
-            }
-            .frame(width: Self.canvas.width, height: Self.canvas.height, alignment: .topLeading)
-            .scaleEffect(scale)
-            .frame(width: geo.size.width, height: geo.size.height)
+        FaceCanvas(size: Self.canvas) {
+            bezel
+            printedFace
+            lcd
         }
     }
+
+    // Case print fonts (Resources/).
+    private static func michroma(_ size: CGFloat) -> Font { CaseFont.custom("Michroma-Regular", size) }
+    private static func archivoBlack(_ size: CGFloat) -> Font { CaseFont.custom("ArchivoExpanded-Black", size) }
+    private static func saira(_ size: CGFloat) -> Font { CaseFont.custom("Saira-Medium", size) }
+    private static func sairaExpanded(_ size: CGFloat) -> Font { CaseFont.custom("SairaExpanded-SemiBold", size) }
 
     // MARK: Bezel and frame lines
 
@@ -261,13 +238,13 @@ struct CasioWatchFace: View {
         ZStack(alignment: .topLeading) {
             // CASIO / F-91W
             Text("CASIO")
-                .font(CaseFont.michroma(25.5))
+                .font(Self.michroma(25.5))
                 .tracking(4)
                 .foregroundStyle(Self.printWhite)
                 .emboldened(1.6)
                 .place(centerX: 199.5, centerY: 91.75)
             Text("F-91W")
-                .font(CaseFont.archivoBlack(23.6))
+                .font(Self.archivoBlack(23.6))
                 .tracking(5.6)
                 .foregroundStyle(Self.gold)
                 .emboldened(0.6)
@@ -278,19 +255,19 @@ struct CasioWatchFace: View {
             // ◀ LIGHT   ALARM  CHRONOGRAPH
             Pointer(left: true).fill(Self.red).frame(width: 21, height: 7).position(x: 96.75, y: 157.75)
             Text("LIGHT")
-                .font(CaseFont.michroma(12.4))
+                .font(Self.michroma(12.4))
                 .tracking(1)
                 .foregroundStyle(Self.printWhite)
                 .emboldened(0.25)
                 .place(leading: 116.5, centerY: 157)
             Text("ALARM")
-                .font(CaseFont.saira(21.7))
+                .font(Self.saira(21.7))
                 .tracking(1.6)
                 .foregroundStyle(Self.gold)
                 .emboldened(0.25)
                 .place(leading: 227.5, centerY: 154.75, width: 100)
             Text("CHRONOGRAPH")
-                .font(CaseFont.saira(21.7))
+                .font(Self.saira(21.7))
                 .tracking(1.6)
                 .foregroundStyle(Self.gold)
                 .emboldened(0.25)
@@ -299,19 +276,19 @@ struct CasioWatchFace: View {
             // ◀ MODE   ALARM  ON · OFF / 24HR ▶
             Pointer(left: true).fill(Self.red).frame(width: 20, height: 6.5).position(x: 98, y: 404.5)
             Text("MODE")
-                .font(CaseFont.michroma(12.8))
+                .font(Self.michroma(12.8))
                 .tracking(1.1)
                 .foregroundStyle(Self.printWhite)
                 .emboldened(0.25)
                 .place(leading: 116.5, centerY: 402.75)
             Text("ALARM")
-                .font(CaseFont.michroma(12.8))
+                .font(Self.michroma(12.8))
                 .tracking(0.85)
                 .foregroundStyle(Self.printWhite)
                 .emboldened(0.25)
                 .place(leading: 242.75, centerY: 402.75, width: 90)
             Text("ON · OFF / 24HR")
-                .font(CaseFont.michroma(12.8))
+                .font(Self.michroma(12.8))
                 .tracking(0.65)
                 .foregroundStyle(Self.printWhite)
                 .emboldened(0.25)
@@ -328,19 +305,19 @@ struct CasioWatchFace: View {
                 .offset(x: 226.6, y: 417.6)
             // The watch's WR is wider than any free extended face; Saira Expanded is stretched.
             Text("WR")
-                .font(CaseFont.sairaExpanded(33.8))
+                .font(Self.sairaExpanded(33.8))
                 .foregroundStyle(Self.red)
                 .oblique()
                 .scaleEffect(x: 1.6, y: 1)
                 .place(centerX: 295.25, centerY: 441.75)
             Text("WATER")
-                .font(CaseFont.michroma(17))
+                .font(Self.michroma(17))
                 .tracking(3.35)
                 .foregroundStyle(Self.printWhite)
                 .emboldened(1.3)
                 .place(centerX: 158, centerY: 441.5, width: 130)
             Text("RESIST")
-                .font(CaseFont.michroma(17))
+                .font(Self.michroma(17))
                 .tracking(4.2)
                 .foregroundStyle(Self.printWhite)
                 .emboldened(1.5)
@@ -498,120 +475,5 @@ struct CasioWatchFace: View {
             weekday: weekdays[((c.weekday ?? 1) - 1) % 7],
             day: (dayOfMonth < 10 ? blankDigit : "") + "\(dayOfMonth)"
         )
-    }
-}
-
-/// A rectangle with its four corners cut off diagonally (`cut` across and down) and the joints
-/// rounded, like the frame lines printed on the F-91W.
-struct CutCornerRect: Shape {
-    let cut: CGSize
-    /// The bottom corners' cut, if different from the top ones.
-    var bottomCut: CGSize? = nil
-    let radius: CGFloat
-
-    func path(in rect: CGRect) -> Path {
-        let top = CGSize(width: min(cut.width, rect.width / 2), height: min(cut.height, rect.height / 2))
-        let b = bottomCut ?? cut
-        let bottom = CGSize(width: min(b.width, rect.width / 2), height: min(b.height, rect.height / 2))
-        let corners = [
-            CGPoint(x: rect.minX + top.width, y: rect.minY), CGPoint(x: rect.maxX - top.width, y: rect.minY),
-            CGPoint(x: rect.maxX, y: rect.minY + top.height), CGPoint(x: rect.maxX, y: rect.maxY - bottom.height),
-            CGPoint(x: rect.maxX - bottom.width, y: rect.maxY), CGPoint(x: rect.minX + bottom.width, y: rect.maxY),
-            CGPoint(x: rect.minX, y: rect.maxY - bottom.height), CGPoint(x: rect.minX, y: rect.minY + top.height),
-        ]
-        var p = Path()
-        p.move(to: CGPoint(x: rect.midX, y: rect.minY))
-        for i in 1...corners.count {
-            p.addArc(tangent1End: corners[i % corners.count], tangent2End: corners[(i + 1) % corners.count], radius: radius)
-        }
-        p.closeSubpath()
-        return p
-    }
-}
-
-/// The small red triangles beside LIGHT, MODE and 24HR.
-private struct Pointer: Shape {
-    let left: Bool
-
-    func path(in rect: CGRect) -> Path {
-        var p = Path()
-        if left {
-            p.move(to: CGPoint(x: rect.minX, y: rect.midY))
-            p.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-            p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-        } else {
-            p.move(to: CGPoint(x: rect.maxX, y: rect.midY))
-            p.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
-            p.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        }
-        p.closeSubpath()
-        return p
-    }
-}
-
-// MARK: - Placement on the canvas
-
-extension View {
-    /// Michroma has a single weight; the watch prints CASIO, WATER and RESIST bold. Overlaying
-    /// copies shifted by `amount` points thickens the strokes.
-    fileprivate func emboldened(_ amount: CGFloat) -> some View {
-        ZStack {
-            ForEach(0..<8, id: \.self) { i in
-                let angle = Double(i) * .pi / 4
-                self.offset(x: amount * cos(angle), y: amount * sin(angle))
-            }
-            self
-        }
-    }
-
-    /// Slants the view like the printed italics ("F-91W", "WR"). SF Pro Expanded has no
-    /// italic face, so `.italic()` would draw it upright.
-    fileprivate func oblique() -> some View {
-        self.transformEffect(CGAffineTransform(a: 1, b: 0, c: -0.21, d: 1, tx: 6, ty: 0))
-    }
-
-    /// Centers the view at a canvas point.
-    fileprivate func place(centerX: CGFloat, centerY: CGFloat, width: CGFloat? = nil) -> some View {
-        self.lineLimit(1)
-            .minimumScaleFactor(0.6)
-            .frame(width: width)
-            .fixedSize(horizontal: width == nil, vertical: true)
-            .position(x: centerX, y: centerY)
-    }
-
-    /// Text starting at `leading`, vertically centered on `centerY`.
-    fileprivate func place(leading: CGFloat, centerY: CGFloat, width: CGFloat = 200) -> some View {
-        self.lineLimit(1)
-            .minimumScaleFactor(0.6)
-            .frame(width: width, alignment: .leading)
-            .position(x: leading + width / 2, y: centerY)
-    }
-
-    /// Text ending at `trailing`, vertically centered on `centerY`.
-    fileprivate func place(trailing: CGFloat, centerY: CGFloat, width: CGFloat) -> some View {
-        self.lineLimit(1)
-            .minimumScaleFactor(0.6)
-            .frame(width: width, alignment: .trailing)
-            .position(x: trailing - width / 2, y: centerY)
-    }
-
-    /// LCD text starting at `leading` with its baseline at `baseline`.
-    fileprivate func place(leading: CGFloat, baseline: CGFloat, glyphHeight: CGFloat, font: LCDFont, width: CGFloat)
-        -> some View
-    {
-        let em = glyphHeight / font.glyphToEm
-        return self.lineLimit(1)
-            .frame(width: width, height: em, alignment: .leading)
-            .position(x: leading + width / 2, y: baseline - font.baselineFromTop * em + em / 2)
-    }
-
-    /// LCD text ending at `trailing` with its baseline at `baseline`.
-    fileprivate func place(trailing: CGFloat, baseline: CGFloat, glyphHeight: CGFloat, font: LCDFont, width: CGFloat)
-        -> some View
-    {
-        let em = glyphHeight / font.glyphToEm
-        return self.lineLimit(1)
-            .frame(width: width, height: em, alignment: .trailing)
-            .position(x: trailing - width / 2, y: baseline - font.baselineFromTop * em + em / 2)
     }
 }

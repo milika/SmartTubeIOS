@@ -15,31 +15,42 @@ struct CasioClockWidgetTests {
         calendar.date(from: DateComponents(year: y, month: m, day: d, hour: h, minute: min, second: s))!
     }
 
+    private let fs = CasioWatchFace.figureSpace
+
     @Test("12-hour: 16:20 on Saturday the 2nd reads 4:20 PM, SA 2 — no leading zero")
     func twelveHourAfternoon() {
         let parts = CasioWatchFace.displayParts(for: date(2026, 5, 2, 16, 20), calendar: calendar, twelveHour: true)
-        #expect(parts.hourTens == nil)
-        #expect(parts.hourOnes == 4)
-        #expect((parts.minuteTens, parts.minuteOnes) == (2, 0))
+        #expect(parts.hoursMinutes == fs + "4:20")
         #expect(parts.isPM)
+        #expect(parts.marker == "PM")
         #expect(parts.weekday == "SA")
-        #expect(parts.day == " 2")
+        #expect(parts.day == fs + "2")
     }
 
     @Test("12-hour: midnight and noon read 12")
     func twelveHourMidnightNoon() {
         let midnight = CasioWatchFace.displayParts(for: date(2026, 5, 2, 0, 5), calendar: calendar, twelveHour: true)
-        #expect((midnight.hourTens, midnight.hourOnes, midnight.isPM) == (1, 2, false))
+        #expect(midnight.hoursMinutes == "12:05")
+        #expect(!midnight.isPM)
+        #expect(midnight.marker == nil)
         let noon = CasioWatchFace.displayParts(for: date(2026, 5, 2, 12, 5), calendar: calendar, twelveHour: true)
-        #expect((noon.hourTens, noon.hourOnes, noon.isPM) == (1, 2, true))
+        #expect(noon.hoursMinutes == "12:05")
+        #expect(noon.isPM)
     }
 
-    @Test("24-hour: 09:07 keeps the leading zero and no PM")
+    @Test("24-hour: 09:07 keeps the leading zero and no PM; two-digit day")
     func twentyFourHour() {
-        let parts = CasioWatchFace.displayParts(for: date(2026, 5, 4, 9, 7), calendar: calendar, twelveHour: false)
-        #expect((parts.hourTens, parts.hourOnes, parts.minuteTens, parts.minuteOnes) == (0, 9, 0, 7))
+        let parts = CasioWatchFace.displayParts(for: date(2026, 5, 26, 9, 7), calendar: calendar, twelveHour: false)
+        #expect(parts.hoursMinutes == "09:07")
         #expect(!parts.isPM)
-        #expect(parts.weekday == "MO")
+        #expect(parts.marker == "24H")
+        #expect(parts.weekday == "TU")
+        #expect(parts.day == "26")
+    }
+
+    @Test("the bundled LCD font is found and registers")
+    func fontIsBundled() {
+        #expect(Bundle.module.url(forResource: "F91WSegment", withExtension: "ttf") != nil)
     }
 
     @Test("timeline: one entry per minute, starting at the current minute")

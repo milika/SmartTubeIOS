@@ -1,3 +1,4 @@
+import CoreText
 import SwiftUI
 import WidgetKit
 
@@ -8,9 +9,10 @@ import WidgetKit
 // How it stays live:
 // - Hours and minutes come from a timeline with one entry per minute (an hour of entries,
 //   then WidgetKit asks for the next hour), so the display changes exactly on the minute.
-// - Widgets can't redraw every second, so the seconds are WidgetKit's own running timer
-//   text counting up from the start of the minute, clipped to its last two digits ("0:23"
-//   shows as "23"). Even if a minute entry arrives late, the last two digits stay right.
+// - Widgets can't redraw every second, so the seconds are WidgetKit's own timer text
+//   counting up from the start of the minute, clipped to its last two digits ("0:23" shows
+//   as "23"). All LCD characters use the bundled F91WSegment font (Tools/make_segment_font.py)
+//   so the live seconds match the rest of the display.
 
 public struct CasioClockWidget: Widget {
     public static let kind = "CasioClockWidget"
@@ -53,20 +55,45 @@ struct CasioClockProvider: TimelineProvider {
     }
 }
 
+// MARK: - LCD font
+
+enum F91WFont {
+    static let postScriptName = "F91WSegment-Regular"
+
+    private static let registered: Bool = {
+        guard let url = Bundle.module.url(forResource: "F91WSegment", withExtension: "ttf") else { return false }
+        return CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+    }()
+
+    /// The font whose glyphs are `height` points tall (glyph height is 0.7 em).
+    static func lcd(height: CGFloat) -> Font {
+        _ = registered
+        return .custom(postScriptName, fixedSize: height / 0.7)
+    }
+}
+
 // MARK: - Watch face
+//
+// Laid out on a fixed 594×530 canvas whose coordinates were measured from a front-on photo of
+// an F-91W (Wikimedia Commons, Casio_F-91W_5051.jpg), then scaled to the widget. Printed text
+// is Eurostile Extended / Microgramma on the watch; SF Pro Expanded is the closest system face.
 
 struct CasioWatchFace: View {
     let date: Date
     var calendar: Calendar = .current
     var uses12HourClock: Bool = CasioWatchFace.localeUses12HourClock
 
+    static let canvas = CGSize(width: 594, height: 530)
+
     static let resin = LinearGradient(
-        colors: [Color(white: 0.16), Color(white: 0.06)], startPoint: .top, endPoint: .bottom)
-    static let bezelBlue = Color(red: 0.17, green: 0.33, blue: 0.70)
-    static let gold = Color(red: 0.86, green: 0.70, blue: 0.36)
-    static let label = Color(white: 0.88)
-    static let lcdInk = Color(red: 0.11, green: 0.13, blue: 0.10)
-    static let wrRed = Color(red: 0.86, green: 0.18, blue: 0.16)
+        colors: [Color(white: 0.13), Color(white: 0.05)], startPoint: .top, endPoint: .bottom)
+    static let blue = Color(red: 0.13, green: 0.40, blue: 0.86)
+    static let silver = Color(white: 0.80)
+    static let gold = Color(red: 0.91, green: 0.76, blue: 0.29)
+    static let printWhite = Color(white: 0.94)
+    static let red = Color(red: 0.89, green: 0.15, blue: 0.17)
+    static let lcdGlass = Color(red: 0.77, green: 0.79, blue: 0.75)
+    static let lcdInk = Color(red: 0.12, green: 0.15, blue: 0.13)
 
     static var localeUses12HourClock: Bool {
         DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: .current)?.contains("a") ?? true
@@ -74,173 +101,274 @@ struct CasioWatchFace: View {
 
     var body: some View {
         GeometryReader { geo in
-            let s = min(geo.size.width, geo.size.height)
-            ZStack {
-                CasioWatchFace.resin
-                // The blue line framing the face.
-                RoundedRectangle(cornerRadius: s * 0.08, style: .continuous)
-                    .strokeBorder(Self.bezelBlue, lineWidth: s * 0.014)
-                    .padding(s * 0.065)
-                VStack(spacing: s * 0.018) {
-                    header(s)
-                    lcd(s)
-                    footer(s)
-                }
-                .padding(.horizontal, s * 0.11)
-                .padding(.vertical, s * 0.1)
+            let scale = min(geo.size.width / Self.canvas.width, geo.size.height / Self.canvas.height)
+            ZStack(alignment: .topLeading) {
+                bezel
+                printedFace
+                lcd
             }
+            .frame(width: Self.canvas.width, height: Self.canvas.height, alignment: .topLeading)
+            .scaleEffect(scale)
             .frame(width: geo.size.width, height: geo.size.height)
         }
     }
 
-    // MARK: Printed labels
+    // MARK: Bezel and frame lines
 
-    private func header(_ s: CGFloat) -> some View {
-        VStack(spacing: s * 0.012) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("CASIO")
-                    .font(.system(size: s * 0.085, weight: .heavy))
-                    .tracking(s * 0.004)
-                    .foregroundStyle(Self.label)
-                Spacer(minLength: 0)
-                Text("F-91W")
-                    .font(.system(size: s * 0.062, weight: .heavy).italic())
-                    .foregroundStyle(Self.gold)
-            }
-            HStack {
-                Text("LIGHT")
-                Spacer(minLength: 0)
-                Text("ALARM CHRONOGRAPH")
-            }
-            .font(.system(size: s * 0.036, weight: .semibold))
-            .foregroundStyle(Self.gold)
+    private var bezel: some View {
+        ZStack(alignment: .topLeading) {
+            // The bright blue ring.
+            RoundedRectangle(cornerRadius: 46, style: .continuous)
+                .strokeBorder(Self.blue, lineWidth: 9)
+                .frame(width: 550, height: 470)
+                .offset(x: 22, y: 30)
+            // The thin silver line framing the printed face.
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .strokeBorder(Self.silver, lineWidth: 2.5)
+                .frame(width: 493, height: 412)
+                .offset(x: 52, y: 58)
         }
     }
 
-    private func footer(_ s: CGFloat) -> some View {
-        VStack(spacing: s * 0.016) {
-            HStack {
-                Text("MODE")
-                Spacer(minLength: 0)
-                Text("ALARM ON·OFF/24HR")
-            }
-            .font(.system(size: s * 0.033, weight: .semibold))
-            .foregroundStyle(Self.label.opacity(0.8))
-            HStack(spacing: s * 0.03) {
-                Text("WATER")
-                Text("WR")
-                    .font(.system(size: s * 0.05, weight: .heavy).italic())
-                    .foregroundStyle(Self.wrRed)
-                    .padding(.horizontal, s * 0.025)
-                    .overlay(
-                        Capsule().strokeBorder(Self.wrRed, lineWidth: s * 0.008)
-                    )
-                Text("RESIST")
-            }
-            .font(.system(size: s * 0.046, weight: .bold))
-            .foregroundStyle(Self.label)
+    // MARK: Printed text and bars
+
+    private var printedFace: some View {
+        ZStack(alignment: .topLeading) {
+            // CASIO / F-91W
+            Text("CASIO")
+                .font(.system(size: 31, weight: .bold).width(.expanded))
+                .foregroundStyle(Self.printWhite)
+                .place(centerX: 195, centerY: 91)
+            Text("F-91W")
+                .font(.system(size: 25.5, weight: .black).width(.expanded))
+                .foregroundStyle(Self.gold)
+                .oblique()
+                .place(centerX: 397, centerY: 91)
+            bar(x: 70, y: 124, width: 450)
+
+            // ◀ LIGHT   ALARM CHRONOGRAPH
+            Pointer(left: true).fill(Self.red).frame(width: 16, height: 7).position(x: 96, y: 155)
+            Text("LIGHT")
+                .font(.system(size: 14, weight: .medium).width(.expanded))
+                .foregroundStyle(Self.printWhite)
+                .place(leading: 116, centerY: 155)
+            Text("ALARM CHRONOGRAPH")
+                .font(.system(size: 17.5, weight: .semibold).width(.expanded))
+                .foregroundStyle(Self.gold)
+                .place(trailing: 497, centerY: 154, width: 290)
+
+            // ◀ MODE   ALARM ON·OFF/24HR ▶
+            Pointer(left: true).fill(Self.red).frame(width: 18, height: 7).position(x: 97, y: 400)
+            Text("MODE")
+                .font(.system(size: 15.5, weight: .medium).width(.expanded))
+                .foregroundStyle(Self.printWhite)
+                .place(leading: 116, centerY: 400)
+            Text("ALARM ON·OFF/24HR")
+                .font(.system(size: 16.5, weight: .medium).width(.expanded))
+                .foregroundStyle(Self.printWhite)
+                .place(trailing: 472, centerY: 400, width: 240)
+            Pointer(left: false).fill(Self.red).frame(width: 18, height: 7).position(x: 491, y: 400)
+
+            // WATER [WR] RESIST
+            bar(x: 70, y: 417, width: 152, height: 5)
+            bar(x: 365, y: 417, width: 155, height: 5)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Self.blue, lineWidth: 4)
+                .frame(width: 143, height: 48)
+                .offset(x: 222, y: 412)
+            Text("WR")
+                .font(.system(size: 31, weight: .heavy).width(.expanded))
+                .foregroundStyle(Self.red)
+                .oblique()
+                .place(centerX: 294, centerY: 437)
+            Text("WATER")
+                .font(.system(size: 24.5, weight: .bold).width(.expanded))
+                .foregroundStyle(Self.printWhite)
+                .place(centerX: 155, centerY: 438, width: 120)
+            Text("RESIST")
+                .font(.system(size: 24.5, weight: .bold).width(.expanded))
+                .foregroundStyle(Self.printWhite)
+                .place(centerX: 435, centerY: 438, width: 130)
+            Text("u")
+                .font(.system(size: 8, weight: .medium))
+                .foregroundStyle(Self.printWhite.opacity(0.85))
+                .place(centerX: 455, centerY: 461)
         }
+    }
+
+    private func bar(x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat = 6) -> some View {
+        Rectangle().fill(Self.blue).frame(width: width, height: height).offset(x: x, y: y)
     }
 
     // MARK: LCD
 
-    private func lcd(_ s: CGFloat) -> some View {
+    private var lcd: some View {
         let parts = Self.displayParts(for: date, calendar: calendar, twelveHour: uses12HourClock)
-        let digitHeight = s * 0.21
-        let digitWidth = digitHeight * 0.53
-        let small = s * 0.07
-
-        return VStack(alignment: .leading, spacing: s * 0.015) {
-            // Top row: PM marker, day of week, date.
-            HStack(alignment: .firstTextBaseline, spacing: s * 0.03) {
-                Text(parts.isPM ? "PM" : " ")
-                    .font(.system(size: small * 0.62, weight: .bold, design: .rounded))
-                    .frame(width: small, alignment: .leading)
-                Spacer(minLength: 0)
-                Text(parts.weekday)
-                    .font(.system(size: small, weight: .semibold, design: .monospaced))
-                Text(parts.day)
-                    .font(.system(size: small, weight: .semibold, design: .monospaced))
-            }
-            // Time: H H : M M  ss
-            HStack(alignment: .bottom, spacing: digitWidth * 0.14) {
-                SevenSegmentDigit(digit: parts.hourTens, color: Self.lcdInk)
-                    .frame(width: digitWidth, height: digitHeight)
-                SevenSegmentDigit(digit: parts.hourOnes, color: Self.lcdInk)
-                    .frame(width: digitWidth, height: digitHeight)
-                SevenSegmentColon(color: Self.lcdInk)
-                    .frame(width: digitHeight * 0.1, height: digitHeight * 0.62)
-                    .padding(.bottom, digitHeight * 0.15)
-                SevenSegmentDigit(digit: parts.minuteTens, color: Self.lcdInk)
-                    .frame(width: digitWidth, height: digitHeight)
-                SevenSegmentDigit(digit: parts.minuteOnes, color: Self.lcdInk)
-                    .frame(width: digitWidth, height: digitHeight)
-                seconds(height: digitHeight * 0.55)
-            }
-        }
-        .foregroundStyle(Self.lcdInk)
-        .padding(.horizontal, s * 0.035)
-        .padding(.vertical, s * 0.025)
-        .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: s * 0.02, style: .continuous)
+        return ZStack(alignment: .topLeading) {
+            // Silver frame, dark surround, grey-green glass.
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.black)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(Self.silver, lineWidth: 2)
+                )
+                .frame(width: 409, height: 204)
+                .offset(x: 88, y: 176)
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [
-                            Color(red: 0.70, green: 0.74, blue: 0.65),
-                            Color(red: 0.62, green: 0.66, blue: 0.57),
-                        ],
-                        startPoint: .topLeading, endPoint: .bottomTrailing)
+                        colors: [Self.lcdGlass, Self.lcdGlass.opacity(0.9)],
+                        startPoint: .top, endPoint: .bottom)
                 )
-                .shadow(color: .black.opacity(0.5), radius: s * 0.01, x: 0, y: s * 0.004)
-        )
+                .frame(width: 389, height: 184)
+                .offset(x: 98, y: 186)
+
+            Group {
+                // PM in the afternoon on a 12-hour clock; 24H on a 24-hour clock, like the watch.
+                if let marker = parts.marker {
+                    Text(marker)
+                        .font(.system(size: 22, weight: .bold))
+                        .place(centerX: 140, centerY: 241)
+                }
+                // Day of week and date share the top row.
+                Text(parts.weekday)
+                    .font(F91WFont.lcd(height: 35))
+                    .place(leading: 232, baseline: 240, glyphHeight: 35)
+                Text(parts.day)
+                    .font(F91WFont.lcd(height: 42))
+                    .place(trailing: 474, baseline: 247, glyphHeight: 42, width: 110)
+                // H:MM
+                Text(parts.hoursMinutes)
+                    .font(F91WFont.lcd(height: 84))
+                    .place(trailing: 380, baseline: 352, glyphHeight: 84, width: 300)
+                seconds
+            }
+            .foregroundStyle(Self.lcdInk)
+        }
     }
 
-    /// Live seconds: WidgetKit's running timer text, counting up from the start of this
-    /// minute ("0:23"), clipped to its last two digits.
-    private func seconds(height: CGFloat) -> some View {
+    /// Live seconds: timer text counting up from the start of this minute ("0:23"), shown
+    /// through a right-aligned window that keeps only the last two digits.
+    private var seconds: some View {
         let minuteStart = calendar.dateInterval(of: .minute, for: date)?.start ?? date
-        let fontSize = height * 0.95
+        let glyph: CGFloat = 60
+        let digitAdvance = glyph / 0.7 * 0.5
         return Text(minuteStart, style: .timer)
-            .font(.system(size: fontSize, weight: .semibold, design: .monospaced))
-            .monospacedDigit()
+            .font(F91WFont.lcd(height: glyph))
             .multilineTextAlignment(.trailing)
             .lineLimit(1)
-            // A frame wide enough for the whole timer ("0:23") so it isn't truncated, shown
-            // through a narrower right-aligned window that keeps only the last two digits.
-            .frame(width: fontSize * 3, alignment: .trailing)
-            .frame(width: fontSize * 1.25, height: height, alignment: .trailing)
+            .frame(width: digitAdvance * 6, alignment: .trailing)
+            .frame(width: digitAdvance * 2, alignment: .trailing)
             .clipped()
+            .place(trailing: 476, baseline: 352, glyphHeight: glyph, width: digitAdvance * 2)
     }
 
     // MARK: Formatting
 
     struct DisplayParts: Equatable {
-        let hourTens: Int?
-        let hourOnes: Int
-        let minuteTens: Int
-        let minuteOnes: Int
+        /// "H:MM" with a figure space for a blank leading hour digit ("\u{2007}6:04").
+        let hoursMinutes: String
         let isPM: Bool
+        /// "PM", "24H" or nil (morning on a 12-hour clock).
+        let marker: String?
         let weekday: String
+        /// Right-aligned day of month ("\u{2007}9", "26").
         let day: String
     }
 
     static let weekdays = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"]
+    static let figureSpace = "\u{2007}"
 
     static func displayParts(for date: Date, calendar: Calendar, twelveHour: Bool) -> DisplayParts {
         let c = calendar.dateComponents([.hour, .minute, .weekday, .day], from: date)
         let hour24 = c.hour ?? 0
         let hour = twelveHour ? (hour24 % 12 == 0 ? 12 : hour24 % 12) : hour24
+        // Like the watch, a 12-hour time has no leading zero ("6:04", not "06:04").
+        let hourText = hour < 10 ? (twelveHour ? figureSpace : "0") + "\(hour)" : "\(hour)"
         let minute = c.minute ?? 0
+        let dayOfMonth = c.day ?? 1
         return DisplayParts(
-            // Like the watch, a 12-hour time has no leading zero ("4:20", not "04:20").
-            hourTens: hour >= 10 ? hour / 10 : (twelveHour ? nil : 0),
-            hourOnes: hour % 10,
-            minuteTens: minute / 10,
-            minuteOnes: minute % 10,
+            hoursMinutes: hourText + ":" + (minute < 10 ? "0" : "") + "\(minute)",
             isPM: twelveHour && hour24 >= 12,
+            marker: twelveHour ? (hour24 >= 12 ? "PM" : nil) : "24H",
             weekday: weekdays[((c.weekday ?? 1) - 1) % 7],
-            day: String(format: "%2d", c.day ?? 1)
+            day: (dayOfMonth < 10 ? figureSpace : "") + "\(dayOfMonth)"
         )
+    }
+}
+
+/// The small red triangles beside LIGHT, MODE and 24HR.
+private struct Pointer: Shape {
+    let left: Bool
+
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        if left {
+            p.move(to: CGPoint(x: rect.minX, y: rect.midY))
+            p.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+            p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        } else {
+            p.move(to: CGPoint(x: rect.maxX, y: rect.midY))
+            p.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+            p.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        }
+        p.closeSubpath()
+        return p
+    }
+}
+
+// MARK: - Placement on the canvas
+
+extension View {
+    /// Slants the view like the printed italics ("F-91W", "WR"). SF Pro Expanded has no
+    /// italic face, so `.italic()` would draw it upright.
+    fileprivate func oblique() -> some View {
+        self.transformEffect(CGAffineTransform(a: 1, b: 0, c: -0.21, d: 1, tx: 6, ty: 0))
+    }
+
+    /// Centers the view at a canvas point.
+    fileprivate func place(centerX: CGFloat, centerY: CGFloat, width: CGFloat? = nil) -> some View {
+        self.lineLimit(1)
+            .minimumScaleFactor(0.6)
+            .frame(width: width)
+            .fixedSize(horizontal: width == nil, vertical: true)
+            .position(x: centerX, y: centerY)
+    }
+
+    /// Text starting at `leading`, vertically centered on `centerY`.
+    fileprivate func place(leading: CGFloat, centerY: CGFloat, width: CGFloat = 200) -> some View {
+        self.lineLimit(1)
+            .minimumScaleFactor(0.6)
+            .frame(width: width, alignment: .leading)
+            .position(x: leading + width / 2, y: centerY)
+    }
+
+    /// Text ending at `trailing`, vertically centered on `centerY`.
+    fileprivate func place(trailing: CGFloat, centerY: CGFloat, width: CGFloat) -> some View {
+        self.lineLimit(1)
+            .minimumScaleFactor(0.6)
+            .frame(width: width, alignment: .trailing)
+            .position(x: trailing - width / 2, y: centerY)
+    }
+
+    /// LCD text (F91WSegment: line box = 1 em, baseline 0.8 em from the top) starting at
+    /// `leading` with its baseline at `baseline`.
+    fileprivate func place(leading: CGFloat, baseline: CGFloat, glyphHeight: CGFloat, width: CGFloat = 200)
+        -> some View
+    {
+        let em = glyphHeight / 0.7
+        return self.lineLimit(1)
+            .frame(width: width, height: em, alignment: .leading)
+            .position(x: leading + width / 2, y: baseline - 0.8 * em + em / 2)
+    }
+
+    /// LCD text ending at `trailing` with its baseline at `baseline`.
+    fileprivate func place(trailing: CGFloat, baseline: CGFloat, glyphHeight: CGFloat, width: CGFloat)
+        -> some View
+    {
+        let em = glyphHeight / 0.7
+        return self.lineLimit(1)
+            .frame(width: width, height: em, alignment: .trailing)
+            .position(x: trailing - width / 2, y: baseline - 0.8 * em + em / 2)
     }
 }

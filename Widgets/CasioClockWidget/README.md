@@ -3,7 +3,12 @@
 A small Home Screen widget: a live digital clock drawn as a Casio F-91W
 (black resin case, blue bezel line, gold labels, grey-green LCD with seven-segment
 digits, day/date, PM marker, running seconds). Self-contained Swift package — no
-dependencies on any app code, no bundled assets or fonts.
+dependencies on any app code. Its only resource is the generated LCD font
+`Resources/F91WSegment.ttf` (built by `Tools/make_segment_font.py`, needs `pip install fonttools`).
+
+The layout is measured from a front-on photo of a real F-91W (Wikimedia Commons,
+`Casio_F-91W_5051.jpg`). Printed text on the watch is Eurostile Extended / Microgramma
+(per Fonts In Use); SF Pro Expanded stands in for it.
 
 ## Add to a project
 
@@ -34,7 +39,7 @@ Delete the `CasioClockWidget()` line and the package dependency.
 - Seconds: `Text(date, style: .timer)` counting up from the start of the minute, clipped to
   its last two digits — widgets can't redraw every second, but timer text animates itself.
 - 12- or 24-hour follows the device setting; 12-hour shows the hour without a leading zero
-  and a PM marker, like the watch.
+  and a PM marker, 24-hour shows "24H", like the watch.
 
 ## Tests
 

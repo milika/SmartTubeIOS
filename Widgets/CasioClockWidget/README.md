@@ -25,6 +25,9 @@ dependencies on any app code. Its resources are fonts, all under the SIL Open Fo
   Eurostile Medium, and Saira Expanded SemiBold (a static instance of Saira's variable font,
   wght 600 / wdth 125, stretched) for the "WR" mark. Subset to the characters the face uses.
 
+Every LCD has the same depth (`LCDShadow` in `LCDStyle`): the frame shades the glass's top and
+left edge, and the segments cast a faint shadow on the reflector behind them.
+
 Tap a widget for the backlight (an `AppIntent`, iOS 17 interactive widgets): that model's LCD
 lights for 3 seconds (the F-91W glows green from the left, like its LED).
 

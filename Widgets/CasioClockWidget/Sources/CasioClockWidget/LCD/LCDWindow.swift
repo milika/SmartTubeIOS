@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// The LCD's framed dark surround and its glass, lit by the backlight when `backlit`.
+/// The LCD's framed dark surround and its glass, lit by the backlight when `backlit`, with the
+/// frame's shadow on the glass edge (LCDShadow).
 struct LCDWindow: View {
     /// Outer rectangle of the dark surround and its outline.
     let frame: CGRect
@@ -32,6 +33,18 @@ struct LCDWindow: View {
                             LinearGradient(
                                 colors: style.backlightFalloff.map { style.backlight.opacity($0) },
                                 startPoint: .leading, endPoint: .trailing))
+                }
+            }
+            .overlay {
+                // The frame's shadow on the glass: a blurred edge, shifted down-right so the top
+                // and left edges are darkest, kept inside the glass.
+                let w = style.shadow.edgeWidth
+                if style.shadow.edgeOpacity > 0 {
+                    RoundedRectangle(cornerRadius: glassRadius, style: .continuous)
+                        .stroke(Color.black.opacity(style.shadow.edgeOpacity), lineWidth: w)
+                        .offset(x: w / 3, y: w / 3)
+                        .blur(radius: w / 2)
+                        .mask(RoundedRectangle(cornerRadius: glassRadius, style: .continuous))
                 }
             }
             .frame(width: glass.width, height: glass.height)

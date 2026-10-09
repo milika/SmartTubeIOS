@@ -205,6 +205,7 @@ struct GMWB5000Face: View {
                     date: context.date, calendar: context.calendar, previewSeconds: context.previewSeconds,
                     glyph: 50, trailing: 450, baseline: 360.5, xScale: 0.93, style: style)
             }
+            .lcdSegmentShadow(style)
             .offset(y: e / 4)
         }
     }

@@ -44,6 +44,7 @@ struct Module593Display: View {
                 date: context.date, calendar: context.calendar, previewSeconds: context.previewSeconds, glyph: 67,
                 trailing: 382, baseline: 166, xScale: Self.digitSqueeze, style: style)
         }
+        .lcdSegmentShadow(style)
         .frame(width: Self.glass.width, height: Self.glass.height, alignment: .topLeading)
     }
 

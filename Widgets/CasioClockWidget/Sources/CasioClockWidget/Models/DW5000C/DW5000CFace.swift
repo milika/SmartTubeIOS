@@ -137,7 +137,7 @@ struct DW5000CFace: View {
             LCDWindow(
                 frame: CGRect(x: 145.5, y: 157, width: 330.5, height: 203.5 + e / 2), frameRadius: 10,
                 surround: Color(white: 0.08), outline: CasioDW5000C.silver, outlineWidth: 6.5,
-                glass: CGRect(x: 166, y: 163, width: 303, height: 182 + e / 2), glassRadius: 2,
+                glass: CGRect(x: 152, y: 163.5, width: 317.5, height: 190.5 + e / 2), glassRadius: 4,
                 backlit: context.backlit, style: style)
             ZStack(alignment: .topLeading) {
                 LCDText(
@@ -164,6 +164,7 @@ struct DW5000CFace: View {
                     date: context.date, calendar: context.calendar, previewSeconds: context.previewSeconds,
                     glyph: 53, trailing: 461, baseline: 335.5, xScale: 0.83, style: style)
             }
+            .lcdSegmentShadow(style)
             .offset(y: e / 4)
         }
     }

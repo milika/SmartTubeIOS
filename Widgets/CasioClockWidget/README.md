@@ -95,8 +95,10 @@ Sources/CasioClockWidget/
   CasioModel.swift   CasioModel / CasioComplicationModel protocols, CasioFaceContext
   Widget/            generic widget + watch complication widget, timeline provider, light intent
   LCD/               DSEG fonts, LCDStyle, LCDText, LiveSeconds, LCDWindow, DisplayParts,
-                     Module593Display (the shared display of module 593: F-91W, A158W, A168W…),
-                     DotMatrixText (5×7 dot-matrix characters, drawn as shapes)
+                     DotMatrixText (5×7 dot-matrix characters, drawn as shapes), and the module
+                     displays (LCDModuleDisplay): Module593Display (F-91W, A158W, A168W…) and its
+                     compact Module593Complication, Module3459Display (GMW-B5000, GW-B5600…),
+                     Module240Display (DW-5000C)
   Kit/               FaceCanvas + place(...) modifiers, CaseFont, BundledFonts, shapes (incl. the
                      G-Shock BrickPattern), text effects, InkText (a label filling a measured ink box)
   Models/F91W/       the F-91W: model (palette, LCD style, Xcode previews), face, complication
@@ -111,10 +113,11 @@ Sources/CasioClockWidget/
 1. Measure a front-on photo of the watch and pick its canvas size. Add
    `Models/<Name>/Casio<Name>.swift`, an `enum` implementing `CasioModel` (kind, gallery name
    and description, canvas, case background, `face(_:)`, optionally `widgetArea`: the part
-   of the canvas the square widget shows), and its face view drawn with
-   `place(...)`, the case-font helpers (`Casio<Name>.michroma(size)`, …), `InkText`, the shapes
-   and the LCD parts (`LCDWindow`, `LCDText`, `LiveHoursMinutes`, `LiveSeconds`,
-   `context.displayParts(blankDigit:)`, its own `LCDStyle`). A new font goes into `Resources/`
+   of the canvas the square widget shows), and its face view: the case drawn with `place(...)`,
+   the case-font helpers (`Casio<Name>.michroma(size)`, …), `InkText` and the shapes, then an
+   `LCDWindow` with its module's display placed in the glass (see below; a new module's display
+   uses `LCDText`, `LiveHoursMinutes`, `LiveSeconds`, `context.displayParts(blankDigit:)`), and
+   its own `LCDStyle`. A new font goes into `Resources/`
    with its licence, and its PostScript name into `CaseFont` (the only place names are spelled).
 2. Register it in `CasioCatalogue.swift`: the model in `CasioModels.all` (tests check unique
    kinds and that it renders) and `CasioWatchWidget<Casio<Name>>()` in `CasioWidgets.homeScreen`.
@@ -125,8 +128,10 @@ Sources/CasioClockWidget/
    register it in `CasioModels.complications` and `CasioWidgets.complications`; the watch app's
    gallery and the watch extension pick it up.
 
-Watches that share a Casio module share its display: draw it once (like `Module593Display`) and
-place it in each model's glass, rather than measuring it again from each photo.
+Watches that share a Casio module share its display: a face draws only the case and places its
+module's display (an `LCDModuleDisplay`, in `LCD/`) in its glass with `placed(in:)`. A model with a
+known module needs no display work; a new module gets its own `Module<number>Display`, measured
+once from a photo.
 
 A model's `kind` must never change once shipped: it identifies the widgets people placed. (The
 F-91W's is `"CasioClockWidget"`, from when it was the only model.)

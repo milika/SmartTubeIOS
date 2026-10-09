@@ -2,8 +2,8 @@ import SwiftUI
 
 /// The display of Casio's module 593 (F-91W, A158W, A168W, …): PM / 24H, weekday, date, H:MM and
 /// live seconds. Measured once, from the F-91W photo, in its 389.5 × 184.5 glass; every model with
-/// this module places it in its own glass (`placed(in:)`), so they all show the same layout.
-struct Module593Display: View {
+/// this module places it in its own glass (LCDModuleDisplay.placed(in:)).
+struct Module593Display: LCDModuleDisplay {
     /// The glass the layout was measured in.
     static let glass = CGSize(width: 389.5, height: 184.5)
     /// Width of the big digits relative to DSEG's (the module's digits are narrower).
@@ -43,19 +43,5 @@ struct Module593Display: View {
         }
         .lcdSegmentShadow(style)
         .frame(width: Self.glass.width, height: Self.glass.height, alignment: .topLeading)
-    }
-
-    /// The display in a model's glass (canvas coordinates): scaled to the glass's width and centred
-    /// vertically, so a taller glass (a case extended to fill the widget) gets even margins.
-    /// `shift` moves it down: each case's window frames the same LCD at a slightly different spot.
-    static func placed(
-        in glass: CGRect, shift: CGFloat = 0, context: CasioFaceContext, style: LCDStyle
-    )
-        -> some View
-    {
-        let scale = glass.width / Self.glass.width
-        return Module593Display(context: context, style: style)
-            .scaleEffect(scale, anchor: .topLeading)
-            .offset(x: glass.minX, y: glass.minY + (glass.height - Self.glass.height * scale) / 2 + shift)
     }
 }

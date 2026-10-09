@@ -135,47 +135,14 @@ struct DW5000CFace: View {
     // MARK: LCD
 
     private var lcd: some View {
-        let parts = context.displayParts(blankDigit: style.digits.blankDigit)
+        let glass = CGRect(x: 152, y: 163.5, width: 317.5, height: 190.5 + extra / 2)
         return ZStack(alignment: .topLeading) {
             LCDWindow(
                 frame: CGRect(x: 145.5, y: 157, width: 330.5, height: 203.5 + extra / 2), frameRadius: 10,
                 surround: Color(white: 0.08), outline: CasioDW5000C.silver, outlineWidth: 6.5,
-                glass: CGRect(x: 152, y: 163.5, width: 317.5, height: 190.5 + extra / 2), glassRadius: 4,
-                backlit: context.backlit, style: style)
-            ZStack(alignment: .topLeading) {
-                LCDText(
-                    text: parts.weekday, font: style.letters, glyph: 36, edge: .leading(173), baseline: 218.5,
-                    // The DW-5000C's W is double width; DSEG's is not. Wide enough for WE, not too wide for FR.
-                    tracking: 10, style: style)
-                if let marker = parts.marker {
-                    ink(marker, CaseFont.michroma)
-                        .placed(
-                            in: CGRect(x: 228.5, y: 235.5, width: marker == "24H" ? 41 : 28, height: 15.5),
-                            color: style.ink, bold: 0.6)
-                }
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .stroke(style.ink, lineWidth: 2)
-                    .frame(width: 158, height: 63.5)
-                    .offset(x: 299, y: 176)
-                LCDText(
-                    text: Self.dateText(context.date, calendar: context.calendar, blank: style.digits.blankDigit),
-                    font: style.digits, glyph: 44, edge: .trailing(456), baseline: 230.5, xScale: 0.877, style: style)
-                LiveHoursMinutes(
-                    context: context, font: style.digits, glyph: 74.5, trailing: 378, baseline: 335.5, xScale: 0.83,
-                    colonGap: 9.5, style: style)
-                LiveSeconds(
-                    context: context, glyph: 53, trailing: 461, baseline: 335.5, xScale: 0.83, style: style)
-            }
-            .lcdSegmentShadow(style)
-            .offset(y: extra / 4)
+                glass: glass, glassRadius: 4, backlit: context.backlit, style: style)
+            Module240Display.placed(in: glass, context: context, style: style)
         }
-    }
-
-    /// Month first, as on the DW-5000C ("11- 4", " 6-28"), each number right-aligned in two digits.
-    static func dateText(_ date: Date, calendar: Calendar, blank: String) -> String {
-        let components = calendar.dateComponents([.day, .month], from: date)
-        return DisplayParts.twoCells(components.month ?? 1, blank: blank) + "-"
-            + DisplayParts.twoCells(components.day ?? 1, blank: blank)
     }
 }
 

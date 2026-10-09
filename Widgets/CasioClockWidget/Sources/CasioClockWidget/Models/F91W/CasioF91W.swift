@@ -33,7 +33,7 @@ enum CasioF91W: CasioComplicationModel {
     static let complicationSummary = "The F-91W's display: time with live seconds, day and date."
 
     static func rectangularComplication(_ context: CasioFaceContext) -> some View {
-        F91WComplication(context: context)
+        Module593Complication(context: context, lcd: lcd)
     }
 
     // Colours sampled from the photo, white-balanced so the white print is neutral.
@@ -45,8 +45,6 @@ enum CasioF91W: CasioComplicationModel {
 
     /// The LCD: DSEG Bold Italic on grey-green glass, no unlit segments (LCDStyle's defaults).
     static let lcd = LCDStyle()
-    /// Width of the big digits relative to DSEG's (measured from the photo).
-    static let digitSqueeze = Module593Display.digitSqueeze
 }
 
 #if !os(watchOS)

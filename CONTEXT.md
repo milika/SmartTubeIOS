@@ -62,6 +62,10 @@ Naming a new module after a concept not listed here requires adding the term in 
 - **Catalogue** — the single list of what the package publishes (`CasioCatalogue.swift`): the
   model registry and the Home Screen widgets / watch complications built from it. Registering a
   watch model happens only there; the app's extensions list the catalogue once.
+- **LCD module / Module display** — Casio builds one *LCD module* (numbered: 593, 3459, 240)
+  into several watches; its *module display* (`Module593Display`, …, an `LCDModuleDisplay`) is
+  that LCD's layout, measured once and placed in each watch model's glass. A *face* draws the
+  case around it. *Rejected*: "screen" (the whole widget), "face" for the display.
 
 ## Architecture vocabulary
 

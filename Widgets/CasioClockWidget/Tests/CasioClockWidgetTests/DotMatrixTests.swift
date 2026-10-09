@@ -21,9 +21,9 @@ struct DotMatrixTests {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = .gmt
         let date = try #require(cal.date(from: DateComponents(year: 2026, month: 6, day: 28)))
-        #expect(GMWB5000Face.dateText(date, calendar: cal, dayFirst: true) == "28. 6")
-        #expect(GMWB5000Face.dateText(date, calendar: cal, dayFirst: false) == " 6-28")
+        #expect(Module3459Display.dateText(date, calendar: cal, dayFirst: true) == "28. 6")
+        #expect(Module3459Display.dateText(date, calendar: cal, dayFirst: false) == " 6-28")
         let date2 = try #require(cal.date(from: DateComponents(year: 2026, month: 11, day: 3)))
-        #expect(GMWB5000Face.dateText(date2, calendar: cal, dayFirst: true) == " 3.11")
+        #expect(Module3459Display.dateText(date2, calendar: cal, dayFirst: true) == " 3.11")
     }
 }

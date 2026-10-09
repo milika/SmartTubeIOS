@@ -1,19 +1,23 @@
 import SwiftUI
 import WidgetKit
 
-/// The F-91W's LCD as a rectangular complication, on a 200×80 canvas: PM / weekday / date on
-/// top, H:MM and live seconds below. Full-colour faces get the grey-green glass and dark ink;
-/// tinted faces get white ink in the face's tint (no glass).
-struct F91WComplication: View {
+/// Module 593's display as a rectangular Apple Watch complication, on a 200×80 canvas: PM / weekday
+/// / date on top, H:MM and live seconds below. A compact layout of its own (the slot is wider and
+/// shorter than the watch's glass, so Module593Display doesn't fit it); any model with module 593
+/// can offer it. Full-colour faces get the model's glass and ink; tinted faces get white ink in
+/// the face's tint (no glass).
+struct Module593Complication: View {
     static let canvas = CGSize(width: 200, height: 80)
 
     let context: CasioFaceContext
+    /// The model's LCD style (full colour).
+    let lcd: LCDStyle
     @Environment(\.widgetRenderingMode) private var renderingMode
 
     private var fullColor: Bool { renderingMode == .fullColor }
 
     private var style: LCDStyle {
-        var lcdStyle = CasioF91W.lcd
+        var lcdStyle = lcd
         if !fullColor {
             lcdStyle.ink = .white
         }
@@ -43,9 +47,9 @@ struct F91WComplication: View {
                     tracking: 2, style: style)
                 LiveHoursMinutes(
                     context: context, font: style.digits, glyph: 44, trailing: 148, baseline: 75,
-                    xScale: CasioF91W.digitSqueeze, style: style)
+                    xScale: Module593Display.digitSqueeze, style: style)
                 LiveSeconds(
-                    context: context, glyph: 32, trailing: 196, baseline: 75, xScale: CasioF91W.digitSqueeze,
+                    context: context, glyph: 32, trailing: 196, baseline: 75, xScale: Module593Display.digitSqueeze,
                     style: style)
             }
             .widgetAccentable()

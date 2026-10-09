@@ -168,75 +168,14 @@ struct GMWB5000Face: View {
     // MARK: LCD
 
     private var lcd: some View {
-        let parts = context.displayParts(blankDigit: style.digits.blankDigit)
+        let glass = CGRect(x: 151, y: 176, width: 313, height: 207 + extra / 2)
         return ZStack(alignment: .topLeading) {
             LCDWindow(
                 frame: CGRect(x: 147, y: 172, width: 321, height: 215 + extra / 2), frameRadius: 18,
                 surround: CasioGMWB5000.surround, outline: CasioGMWB5000.surround, outlineWidth: 0,
-                glass: CGRect(x: 151, y: 176, width: 313, height: 207 + extra / 2), glassRadius: 14,
-                backlit: context.backlit, style: style)
-            ZStack(alignment: .topLeading) {
-                indicator("PS", leading: 178, centerY: 197.75, tracking: 5.3)
-                indicator("RCVD", leading: 250, centerY: 198.25)
-                if context.calendar.timeZone.isDaylightSavingTime(for: context.date) {
-                    indicator("DST", leading: 197, centerY: 270.75, tracking: 3.1)
-                }
-                // P for PM on a 12-hour clock (the G-Shock shows nothing on a 24-hour clock).
-                if parts.isPM {
-                    indicator("P", leading: 161, centerY: 304)
-                }
-                LCDText(
-                    text: parts.weekday, font: style.letters, glyph: 41.5, edge: .leading(227), baseline: 251.5,
-                    tracking: 2, style: style)
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .stroke(style.ink, lineWidth: 1.6)
-                    .frame(width: 136, height: 61)
-                    .offset(x: 311, y: 201)
-                DotMatrixText(
-                    text: Self.dateText(context.date, calendar: context.calendar, dayFirst: Self.localeDayFirst),
-                    pitch: CGSize(width: 4, height: 5.7), dot: CGSize(width: 3.3, height: 4.8), advance: 27.25,
-                    narrowAdvance: 14, color: style.ink
-                )
-                .frame(width: 130, height: 40, alignment: .topLeading)
-                .offset(x: 323.75, y: 211)
-                LiveHoursMinutes(
-                    context: context, font: style.digits, glyph: 76, trailing: 372, baseline: 362.5, xScale: 0.85,
-                    style: style)
-                LiveSeconds(
-                    context: context, glyph: 50, trailing: 450, baseline: 360.5, xScale: 0.93, style: style)
-            }
-            .lcdSegmentShadow(style)
-            .offset(y: extra / 4)
+                glass: glass, glassRadius: 14, backlit: context.backlit, style: style)
+            Module3459Display.placed(in: glass, context: context, style: style)
         }
-    }
-
-    private func indicator(_ text: String, leading: CGFloat, centerY: CGFloat, tracking: CGFloat = 1) -> some View {
-        Text(text)
-            .font(CasioGMWB5000.michroma(14.4))
-            .tracking(tracking)
-            .foregroundStyle(style.ink)
-            .emboldened(0.5)
-            .scaleEffect(x: 0.82, y: 1, anchor: .leading)
-            .place(leading: leading, centerY: centerY, width: 60)
-    }
-
-    // MARK: Date
-
-    /// Day first ("28. 6") unless the locale writes the month first (" 6-28"), like the watch's
-    /// date-format setting.
-    static func dateText(_ date: Date, calendar: Calendar, dayFirst: Bool) -> String {
-        let components = calendar.dateComponents([.day, .month], from: date)
-        let day = DisplayParts.twoCells(components.day ?? 1, blank: " "),
-            month = DisplayParts.twoCells(components.month ?? 1, blank: " ")
-        return dayFirst ? day + "." + month : month + "-" + day
-    }
-
-    static var localeDayFirst: Bool {
-        let format = DateFormatter.dateFormat(fromTemplate: "dM", options: 0, locale: .current) ?? "d.M"
-        guard let dayIndex = format.firstIndex(of: "d"), let monthIndex = format.firstIndex(of: "M") else {
-            return true
-        }
-        return dayIndex < monthIndex
     }
 }
 

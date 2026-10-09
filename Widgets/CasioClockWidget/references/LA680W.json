@@ -1,0 +1,32 @@
+{
+  "model": "CasioLA680W",
+  "image": "LA680W - owner, LA680WA-1 product image (queued).png",
+  "canvas": {"origin": [360, 300], "scale": 0.75, "size": [640, 640]},
+  "time": "2024-06-30T22:58:50",
+  "twelveHour": true,
+  "masks": {"grey": {"lum": [80, null], "sat": [null, 40]}, "glass": {"lum": [49, null]}},
+  "notes": ["The image is a product render; colours sampled from it.", "HHMM leaves out the hours 1: the LA680W 1 is wider than DSEG’s (a font limitation)."],
+  "elements": [
+    {"name": "CASIO", "mask": "white", "box": [249, 171, 374, 199]},
+    {"name": "START dot", "mask": "white", "box": [102, 233, 118, 250]},
+    {"name": "START", "mask": "white", "box": [99, 252, 120, 318]},
+    {"name": "MODE", "mask": "white", "box": [98, 394, 118, 455]},
+    {"name": "MODE dot", "mask": "white", "box": [100, 456, 117, 472]},
+    {"name": "LIGHT", "mask": "grey", "box": [502, 390, 523, 457]},
+    {"name": "LIGHT dot", "mask": "grey", "box": [504, 458, 519, 473]},
+    {"name": "line L", "mask": "white", "box": [140, 504, 173, 514]},
+    {"name": "WATER", "mask": "white", "box": [176, 498, 257, 521]},
+    {"name": "WR box", "mask": "white", "box": [260, 492, 357, 528]},
+    {"name": "RESIST", "mask": "white", "box": [362, 499, 442, 522]},
+    {"name": "line R", "mask": "light", "box": [447, 506, 478, 516]},
+    {"name": "ILLUMINATOR", "mask": "grey", "box": [201, 531, 417, 552]},
+    {"name": "signal", "mask": "dark", "box": [183, 273, 220, 293]},
+    {"name": "bell", "mask": "dark", "box": [226, 270, 249, 297]},
+    {"name": "PM", "mask": "dark", "box": [174, 318, 220, 338]},
+    {"name": "weekday", "mask": "dark", "box": [281, 266, 361, 323]},
+    {"name": "day", "mask": "dark", "box": [380, 265, 451, 322]},
+    {"name": "HHMM", "mask": "dark", "box": [216, 338, 382, 441]},
+    {"name": "sec", "mask": "dark", "box": [382, 364, 452, 440]},
+    {"name": "LCD glass", "mask": "glass", "box": [154, 243, 466, 465], "kind": "edges"}
+  ]
+}

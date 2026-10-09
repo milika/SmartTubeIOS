@@ -30,6 +30,7 @@ compares the face with its reference again in one step (see [ADDING-A-MODEL.md](
 | W-738H | product image, front (1200 px) | supplied by the owner; measured only | canvas = image − (280, 180) |
 | W-800H | W-800H-2AV (navy) product image (1000 px) | supplied by the owner; measured only (three more W-800H images archived for comparison) | canvas = image − (180, 160) |
 | G-Shock GW-B5600 | GW-B5600MG-1 (Midnight Green) product image (1200 px) | supplied by the owner; measured only | canvas = image − (270, 420), before the case extension |
+| LA680W | LA680WA-1 product image (1200 px) | supplied by the owner (2026-10-09); measured only | image px = (360, 300) + 0.75 × canvas, before the case extension |
 | G-Shock DW-5600E | DW-5600E-1V product image (2000 px, TACEQ) | supplied by the owner; measured only (an angled Amazon image archived for colours) | canvas = image − (540, 580), before the case extension |
 
 How well each face matches its image: every element in its manifest (`references/<Model>.json`)
@@ -44,7 +45,6 @@ folder with "(queued)" in the name.
 
 | Watch | Image | Notes |
 |---|---|---|
-| LA680W | LA680WA-1, 1200 px | small octagon chrome case, black face, START / MODE / LIGHT, WATER [WR] RESIST, ILLUMINATOR |
 | A178W | A178WA-1A, 1000 px | chrome; SUN 6-30, P, SNZ / ALM / SIG row; blue WR, DUAL TIME / 10 YEAR BATTERY |
 | A700W | A700WE-1A, 1000 px | slim chrome; coloured ALARM / SIG / SPL / CHRONO labels above the LCD |
 | A700W (negative) | A700W with negative display, cyan print, mesh band, 1100 px | inverted LCD (`litInk`, as the W-738H) |
@@ -87,6 +87,7 @@ at hand, the display is named after the watch.
 | `W800HDisplay` | not checked | W-800H | — |
 | `GWB5600Display` | not checked | GW-B5600 | — |
 | `W86Display` | not checked | W-86 | — |
+| `LA680WDisplay` | not checked | LA680W | — |
 
 ## Finding new references
 

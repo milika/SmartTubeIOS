@@ -30,6 +30,7 @@ compares the face with its reference again in one step (see [ADDING-A-MODEL.md](
 | W-738H | product image, front (1200 px) | supplied by the owner; measured only | canvas = image − (280, 180) |
 | W-800H | W-800H-2AV (navy) product image (1000 px) | supplied by the owner; measured only (three more W-800H images archived for comparison) | canvas = image − (180, 160) |
 | G-Shock GW-B5600 | GW-B5600MG-1 (Midnight Green) product image (1200 px) | supplied by the owner; measured only | canvas = image − (270, 420), before the case extension |
+| A178W | A178WA-1A product image (1000 px) | supplied by the owner (2026-10-09); measured only | image px = (250, 215) + 0.8 × canvas |
 | LA680W | LA680WA-1 product image (1200 px) | supplied by the owner (2026-10-09); measured only | image px = (360, 300) + 0.75 × canvas, before the case extension |
 | G-Shock DW-5600E | DW-5600E-1V product image (2000 px, TACEQ) | supplied by the owner; measured only (an angled Amazon image archived for colours) | canvas = image − (540, 580), before the case extension |
 
@@ -45,7 +46,6 @@ folder with "(queued)" in the name.
 
 | Watch | Image | Notes |
 |---|---|---|
-| A178W | A178WA-1A, 1000 px | chrome; SUN 6-30, P, SNZ / ALM / SIG row; blue WR, DUAL TIME / 10 YEAR BATTERY |
 | A700W | A700WE-1A, 1000 px | slim chrome; coloured ALARM / SIG / SPL / CHRONO labels above the LCD |
 | A700W (negative) | A700W with negative display, cyan print, mesh band, 1100 px | inverted LCD (`litInk`, as the W-738H) |
 | F-105W | F-105W-1A, 1000 px | black resin, blue face, ILLUMINATOR band, EL BACKLIGHT/RESET |
@@ -61,7 +61,7 @@ License 1.1, licences in `Sources/CasioClockWidget/Resources/`):
 | Neue Helvetica Extended Black ("F-91W", WATER RESIST, ILLUMINATOR, …) | Archivo Expanded Black | static instance of Archivo's variable font, wght 900 / wdth 125 |
 | Eurostile Medium (ALARM CHRONOGRAPH, small print) | Saira Medium | static instance |
 | the wide "WR" mark | Saira Expanded SemiBold | wght 600 / wdth 125, stretched |
-| LCD segments | DSEG7 / DSEG14 Classic Bold Italic, DSEG7 Classic Bold (upright) | by Keshikan, [keshikan.net](https://www.keshikan.net/fonts-e.html) |
+| LCD segments | DSEG7 / DSEG14 Classic Bold Italic, DSEG7 Classic Bold and Light (upright) | by Keshikan, [keshikan.net](https://www.keshikan.net/fonts-e.html) |
 
 The F-91W's typefaces were identified with Fonts In Use:
 [fontsinuse.com/uses/74290](https://fontsinuse.com/uses/74290).
@@ -88,6 +88,7 @@ at hand, the display is named after the watch.
 | `GWB5600Display` | not checked | GW-B5600 | — |
 | `W86Display` | not checked | W-86 | — |
 | `LA680WDisplay` | not checked | LA680W | — |
+| `A178WDisplay` | not checked | A178W | — |
 
 ## Finding new references
 

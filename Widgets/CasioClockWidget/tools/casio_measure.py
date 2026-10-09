@@ -113,12 +113,27 @@ def window_edges(mask, box):
     x0, y0, x1, y1 = box
     sub = mask[2 * y0:2 * y1, 2 * x0:2 * x1]
     h, w = sub.shape
-    rows = sub[int(h * 0.4):int(h * 0.6)].mean(0) > 0.6
-    cols = sub[:, int(w * 0.4):int(w * 0.6)].mean(1) > 0.6
+    rows = solid(sub[int(h * 0.4):int(h * 0.6)].mean(0) > 0.6)
+    cols = solid(sub[:, int(w * 0.4):int(w * 0.6)].mean(1) > 0.6)
     if not rows.any() or not cols.any():
         return None
     xs, ys = np.nonzero(rows)[0], np.nonzero(cols)[0]
     return (x0 + xs[0] / 2, y0 + ys[0] / 2, x0 + (xs[-1] + 1) / 2, y0 + (ys[-1] + 1) / 2)
+
+
+def solid(line, length=6):
+    """`line` with runs shorter than `length` samples (3 pt) cleared: an outline's anti-aliased
+    edge next to the window is not the window."""
+    out = np.zeros_like(line)
+    start = None
+    for i, value in enumerate(list(line) + [False]):
+        if value and start is None:
+            start = i
+        elif not value and start is not None:
+            if i - start >= length:
+                out[start:i] = True
+            start = None
+    return out
 
 
 def measure(mask, item):

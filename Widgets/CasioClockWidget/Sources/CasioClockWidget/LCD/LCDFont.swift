@@ -1,6 +1,6 @@
 import SwiftUI
 
-// DSEG7 / DSEG14 Classic Bold Italic by Keshikan (SIL OFL 1.1, Resources/DSEG-LICENSE.txt)
+// DSEG7 / DSEG14 Classic (Bold Italic, Bold, Light) by Keshikan (SIL OFL 1.1, Resources/DSEG-LICENSE.txt)
 // for digits and letters.
 
 struct LCDFont: Equatable {

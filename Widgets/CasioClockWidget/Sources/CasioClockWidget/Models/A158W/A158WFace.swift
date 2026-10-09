@@ -7,14 +7,14 @@ struct A158WFace: View {
     private var style: LCDStyle { CasioA158W.lcd }
     /// The case extension: plate and lines grow by it, the LCD window by half, and the groups
     /// below move down to share the space evenly.
-    private var e: CGFloat { CasioA158W.caseExtension }
+    private var extra: CGFloat { CasioA158W.caseExtension }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             plate
             topPrint
-            lcd.offset(y: e / 4)
-            bottomPrint.offset(y: e)
+            lcd.offset(y: extra / 4)
+            bottomPrint.offset(y: extra)
         }
     }
 
@@ -24,15 +24,15 @@ struct A158WFace: View {
         ZStack(alignment: .topLeading) {
             CutCornerRect(cut: CGSize(width: 60, height: 75), bottomCut: CGSize(width: 45, height: 45), radius: 20)
                 .fill(CasioA158W.plate)
-                .frame(width: 544.5, height: 453 + e)
+                .frame(width: 544.5, height: 453 + extra)
                 .offset(x: 33, y: 22.5)
             CutCornerRect(cut: CGSize(width: 52, height: 66), bottomCut: CGSize(width: 38, height: 38), radius: 16)
                 .stroke(CasioA158W.line, lineWidth: 1.5)
-                .frame(width: 514.5, height: 423 + e)
+                .frame(width: 514.5, height: 423 + extra)
                 .offset(x: 48, y: 37.5)
             CutCornerRect(cut: CGSize(width: 42, height: 55), bottomCut: CGSize(width: 30, height: 30), radius: 14)
                 .stroke(CasioA158W.blue, lineWidth: 8)
-                .frame(width: 480, height: 387 + e)
+                .frame(width: 480, height: 387 + extra)
                 .offset(x: 65.25, y: 59.25)
         }
     }
@@ -109,10 +109,10 @@ struct A158WFace: View {
     // MARK: LCD (module 593, like the F-91W)
 
     private var lcd: some View {
-        let glass = CGRect(x: 117, y: 177, width: 370.5, height: 175.5 + e / 2)
+        let glass = CGRect(x: 117, y: 177, width: 370.5, height: 175.5 + extra / 2)
         return ZStack(alignment: .topLeading) {
             LCDWindow(
-                frame: CGRect(x: 105, y: 168, width: 390, height: 195 + e / 2), frameRadius: 14,
+                frame: CGRect(x: 105, y: 168, width: 390, height: 195 + extra / 2), frameRadius: 14,
                 outline: CasioA158W.line, outlineWidth: 1.5,
                 glass: glass, glassRadius: 6, backlit: context.backlit, style: style)
             // The A158W's window shows the LCD 9.5 pt lower than the F-91W's (measured).
@@ -124,13 +124,13 @@ struct A158WFace: View {
 /// A rectangle whose right end slants (wider at the bottom), like the A158W's WATER RESIST band.
 private struct Slant: Shape {
     func path(in rect: CGRect) -> Path {
-        var p = Path()
-        let s = rect.height * 0.37
-        p.move(to: CGPoint(x: rect.minX, y: rect.minY))
-        p.addLine(to: CGPoint(x: rect.maxX - s, y: rect.minY))
-        p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-        p.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        p.closeSubpath()
-        return p
+        var path = Path()
+        let slant = rect.height * 0.37
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX - slant, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.closeSubpath()
+        return path
     }
 }

@@ -13,11 +13,11 @@ struct F91WComplication: View {
     private var fullColor: Bool { renderingMode == .fullColor }
 
     private var style: LCDStyle {
-        var s = CasioF91W.lcd
+        var lcdStyle = CasioF91W.lcd
         if !fullColor {
-            s.ink = .white
+            lcdStyle.ink = .white
         }
-        return s
+        return lcdStyle
     }
 
     var body: some View {

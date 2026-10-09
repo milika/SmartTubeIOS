@@ -18,8 +18,8 @@ struct LCDText: View {
     var body: some View {
         let layers: [(String, Double)] =
             [(font.allLit(text), style.unlitOpacity), (text, 1)].compactMap { item in
-                guard let t = item.0, item.1 > 0 else { return nil }
-                return (t, item.1)
+                guard let layerText = item.0, item.1 > 0 else { return nil }
+                return (layerText, item.1)
             }
         ForEach(Array(layers.enumerated()), id: \.offset) { _, layer in
             let view = Text(layer.0).font(font.font(height: glyph)).tracking(tracking)

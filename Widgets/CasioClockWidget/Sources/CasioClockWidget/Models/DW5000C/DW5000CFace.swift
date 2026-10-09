@@ -8,15 +8,15 @@ struct DW5000CFace: View {
     private var style: LCDStyle { CasioDW5000C.lcd }
     /// The case extension: the recess, red line and bricks grow by it, the LCD window by half;
     /// side labels and the groups below move down to share the space.
-    private var e: CGFloat { CasioDW5000C.caseExtension }
+    private var extra: CGFloat { CasioDW5000C.caseExtension }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             faceAndBricks
             topPrint
             sideLabels
-            lcd.offset(y: e / 4)
-            bottomPrint.offset(y: e)
+            lcd.offset(y: extra / 4)
+            bottomPrint.offset(y: extra)
         }
     }
 
@@ -26,23 +26,23 @@ struct DW5000CFace: View {
         ZStack(alignment: .topLeading) {
             CutCornerRect(cut: CGSize(width: 70, height: 70), radius: 30)
                 .fill(CasioDW5000C.recess)
-                .frame(width: 525, height: 440 + e)
+                .frame(width: 525, height: 440 + extra)
                 .offset(x: 48.5, y: 35)
             // Light mortar between dark bricks, inside the red line.
             ZStack(alignment: .topLeading) {
                 CasioDW5000C.mortar
                 BrickPattern(brick: CGSize(width: 19.2, height: 7.1), pitch: CGSize(width: 20.5, height: 8.417))
                     .fill(CasioDW5000C.brick)
-                    .frame(width: 420, height: 330 + e)
+                    .frame(width: 420, height: 330 + extra)
                     .offset(x: 105.4 - 113.5, y: 102 - 103)
             }
-            .frame(width: 397, height: 310.5 + e)
+            .frame(width: 397, height: 310.5 + extra)
             .clipped()
             .mask(CutCornerRect(cut: CGSize(width: 54, height: 58), radius: 10))
             .offset(x: 113.5, y: 103)
             CutCornerRect(cut: CGSize(width: 61, height: 65), radius: 14)
                 .stroke(CasioDW5000C.red, lineWidth: 6.5)
-                .frame(width: 416.5, height: 329 + e)
+                .frame(width: 416.5, height: 329 + extra)
                 .offset(x: 102.75, y: 93.75)
         }
     }
@@ -93,14 +93,14 @@ struct DW5000CFace: View {
                 vertical("LIGHT", CGRect(x: 530.5, y: 188, width: 10, height: 40), angle: 90)
                 dot(x: 535.75, y: 176.5)
             }
-            .offset(y: e / 4)
+            .offset(y: extra / 4)
             Group {
                 vertical("MODE", CGRect(x: 80.5, y: 286.5, width: 11, height: 42.5), angle: -90)
                 dot(x: 86, y: 340)
                 vertical("24HR", CGRect(x: 530, y: 292, width: 10, height: 37.5), angle: 90)
                 dot(x: 535.25, y: 341)
             }
-            .offset(y: 3 * e / 4)
+            .offset(y: 3 * extra / 4)
         }
     }
 
@@ -138,9 +138,9 @@ struct DW5000CFace: View {
         let parts = context.displayParts(blankDigit: style.digits.blankDigit)
         return ZStack(alignment: .topLeading) {
             LCDWindow(
-                frame: CGRect(x: 145.5, y: 157, width: 330.5, height: 203.5 + e / 2), frameRadius: 10,
+                frame: CGRect(x: 145.5, y: 157, width: 330.5, height: 203.5 + extra / 2), frameRadius: 10,
                 surround: Color(white: 0.08), outline: CasioDW5000C.silver, outlineWidth: 6.5,
-                glass: CGRect(x: 152, y: 163.5, width: 317.5, height: 190.5 + e / 2), glassRadius: 4,
+                glass: CGRect(x: 152, y: 163.5, width: 317.5, height: 190.5 + extra / 2), glassRadius: 4,
                 backlit: context.backlit, style: style)
             ZStack(alignment: .topLeading) {
                 LCDText(
@@ -167,30 +167,34 @@ struct DW5000CFace: View {
                     context: context, glyph: 53, trailing: 461, baseline: 335.5, xScale: 0.83, style: style)
             }
             .lcdSegmentShadow(style)
-            .offset(y: e / 4)
+            .offset(y: extra / 4)
         }
     }
 
     /// Month first, as on the DW-5000C ("11- 4", " 6-28"), each number right-aligned in two digits.
     static func dateText(_ date: Date, calendar: Calendar, blank: String) -> String {
-        let c = calendar.dateComponents([.day, .month], from: date)
-        return DisplayParts.twoCells(c.month ?? 1, blank: blank) + "-" + DisplayParts.twoCells(c.day ?? 1, blank: blank)
+        let components = calendar.dateComponents([.day, .month], from: date)
+        return DisplayParts.twoCells(components.month ?? 1, blank: blank) + "-"
+            + DisplayParts.twoCells(components.day ?? 1, blank: blank)
     }
 }
 
 /// The lithium-battery mark: four bars, a dot, four bars.
 private struct BatteryMark: Shape {
-    func path(in r: CGRect) -> Path {
-        var p = Path()
-        let s = r.width / 57.5
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let scale = rect.width / 57.5
         let bars: [CGFloat] = [1.8, 7.6, 13.0, 18.8, 38.4, 44.25, 50.1, 55.9]
         for x in bars {
-            p.addRoundedRect(
-                in: CGRect(x: r.minX + (x - 1.6) * s, y: r.minY, width: 3.2 * s, height: r.height),
-                cornerSize: CGSize(width: 1.4 * s, height: 1.4 * s))
+            path.addRoundedRect(
+                in: CGRect(x: rect.minX + (x - 1.6) * scale, y: rect.minY, width: 3.2 * scale, height: rect.height),
+                cornerSize: CGSize(width: 1.4 * scale, height: 1.4 * scale))
         }
-        p.addEllipse(in: CGRect(x: r.minX + (28.8 - 5.9) * s, y: r.midY - 5.9 * s, width: 11.8 * s, height: 11.8 * s))
-        return p
+        path.addEllipse(
+            in: CGRect(
+                x: rect.minX + (28.8 - 5.9) * scale, y: rect.midY - 5.9 * scale, width: 11.8 * scale,
+                height: 11.8 * scale))
+        return path
     }
 }
 
@@ -212,29 +216,29 @@ private struct ShockResistBadge: View {
     }
 
     private struct Shield: Shape {
-        func path(in r: CGRect) -> Path {
-            let c: CGFloat = 4.5
-            var p = Path()
-            p.move(to: CGPoint(x: r.minX + c, y: r.minY))
-            p.addLine(to: CGPoint(x: r.maxX - c, y: r.minY))
-            p.addLine(to: CGPoint(x: r.maxX, y: r.minY + c))
-            p.addLine(to: CGPoint(x: r.maxX, y: r.minY + r.height * 0.64))
-            p.addLine(to: CGPoint(x: r.midX, y: r.maxY))
-            p.addLine(to: CGPoint(x: r.minX, y: r.minY + r.height * 0.64))
-            p.addLine(to: CGPoint(x: r.minX, y: r.minY + c))
-            p.closeSubpath()
-            return p
+        func path(in rect: CGRect) -> Path {
+            let corner: CGFloat = 4.5
+            var path = Path()
+            path.move(to: CGPoint(x: rect.minX + corner, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX - corner, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + corner))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.64))
+            path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + rect.height * 0.64))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + corner))
+            path.closeSubpath()
+            return path
         }
     }
 
     private struct Triangle: Shape {
-        func path(in r: CGRect) -> Path {
-            var p = Path()
-            p.move(to: CGPoint(x: r.minX, y: r.minY))
-            p.addLine(to: CGPoint(x: r.maxX, y: r.minY))
-            p.addLine(to: CGPoint(x: r.midX, y: r.maxY))
-            p.closeSubpath()
-            return p
+        func path(in rect: CGRect) -> Path {
+            var path = Path()
+            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+            path.closeSubpath()
+            return path
         }
     }
 }

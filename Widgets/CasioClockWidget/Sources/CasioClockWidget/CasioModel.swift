@@ -50,7 +50,7 @@ struct CasioFaceContext {
     var uses12HourClock: Bool = DisplayParts.localeUses12HourClock
     var backlit = false
     /// Fixed seconds for static renders; the timer only animates inside a widget.
-    var previewSeconds: Int? = nil
+    var previewSeconds: Int?
 }
 
 /// Every model (and every model with a complication), for tests: unique kinds, bundled fonts.

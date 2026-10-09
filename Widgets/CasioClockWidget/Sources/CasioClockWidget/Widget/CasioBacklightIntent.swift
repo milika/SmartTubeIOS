@@ -19,7 +19,7 @@ public struct CasioBacklightIntent: AppIntent {
         self.model = model
     }
 
-    public func perform() async throws -> some IntentResult {
+    public func perform() throws -> some IntentResult {
         // WidgetKit reloads the widget's timeline after a widget intent runs.
         UserDefaults.standard.set(Date().addingTimeInterval(Self.duration), forKey: Self.defaultsKey(model: model))
         return .result()

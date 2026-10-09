@@ -13,12 +13,12 @@ struct InkText: Shape {
 
     func path(in rect: CGRect) -> Path {
         let outline = Self.outline(text, font: font, tracking: tracking)
-        let b = outline.boundingRect
-        guard b.width > 0, b.height > 0 else { return Path() }
+        let bounds = outline.boundingRect
+        guard bounds.width > 0, bounds.height > 0 else { return Path() }
         return outline.applying(
             CGAffineTransform(translationX: rect.minX, y: rect.minY)
-                .scaledBy(x: rect.width / b.width, y: rect.height / b.height)
-                .translatedBy(x: -b.minX, y: -b.minY))
+                .scaledBy(x: rect.width / bounds.width, y: rect.height / bounds.height)
+                .translatedBy(x: -bounds.minX, y: -bounds.minY))
     }
 
     /// The glyph outlines at 100 pt, y pointing down.
@@ -55,24 +55,24 @@ extension InkText {
     /// The text filling `box` on the canvas; `bold` thickens the strokes by that many points on
     /// each side (the box still holds the thickened ink).
     func placed(in box: CGRect, color: Color, bold: CGFloat = 0) -> some View {
-        let r = box.insetBy(dx: bold, dy: bold)
+        let inset = box.insetBy(dx: bold, dy: bold)
         return ZStack(alignment: .topLeading) {
             fill(color)
             if bold > 0 { stroke(color, style: StrokeStyle(lineWidth: 2 * bold, lineJoin: .round)) }
         }
-        .frame(width: r.width, height: r.height)
-        .offset(x: r.minX, y: r.minY)
+        .frame(width: inset.width, height: inset.height)
+        .offset(x: inset.minX, y: inset.minY)
     }
 
     /// Vertical text: `box` is its ink box on the canvas, `angle` -90 reads upwards, 90 downwards.
     func placed(vertical box: CGRect, angle: Double, color: Color, bold: CGFloat = 0) -> some View {
-        let r = box.insetBy(dx: bold, dy: bold)
+        let inset = box.insetBy(dx: bold, dy: bold)
         return ZStack(alignment: .topLeading) {
             fill(color)
             if bold > 0 { stroke(color, style: StrokeStyle(lineWidth: 2 * bold, lineJoin: .round)) }
         }
-        .frame(width: r.height, height: r.width)
+        .frame(width: inset.height, height: inset.width)
         .rotationEffect(.degrees(angle))
-        .position(x: r.midX, y: r.midY)
+        .position(x: inset.midX, y: inset.midY)
     }
 }

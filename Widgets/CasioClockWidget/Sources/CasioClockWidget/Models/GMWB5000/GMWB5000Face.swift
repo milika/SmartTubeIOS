@@ -7,15 +7,15 @@ struct GMWB5000Face: View {
     private var style: LCDStyle { CasioGMWB5000.lcd }
     /// The case extension: bezel, plate and frame lines grow by it, the LCD window by half; side
     /// labels and the groups below move down to share the space.
-    private var e: CGFloat { CasioGMWB5000.caseExtension }
+    private var extra: CGFloat { CasioGMWB5000.caseExtension }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             bezelAndPlate
             topPrint
             sideLabels
-            lcd.offset(y: e / 4)
-            bottomPrint.offset(y: e)
+            lcd.offset(y: extra / 4)
+            bottomPrint.offset(y: extra)
         }
     }
 
@@ -29,29 +29,29 @@ struct GMWB5000Face: View {
                     CutCornerRect(cut: Self.bezelCut, bottomCut: Self.bezelBottomCut, radius: 45)
                         .stroke(CasioGMWB5000.steelEdge, lineWidth: 1.5)
                 )
-                .frame(width: 569, height: 526 + e)
+                .frame(width: 569, height: 526 + extra)
                 .offset(x: 18, y: 19)
             engraved("PROTECTION", size: 23.6, tracking: 6.3).place(centerX: 308.5, centerY: 59.25)
             // Polished bevel, black plate.
             RoundedRectangle(cornerRadius: 62, style: .continuous)
                 .fill(CasioGMWB5000.bevel)
-                .frame(width: 461, height: 395 + e)
+                .frame(width: 461, height: 395 + extra)
                 .offset(x: 76, y: 82)
             RoundedRectangle(cornerRadius: 58, style: .continuous)
                 .fill(CasioGMWB5000.plate)
-                .frame(width: 451, height: 383 + e)
+                .frame(width: 451, height: 383 + extra)
                 .offset(x: 81, y: 87)
             // Brick pattern inside the grey line.
             BrickPattern(brick: CGSize(width: 16, height: 4.6), pitch: CGSize(width: 18.8, height: 7.75))
                 .fill(CasioGMWB5000.brick)
-                .frame(width: 384, height: 317 + e)
+                .frame(width: 384, height: 317 + extra)
                 .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
                 .offset(x: 116, y: 121)
             RoundedRectangle(cornerRadius: 30, style: .continuous)
                 .stroke(CasioGMWB5000.frameLine, lineWidth: 3)
-                .frame(width: 384, height: 317 + e)
+                .frame(width: 384, height: 317 + extra)
                 .offset(x: 116, y: 121)
-            engraved("G-SHOCK", size: 34.6, tracking: 6.5).place(centerX: 305.75, centerY: 499 + e)
+            engraved("G-SHOCK", size: 34.6, tracking: 6.5).place(centerX: 305.75, centerY: 499 + extra)
         }
     }
 
@@ -96,16 +96,16 @@ struct GMWB5000Face: View {
     private func label(
         _ text: String, leading: CGFloat? = nil, trailing: CGFloat? = nil, centerY: CGFloat, tracking: CGFloat = 0.8
     ) -> some View {
-        let t = Text(text)
+        let printed = Text(text)
             .font(CasioGMWB5000.michroma(9.9))
             .tracking(tracking)
             .foregroundStyle(CasioGMWB5000.labelGrey)
             .emboldened(0.25)
         return Group {
             if let leading {
-                t.place(leading: leading, centerY: centerY, width: 200)
+                printed.place(leading: leading, centerY: centerY, width: 200)
             } else if let trailing {
-                t.place(trailing: trailing, centerY: centerY, width: 200)
+                printed.place(trailing: trailing, centerY: centerY, width: 200)
             }
         }
     }
@@ -114,14 +114,14 @@ struct GMWB5000Face: View {
     /// each with a dot by its button.
     private var sideLabels: some View {
         ZStack(alignment: .topLeading) {
-            vertical("ADJUST", centerX: 99.75, centerY: 233.75 + e / 4, angle: -90, tracking: 0.5)
-            dot(x: 98.5, y: 190 + e / 4)
-            vertical("MODE", centerX: 98.5, centerY: 330.5 + 3 * e / 4, angle: -90, tracking: 1.4)
-            dot(x: 98.5, y: 365 + 3 * e / 4)
-            vertical("SET [–]", centerX: 516.5, centerY: 227.75 + e / 4, angle: 90, tracking: 3.75)
-            dot(x: 516.5, y: 190 + e / 4)
-            vertical("SET [+]", centerX: 516, centerY: 335 + 3 * e / 4, angle: 90, tracking: 2.8)
-            dot(x: 516.5, y: 368 + 3 * e / 4)
+            vertical("ADJUST", centerX: 99.75, centerY: 233.75 + extra / 4, angle: -90, tracking: 0.5)
+            dot(x: 98.5, y: 190 + extra / 4)
+            vertical("MODE", centerX: 98.5, centerY: 330.5 + 3 * extra / 4, angle: -90, tracking: 1.4)
+            dot(x: 98.5, y: 365 + 3 * extra / 4)
+            vertical("SET [–]", centerX: 516.5, centerY: 227.75 + extra / 4, angle: 90, tracking: 3.75)
+            dot(x: 516.5, y: 190 + extra / 4)
+            vertical("SET [+]", centerX: 516, centerY: 335 + 3 * extra / 4, angle: 90, tracking: 2.8)
+            dot(x: 516.5, y: 368 + 3 * extra / 4)
         }
     }
 
@@ -171,9 +171,9 @@ struct GMWB5000Face: View {
         let parts = context.displayParts(blankDigit: style.digits.blankDigit)
         return ZStack(alignment: .topLeading) {
             LCDWindow(
-                frame: CGRect(x: 147, y: 172, width: 321, height: 215 + e / 2), frameRadius: 18,
+                frame: CGRect(x: 147, y: 172, width: 321, height: 215 + extra / 2), frameRadius: 18,
                 surround: CasioGMWB5000.surround, outline: CasioGMWB5000.surround, outlineWidth: 0,
-                glass: CGRect(x: 151, y: 176, width: 313, height: 207 + e / 2), glassRadius: 14,
+                glass: CGRect(x: 151, y: 176, width: 313, height: 207 + extra / 2), glassRadius: 14,
                 backlit: context.backlit, style: style)
             ZStack(alignment: .topLeading) {
                 indicator("PS", leading: 178, centerY: 197.75, tracking: 5.3)
@@ -206,7 +206,7 @@ struct GMWB5000Face: View {
                     context: context, glyph: 50, trailing: 450, baseline: 360.5, xScale: 0.93, style: style)
             }
             .lcdSegmentShadow(style)
-            .offset(y: e / 4)
+            .offset(y: extra / 4)
         }
     }
 
@@ -225,15 +225,18 @@ struct GMWB5000Face: View {
     /// Day first ("28. 6") unless the locale writes the month first (" 6-28"), like the watch's
     /// date-format setting.
     static func dateText(_ date: Date, calendar: Calendar, dayFirst: Bool) -> String {
-        let c = calendar.dateComponents([.day, .month], from: date)
-        let day = DisplayParts.twoCells(c.day ?? 1, blank: " "), month = DisplayParts.twoCells(c.month ?? 1, blank: " ")
+        let components = calendar.dateComponents([.day, .month], from: date)
+        let day = DisplayParts.twoCells(components.day ?? 1, blank: " "),
+            month = DisplayParts.twoCells(components.month ?? 1, blank: " ")
         return dayFirst ? day + "." + month : month + "-" + day
     }
 
     static var localeDayFirst: Bool {
-        let f = DateFormatter.dateFormat(fromTemplate: "dM", options: 0, locale: .current) ?? "d.M"
-        guard let d = f.firstIndex(of: "d"), let m = f.firstIndex(of: "M") else { return true }
-        return d < m
+        let format = DateFormatter.dateFormat(fromTemplate: "dM", options: 0, locale: .current) ?? "d.M"
+        guard let dayIndex = format.firstIndex(of: "d"), let monthIndex = format.firstIndex(of: "M") else {
+            return true
+        }
+        return dayIndex < monthIndex
     }
 }
 
@@ -254,18 +257,18 @@ private struct ShockResistBadge: View {
     }
 
     private struct Shield: Shape {
-        func path(in r: CGRect) -> Path {
-            let c = r.width * 0.12
-            var p = Path()
-            p.move(to: CGPoint(x: r.minX + c, y: r.minY))
-            p.addLine(to: CGPoint(x: r.maxX - c, y: r.minY))
-            p.addLine(to: CGPoint(x: r.maxX, y: r.minY + c))
-            p.addLine(to: CGPoint(x: r.maxX, y: r.minY + r.height * 0.62))
-            p.addLine(to: CGPoint(x: r.midX, y: r.maxY))
-            p.addLine(to: CGPoint(x: r.minX, y: r.minY + r.height * 0.62))
-            p.addLine(to: CGPoint(x: r.minX, y: r.minY + c))
-            p.closeSubpath()
-            return p
+        func path(in rect: CGRect) -> Path {
+            let corner = rect.width * 0.12
+            var path = Path()
+            path.move(to: CGPoint(x: rect.minX + corner, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX - corner, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + corner))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.62))
+            path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + rect.height * 0.62))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + corner))
+            path.closeSubpath()
+            return path
         }
     }
 }

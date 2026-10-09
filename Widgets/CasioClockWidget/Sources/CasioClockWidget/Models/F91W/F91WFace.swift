@@ -7,7 +7,7 @@ struct F91WFace: View {
     private var style: LCDStyle { CasioF91W.lcd }
     /// The case extension (see CasioF91W.caseExtension): the frame lines grow by it, the LCD
     /// window by half of it, and the groups below move down to share the space evenly.
-    private var e: CGFloat { CasioF91W.caseExtension }
+    private var extra: CGFloat { CasioF91W.caseExtension }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -23,20 +23,18 @@ struct F91WFace: View {
         ZStack(alignment: .topLeading) {
             // Thin outer blue line, wide blue band, white line framing the printed face; all three
             // are octagons with the watch's cut corners.
-            frameLine(x: 23.5, y: 31.5, width: 548.5, height: 472 + e, lineWidth: 3, radius: 24, color: CasioF91W.blue)
-            frameLine(x: 36, y: 45.5, width: 520.5, height: 445 + e, lineWidth: 10.5, radius: 22, color: CasioF91W.blue)
-            frameLine(x: 50, y: 60, width: 492, height: 417 + e, lineWidth: 2, radius: 18, color: CasioF91W.silver)
+            frameLine(CGRect(x: 23.5, y: 31.5, width: 548.5, height: 472 + extra), 3, radius: 24, CasioF91W.blue)
+            frameLine(CGRect(x: 36, y: 45.5, width: 520.5, height: 445 + extra), 10.5, radius: 22, CasioF91W.blue)
+            frameLine(CGRect(x: 50, y: 60, width: 492, height: 417 + extra), 2, radius: 18, CasioF91W.silver)
         }
     }
 
-    /// A frame line stroked along the given centerline rectangle.
-    private func frameLine(
-        x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat, lineWidth: CGFloat, radius: CGFloat, color: Color
-    ) -> some View {
+    /// A frame line `lineWidth` wide stroked along the given centerline rectangle.
+    private func frameLine(_ centerline: CGRect, _ lineWidth: CGFloat, radius: CGFloat, _ color: Color) -> some View {
         CutCornerRect(cut: CGSize(width: 40, height: 64), radius: radius)
             .stroke(color, lineWidth: lineWidth)
-            .frame(width: width, height: height)
-            .offset(x: x, y: y)
+            .frame(width: centerline.width, height: centerline.height)
+            .offset(x: centerline.minX, y: centerline.minY)
     }
 
     // MARK: Printed text and bars
@@ -81,7 +79,7 @@ struct F91WFace: View {
                 .place(trailing: 504.5, centerY: 154.75, width: 200)
 
         }
-        .overlay(alignment: .topLeading) { bottomPrint.offset(y: e) }
+        .overlay(alignment: .topLeading) { bottomPrint.offset(y: extra) }
     }
 
     private var bottomPrint: some View {
@@ -149,11 +147,12 @@ struct F91WFace: View {
     // MARK: LCD
 
     private var lcd: some View {
-        let glass = CGRect(x: 104, y: 191.5 + e / 4, width: 389.5, height: 184.5 + e / 2)
+        let glass = CGRect(x: 104, y: 191.5 + extra / 4, width: 389.5, height: 184.5 + extra / 2)
         return ZStack(alignment: .topLeading) {
             // Silver outline, dark surround, grey-green glass, and the module 593 display.
             LCDWindow(
-                frame: CGRect(x: 89, y: 174 + e / 4, width: 414.5, height: 214 + e / 2), outline: CasioF91W.silver,
+                frame: CGRect(x: 89, y: 174 + extra / 4, width: 414.5, height: 214 + extra / 2),
+                outline: CasioF91W.silver,
                 glass: glass, backlit: context.backlit, style: style)
             Module593Display.placed(in: glass, context: context, style: style)
         }

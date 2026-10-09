@@ -5,8 +5,8 @@ extension View {
     /// bolder than any weight of the stand-in font (Michroma has a single weight).
     func emboldened(_ amount: CGFloat) -> some View {
         ZStack {
-            ForEach(0..<8, id: \.self) { i in
-                let angle = Double(i) * .pi / 4
+            ForEach(0..<8, id: \.self) { step in
+                let angle = Double(step) * .pi / 4
                 self.offset(x: amount * cos(angle), y: amount * sin(angle))
             }
             self

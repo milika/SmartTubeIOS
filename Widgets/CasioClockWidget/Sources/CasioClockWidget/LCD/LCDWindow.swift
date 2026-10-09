@@ -38,12 +38,12 @@ struct LCDWindow: View {
             .overlay {
                 // The frame's shadow on the glass: a blurred edge, shifted down-right so the top
                 // and left edges are darkest, kept inside the glass.
-                let w = style.shadow.edgeWidth
+                let edge = style.shadow.edgeWidth
                 if style.shadow.edgeOpacity > 0 {
                     RoundedRectangle(cornerRadius: glassRadius, style: .continuous)
-                        .stroke(Color.black.opacity(style.shadow.edgeOpacity), lineWidth: w)
-                        .offset(x: w / 3, y: w / 3)
-                        .blur(radius: w / 2)
+                        .stroke(Color.black.opacity(style.shadow.edgeOpacity), lineWidth: edge)
+                        .offset(x: edge / 3, y: edge / 3)
+                        .blur(radius: edge / 2)
                         .mask(RoundedRectangle(cornerRadius: glassRadius, style: .continuous))
                 }
             }

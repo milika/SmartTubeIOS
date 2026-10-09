@@ -27,18 +27,18 @@ struct DisplayParts: Equatable {
     static func make(
         for date: Date, calendar: Calendar, twelveHour: Bool, blankDigit: String = figureSpace
     ) -> DisplayParts {
-        let c = calendar.dateComponents([.hour, .minute, .weekday, .day], from: date)
-        let hour24 = c.hour ?? 0
+        let components = calendar.dateComponents([.hour, .minute, .weekday, .day], from: date)
+        let hour24 = components.hour ?? 0
         let hour = twelveHour ? (hour24 % 12 == 0 ? 12 : hour24 % 12) : hour24
         // Like the watch, a 12-hour time has no leading zero ("6:04", not "06:04").
         let hourText = hour < 10 ? (twelveHour ? blankDigit : "0") + "\(hour)" : "\(hour)"
-        let minute = c.minute ?? 0
-        let dayOfMonth = c.day ?? 1
+        let minute = components.minute ?? 0
+        let dayOfMonth = components.day ?? 1
         return DisplayParts(
             hoursMinutes: hourText + ":" + (minute < 10 ? "0" : "") + "\(minute)",
             isPM: twelveHour && hour24 >= 12,
             marker: twelveHour ? (hour24 >= 12 ? "PM" : nil) : "24H",
-            weekday: weekdays[((c.weekday ?? 1) - 1) % 7],
+            weekday: weekdays[((components.weekday ?? 1) - 1) % 7],
             day: twoCells(dayOfMonth, blank: blankDigit)
         )
     }

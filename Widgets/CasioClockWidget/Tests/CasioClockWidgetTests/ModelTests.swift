@@ -32,13 +32,13 @@ struct ModelTests {
     }
 
     @Test("DW-5000C date: month first, each number right-aligned in two digits")
-    func dw5000cDate() {
+    func dw5000cDate() throws {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "UTC")!
-        let d = cal.date(from: DateComponents(year: 2026, month: 11, day: 4))!
-        #expect(DW5000CFace.dateText(d, calendar: cal, blank: "!") == "11-!4")
-        let d2 = cal.date(from: DateComponents(year: 2026, month: 6, day: 28))!
-        #expect(DW5000CFace.dateText(d2, calendar: cal, blank: "!") == "!6-28")
+        cal.timeZone = .gmt
+        let date = try #require(cal.date(from: DateComponents(year: 2026, month: 11, day: 4)))
+        #expect(DW5000CFace.dateText(date, calendar: cal, blank: "!") == "11-!4")
+        let date2 = try #require(cal.date(from: DateComponents(year: 2026, month: 6, day: 28)))
+        #expect(DW5000CFace.dateText(date2, calendar: cal, blank: "!") == "!6-28")
     }
 
     @Test("complication kinds are unique and differ from the iPhone kinds")

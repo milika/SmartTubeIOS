@@ -53,9 +53,9 @@ struct Module593Display: View {
     )
         -> some View
     {
-        let s = glass.width / Self.glass.width
+        let scale = glass.width / Self.glass.width
         return Module593Display(context: context, style: style)
-            .scaleEffect(s, anchor: .topLeading)
-            .offset(x: glass.minX, y: glass.minY + (glass.height - Self.glass.height * s) / 2 + shift)
+            .scaleEffect(scale, anchor: .topLeading)
+            .offset(x: glass.minX, y: glass.minY + (glass.height - Self.glass.height * scale) / 2 + shift)
     }
 }

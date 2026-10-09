@@ -7,8 +7,8 @@ import WidgetKit
 /// Internal: each model exposes a public wrapper (see CasioF91WComplication).
 struct CasioComplicationWidget<Model: CasioComplicationModel>: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: Model.complicationKind, provider: CasioClockProvider(model: Model.complicationKind)) {
-            entry in
+        let provider = CasioClockProvider(model: Model.complicationKind)
+        return StaticConfiguration(kind: Model.complicationKind, provider: provider) { entry in
             Model.rectangularComplication(CasioFaceContext(date: entry.date))
                 .containerBackground(for: .widget) { Color.clear }
         }

@@ -4,7 +4,7 @@ import SwiftUI
 /// `visible` part of it (default: all) to fit the space it is given, centred.
 struct FaceCanvas<Content: View>: View {
     let size: CGSize
-    var visible: CGRect? = nil
+    var visible: CGRect?
     @ViewBuilder let content: () -> Content
 
     var body: some View {

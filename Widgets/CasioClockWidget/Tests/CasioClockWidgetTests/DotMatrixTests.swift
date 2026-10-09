@@ -17,13 +17,13 @@ struct DotMatrixTests {
     }
 
     @Test("G-Shock date: day first ('28. 6') or month first (' 6-28') like the locale")
-    func dateText() {
+    func dateText() throws {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "UTC")!
-        let d = cal.date(from: DateComponents(year: 2026, month: 6, day: 28))!
-        #expect(GMWB5000Face.dateText(d, calendar: cal, dayFirst: true) == "28. 6")
-        #expect(GMWB5000Face.dateText(d, calendar: cal, dayFirst: false) == " 6-28")
-        let d2 = cal.date(from: DateComponents(year: 2026, month: 11, day: 3))!
-        #expect(GMWB5000Face.dateText(d2, calendar: cal, dayFirst: true) == " 3.11")
+        cal.timeZone = .gmt
+        let date = try #require(cal.date(from: DateComponents(year: 2026, month: 6, day: 28)))
+        #expect(GMWB5000Face.dateText(date, calendar: cal, dayFirst: true) == "28. 6")
+        #expect(GMWB5000Face.dateText(date, calendar: cal, dayFirst: false) == " 6-28")
+        let date2 = try #require(cal.date(from: DateComponents(year: 2026, month: 11, day: 3)))
+        #expect(GMWB5000Face.dateText(date2, calendar: cal, dayFirst: true) == " 3.11")
     }
 }

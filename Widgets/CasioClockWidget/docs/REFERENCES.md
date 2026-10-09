@@ -22,6 +22,7 @@ its reference again (`tools/casio_measure.py canvas …`, see [ADDING-A-MODEL.md
 | G-Shock DW-5000C | `DW-5000.jpg` | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:DW-5000.jpg), Stollenbaeck, CC BY-SA 4.0 | canvas = image scaled to 960 px − (170, 240) |
 | W-59 | `Casio W-59 digital watch.jpg` | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Casio_W-59_digital_watch.jpg), Ricce, public domain | canvas = (image − 120) / 2 |
 | CA-53W | `Casio CA-53W, 1.jpg` | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Casio_CA-53W,_1.jpg), Morn, CC BY-SA 4.0 | levelled by 0.8°, canvas = image scaled to 960 px − (160, 290) |
+| W-86 | `Casio W-86 digital watch (front closeup minor retouch).jpg` | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Casio_W-86_digital_watch_(front_closeup_minor_retouch).jpg), Multicherry, CC BY-SA 4.0 (light colour from the same author's backlight photo) | image px = (435, 390) + 1.5 × canvas, before the case extension |
 | A168W | Casio A168WA-1W product image (1000 px), from bomar.rs | supplied by the owner; Casio's image, measured only | canvas = image − (230, 250) |
 | A168W (colours) | photo of a real A168WA-1 (1100 px) | supplied by the owner; colours only (the product render's are off) | — |
 | W-738H | product image, front (1200 px) | supplied by the owner; measured only | canvas = image − (280, 180) |
@@ -68,6 +69,7 @@ at hand, the display is named after the watch.
 | `W738HDisplay` | not checked | W-738H | — |
 | `W800HDisplay` | not checked | W-800H | — |
 | `GWB5600Display` | not checked | GW-B5600 | — |
+| `W86Display` | not checked | W-86 | — |
 
 ## Finding new references
 

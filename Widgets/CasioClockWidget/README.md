@@ -19,6 +19,7 @@ only resources are free fonts.
 | Casio W-800H | `CasioW800H` | W-800H display (year, SNZ/ALM/SIG) | bright mint | navy (W-800H-2AV) |
 | Casio W-738H | `CasioW738H` | W-738H display | segments glow | inverted (negative) display |
 | Casio CA-53W | `CasioCA53W` | module 3208 | bright mint | calculator watch; the real one has no light |
+| Casio W-86 | `CasioW86` | W-86 display | ice-blue EL | |
 | G-Shock DW-5000C | `CasioDW5000C` | module 240 | warm bulb | the first G-Shock (1983) |
 | G-Shock DW-5600E | `CasioDW5600E` | module 3229 | blue-green EL | the widget leaves the PROTECTION / G-SHOCK bezel out |
 | G-Shock GW-B5600 | `CasioGWB5600` | GW-B5600 display | white LED | Midnight Green (GW-B5600MG), face only; the camouflage is a stand-in |

@@ -39,9 +39,8 @@ enum CasioA158W: CasioModel {
     static let maroon = Color(red: 0.36, green: 0.12, blue: 0.14)
     static let marker = Color(red: 0.55, green: 0.12, blue: 0.14)
 
-    /// The same LCD module as the F-91W.
+    /// The same LCD module (593) as the F-91W: same glass, ink and layout (Module593Display).
     static let lcd = LCDStyle()
-    static let digitSqueeze: CGFloat = 0.9
 
     static func michroma(_ size: CGFloat) -> Font { CaseFont.custom("Michroma-Regular", size) }
     static func saira(_ size: CGFloat) -> Font { CaseFont.custom("Saira-Medium", size) }

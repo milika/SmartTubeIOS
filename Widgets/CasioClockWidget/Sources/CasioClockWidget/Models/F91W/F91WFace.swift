@@ -154,42 +154,13 @@ struct F91WFace: View {
     // MARK: LCD
 
     private var lcd: some View {
-        let parts = DisplayParts.make(
-            for: date, calendar: calendar, twelveHour: uses12HourClock, blankDigit: style.digits.blankDigit)
+        let glass = CGRect(x: 104, y: 191.5 + e / 4, width: 389.5, height: 184.5 + e / 2)
         return ZStack(alignment: .topLeading) {
-            // Silver outline, dark surround, grey-green glass.
+            // Silver outline, dark surround, grey-green glass, and the module 593 display.
             LCDWindow(
                 frame: CGRect(x: 89, y: 174 + e / 4, width: 414.5, height: 214 + e / 2), outline: CasioF91W.silver,
-                glass: CGRect(x: 104, y: 191.5 + e / 4, width: 389.5, height: 184.5 + e / 2), backlit: backlit, style: style)
-            lcdContent(parts).offset(y: e / 2)
-        }
-    }
-
-    @ViewBuilder
-    private func lcdContent(_ parts: DisplayParts) -> some View {
-        ZStack(alignment: .topLeading) {
-
-            // PM in the afternoon on a 12-hour clock; 24H on a 24-hour clock, like the watch.
-            if let marker = parts.marker {
-                Text(marker)
-                    .font(.system(size: 29.3, weight: .bold))
-                    .foregroundStyle(style.ink)
-                    .place(centerX: 141, centerY: 243.5)
-            }
-            // Day of week and date share the top row.
-            LCDText(
-                text: parts.weekday, font: style.letters, glyph: 43, edge: .leading(234), baseline: 247, tracking: 7.5,
-                style: style)
-            LCDText(
-                text: parts.day, font: style.digits, glyph: 47.5, edge: .trailing(484.7), baseline: 251.5, width: 120,
-                tracking: 4.5, style: style)
-            // H:MM; the watch's digits are narrower than DSEG's.
-            LCDText(
-                text: parts.hoursMinutes, font: style.digits, glyph: 88.5, edge: .trailing(383), baseline: 357.5,
-                width: 320, xScale: CasioF91W.digitSqueeze, style: style)
-            LiveSeconds(
-                date: date, calendar: calendar, previewSeconds: previewSeconds, glyph: 67, trailing: 486,
-                baseline: 357.5, xScale: CasioF91W.digitSqueeze, style: style)
+                glass: glass, backlit: backlit, style: style)
+            Module593Display.placed(in: glass, context: context, style: style)
         }
     }
 }

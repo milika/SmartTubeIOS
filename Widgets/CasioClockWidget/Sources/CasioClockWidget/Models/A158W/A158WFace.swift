@@ -106,39 +106,16 @@ struct A158WFace: View {
         }
     }
 
-    // MARK: LCD (the F-91W's module)
+    // MARK: LCD (module 593, like the F-91W)
 
     private var lcd: some View {
-        let parts = DisplayParts.make(
-            for: context.date, calendar: context.calendar, twelveHour: context.uses12HourClock,
-            blankDigit: style.digits.blankDigit)
+        let glass = CGRect(x: 117, y: 177, width: 370.5, height: 175.5 + e / 2)
         return ZStack(alignment: .topLeading) {
             LCDWindow(
                 frame: CGRect(x: 105, y: 168, width: 390, height: 195 + e / 2), frameRadius: 14,
                 outline: CasioA158W.line, outlineWidth: 1.5,
-                glass: CGRect(x: 117, y: 177, width: 370.5, height: 175.5 + e / 2), glassRadius: 6,
-                backlit: context.backlit, style: style)
-            ZStack(alignment: .topLeading) {
-                if let marker = parts.marker {
-                    Text(marker)
-                        .font(.system(size: 21, weight: .medium))
-                        .foregroundStyle(style.ink)
-                        .place(centerX: 200, centerY: 237)
-                }
-                LCDText(
-                    text: parts.weekday, font: style.letters, glyph: 37.5, edge: .leading(244.5), baseline: 237.5,
-                    tracking: 9.5, style: style)
-                LCDText(
-                    text: parts.day, font: style.digits, glyph: 40.5, edge: .trailing(473), baseline: 239.5,
-                    width: 120, tracking: 4, style: style)
-                LCDText(
-                    text: parts.hoursMinutes, font: style.digits, glyph: 83.4, edge: .trailing(381), baseline: 344.5,
-                    width: 320, xScale: CasioA158W.digitSqueeze, style: style)
-                LiveSeconds(
-                    date: context.date, calendar: context.calendar, previewSeconds: context.previewSeconds,
-                    glyph: 61, trailing: 472.5, baseline: 341.5, xScale: 0.84, style: style)
-            }
-            .offset(y: e / 4)
+                glass: glass, glassRadius: 6, backlit: context.backlit, style: style)
+            Module593Display.placed(in: glass, context: context, style: style)
         }
     }
 }

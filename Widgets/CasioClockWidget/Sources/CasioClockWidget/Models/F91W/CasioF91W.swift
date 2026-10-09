@@ -49,7 +49,7 @@ enum CasioF91W: CasioComplicationModel {
     /// The LCD: DSEG Bold Italic on grey-green glass, no unlit segments (LCDStyle's defaults).
     static let lcd = LCDStyle()
     /// Width of the big digits relative to DSEG's (measured from the photo).
-    static let digitSqueeze: CGFloat = 0.9
+    static let digitSqueeze = Module593Display.digitSqueeze
 
     // Case print fonts (Resources/).
     static func michroma(_ size: CGFloat) -> Font { CaseFont.custom("Michroma-Regular", size) }

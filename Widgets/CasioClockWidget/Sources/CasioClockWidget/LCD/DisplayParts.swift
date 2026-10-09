@@ -18,6 +18,12 @@ struct DisplayParts: Equatable {
         DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: .current)?.contains("a") ?? true
     }
 
+    /// A day or month right-aligned in two digit cells, `blank` filling the empty one ("\u{2007}9",
+    /// "26"), as the LCDs show dates.
+    static func twoCells(_ number: Int, blank: String) -> String {
+        number < 10 ? blank + "\(number)" : "\(number)"
+    }
+
     static func make(
         for date: Date, calendar: Calendar, twelveHour: Bool, blankDigit: String = figureSpace
     ) -> DisplayParts {
@@ -33,7 +39,7 @@ struct DisplayParts: Equatable {
             isPM: twelveHour && hour24 >= 12,
             marker: twelveHour ? (hour24 >= 12 ? "PM" : nil) : "24H",
             weekday: weekdays[((c.weekday ?? 1) - 1) % 7],
-            day: (dayOfMonth < 10 ? blankDigit : "") + "\(dayOfMonth)"
+            day: twoCells(dayOfMonth, blank: blankDigit)
         )
     }
 }

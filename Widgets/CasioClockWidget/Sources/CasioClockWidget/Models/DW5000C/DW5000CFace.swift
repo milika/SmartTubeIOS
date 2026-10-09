@@ -169,8 +169,7 @@ struct DW5000CFace: View {
     /// Month first, as on the DW-5000C ("11- 4", " 6-28"), each number right-aligned in two digits.
     static func dateText(_ date: Date, calendar: Calendar, blank: String) -> String {
         let c = calendar.dateComponents([.day, .month], from: date)
-        func two(_ n: Int) -> String { n < 10 ? blank + "\(n)" : "\(n)" }
-        return two(c.month ?? 1) + "-" + two(c.day ?? 1)
+        return DisplayParts.twoCells(c.month ?? 1, blank: blank) + "-" + DisplayParts.twoCells(c.day ?? 1, blank: blank)
     }
 }
 

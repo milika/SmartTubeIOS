@@ -223,8 +223,7 @@ struct GMWB5000Face: View {
     /// date-format setting.
     static func dateText(_ date: Date, calendar: Calendar, dayFirst: Bool) -> String {
         let c = calendar.dateComponents([.day, .month], from: date)
-        func two(_ n: Int) -> String { n < 10 ? " \(n)" : "\(n)" }
-        let day = two(c.day ?? 1), month = two(c.month ?? 1)
+        let day = DisplayParts.twoCells(c.day ?? 1, blank: " "), month = DisplayParts.twoCells(c.month ?? 1, blank: " ")
         return dayFirst ? day + "." + month : month + "-" + day
     }
 

@@ -110,8 +110,10 @@ Sources/CasioClockWidget/
    `Models/<Name>/Casio<Name>.swift`, an `enum` implementing `CasioModel` (kind, gallery name
    and description, canvas, fonts, case background, `face(_:)`, optionally `widgetArea`: the part
    of the canvas the square widget shows), and its face view drawn with
-   `place(...)`, `CaseFont`, the shapes and the LCD parts (`LCDWindow`, `LCDText`,
-   `LiveSeconds`, `DisplayParts`, its own `LCDStyle`). Add its fonts and licences to `Resources/`.
+   `place(...)`, the case-font helpers (`Casio<Name>.michroma(size)`, …), `InkText`, the shapes
+   and the LCD parts (`LCDWindow`, `LCDText`, `LiveHoursMinutes`, `LiveSeconds`,
+   `context.displayParts(blankDigit:)`, its own `LCDStyle`). A new font goes into `Resources/`
+   with its licence, and its PostScript name into `CaseFont` (the only place names are spelled).
 2. Add a public wrapper next to it, like `Models/F91W/CasioF91WWidget.swift`:
 
    ```swift

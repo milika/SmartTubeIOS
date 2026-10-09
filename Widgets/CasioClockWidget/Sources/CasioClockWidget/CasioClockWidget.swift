@@ -11,8 +11,8 @@ import WidgetKit
 //   then WidgetKit asks for the next hour), so the display changes exactly on the minute.
 // - Widgets can't redraw every second, so the seconds are WidgetKit's own timer text
 //   counting up from the start of the minute, clipped to its last two digits ("0:23" shows
-//   as "23"). All LCD characters use the bundled F91WSegment font (Tools/make_segment_font.py)
-//   so the live seconds match the rest of the display.
+//   as "23"). All LCD characters use the bundled DSEG fonts so the live seconds match the
+//   rest of the display.
 
 public struct CasioClockWidget: Widget {
     public static let kind = "CasioClockWidget"
@@ -57,8 +57,8 @@ struct CasioClockProvider: TimelineProvider {
 
 // MARK: - LCD fonts
 //
-// DSEG7 / DSEG14 Classic by Keshikan (SIL OFL 1.1, Resources/DSEG-LICENSE.txt) for digits and
-// letters; F91WSegment is the earlier hand-drawn font (Tools/make_segment_font.py).
+// DSEG7 / DSEG14 Classic Bold Italic by Keshikan (SIL OFL 1.1, Resources/DSEG-LICENSE.txt)
+// for digits and letters.
 
 struct LCDFont: Equatable {
     let postScriptName: String
@@ -83,9 +83,6 @@ struct LCDFont: Equatable {
             postScriptName: "DSEG14Classic-\(style)", glyphToEm: 1, baselineFromTop: 1, digitAdvance: 0.816,
             allSegments: "~", blankDigit: "!")
     }
-    static let handDrawn = LCDFont(
-        postScriptName: "F91WSegment-Regular", glyphToEm: 0.7, baselineFromTop: 0.8, digitAdvance: 0.5,
-        allSegments: nil, blankDigit: "\u{2007}")
 
     private static let registered: Bool = {
         for url in Bundle.module.urls(forResourcesWithExtension: "ttf", subdirectory: nil) ?? [] {
@@ -108,10 +105,11 @@ struct LCDFont: Equatable {
     }
 }
 
-/// Look options for the face (prototyping; the widget uses `.standard`).
+/// Look options for the face; the widget uses `.standard` (chosen from prototypes: DSEG Bold
+/// Italic with unlit segments on grey-green glass).
 struct CasioFaceStyle {
-    var digits: LCDFont = .dseg7("Italic")
-    var letters: LCDFont = .dseg14("Italic")
+    var digits: LCDFont = .dseg7("BoldItalic")
+    var letters: LCDFont = .dseg14("BoldItalic")
     /// Opacity of the unlit segments behind the digits; 0 = off.
     var unlitOpacity: Double = 0.08
     var glass: Color = Color(red: 0.77, green: 0.79, blue: 0.75)
@@ -326,7 +324,7 @@ struct CasioWatchFace: View {
             if style.unlitOpacity > 0, let lit = font.allLit("00") {
                 Text(lit).font(font.font(height: glyph))
                     .foregroundStyle(style.ink.opacity(style.unlitOpacity))
-                    .place(trailing: 476, baseline: 352, glyphHeight: glyph, font: font, width: digitAdvance * 2.2)
+                    .place(trailing: 476, baseline: 352, glyphHeight: glyph, font: font, width: digitAdvance * 2.02)
             }
             live
                 .font(font.font(height: glyph))
@@ -334,9 +332,9 @@ struct CasioWatchFace: View {
                 .multilineTextAlignment(.trailing)
                 .lineLimit(1)
                 .frame(width: digitAdvance * 6, alignment: .trailing)
-                .frame(width: digitAdvance * 2.2, alignment: .trailing)
+                .frame(width: digitAdvance * 2.02, alignment: .trailing)
                 .clipped()
-                .place(trailing: 476, baseline: 352, glyphHeight: glyph, font: font, width: digitAdvance * 2.2)
+                .place(trailing: 476, baseline: 352, glyphHeight: glyph, font: font, width: digitAdvance * 2.02)
         }
     }
 

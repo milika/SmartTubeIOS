@@ -50,7 +50,9 @@ struct CasioClockWidgetTests {
 
     @Test("the bundled LCD font is found and registers")
     func fontIsBundled() {
-        #expect(Bundle.module.url(forResource: "F91WSegment", withExtension: "ttf") != nil)
+        for name in ["DSEG7Classic-BoldItalic", "DSEG14Classic-BoldItalic"] {
+            #expect(Bundle.module.url(forResource: name, withExtension: "ttf") != nil)
+        }
     }
 
     @Test("timeline: one entry per minute, starting at the current minute")

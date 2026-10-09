@@ -3,8 +3,8 @@
 A small Home Screen widget: a live digital clock drawn as a Casio F-91W
 (black resin case, blue bezel line, gold labels, grey-green LCD with seven-segment
 digits, day/date, PM marker, running seconds). Self-contained Swift package — no
-dependencies on any app code. Its only resource is the generated LCD font
-`Resources/F91WSegment.ttf` (built by `Tools/make_segment_font.py`, needs `pip install fonttools`).
+dependencies on any app code. Its only resources are the LCD fonts DSEG7 / DSEG14 Classic Bold
+Italic by Keshikan (SIL Open Font License 1.1, `Resources/DSEG-LICENSE.txt`; keshikan.net).
 
 The layout is measured from a front-on photo of a real F-91W (Wikimedia Commons,
 `Casio_F-91W_5051.jpg`). Printed text on the watch is Eurostile Extended / Microgramma

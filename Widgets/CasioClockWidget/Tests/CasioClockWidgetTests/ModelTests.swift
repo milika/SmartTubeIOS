@@ -57,10 +57,13 @@ struct ModelTests {
         #expect(CasioF91W.widgetArea.width == CasioF91W.widgetArea.height)
     }
 
-    @Test("the bundled font files are exactly the fonts the package draws with, and they register")
+    @Test(
+        "the bundled font files are exactly the fonts the package draws with (case fonts and every model's LCD fonts), and they register"
+    )
     func fonts() throws {
         BundledFonts.register()
-        let used = Set(CaseFont.all + [LCDStyle().digits.postScriptName, LCDStyle().letters.postScriptName])
+        let lcdFonts = CasioModels.all.flatMap { [$0.lcd.digits.postScriptName, $0.lcd.letters.postScriptName] }
+        let used = Set(CaseFont.all + lcdFonts)
         var bundled = Set<String>()
         for url in BundledFonts.fileURLs {
             let descriptors = try #require(

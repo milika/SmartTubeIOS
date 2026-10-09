@@ -17,6 +17,8 @@ protocol CasioModel {
     static var widgetArea: CGRect { get }
     /// Fills the widget behind the face (the case colour).
     static var caseBackground: CaseBackground { get }
+    /// The LCD's look: segment fonts, glass, ink, light.
+    static var lcd: LCDStyle { get }
     @ViewBuilder static func face(_ context: CasioFaceContext) -> Face
 }
 

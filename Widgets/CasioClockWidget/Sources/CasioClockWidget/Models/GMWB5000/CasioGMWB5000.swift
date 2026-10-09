@@ -10,18 +10,17 @@ enum CasioGMWB5000: CasioModel {
     static let displayName = "G-Shock GMW-B5000"
     static let summary = "A live digital clock in the style of the steel G-Shock GMW-B5000. Tap it for the light."
 
-    /// The face is wider than tall; the case is extended to fill the square widget (elements keep
-    /// their measured size; the LCD window grows by half and the groups spread apart).
-    static let caseExtension: CGFloat = 71
+    /// The widget shows the black face inside the steel bezel (owner: no big bezel). The face is
+    /// wider than tall, so the case is extended until it is square (elements keep their measured
+    /// size; the LCD window grows by half and the groups spread apart).
+    static let caseExtension: CGFloat = 68
     static let canvas = CGSize(width: 630, height: 560 + caseExtension)
-    /// The square around the bezel.
-    static let widgetArea = CGRect(x: 13, y: 10, width: 607, height: 607)
+    /// The black face plate (its rounded corners match the widget's).
+    static let widgetArea = CGRect(x: 81, y: 87, width: 451, height: 451)
     static let fonts = ["DSEG7Classic-BoldItalic", "DSEG14Classic-BoldItalic", "Michroma-Regular", "Saira-Medium"]
 
-    /// The polished steel case around the bezel.
-    static let caseBackground = LinearGradient(
-        colors: [Color(white: 0.86), Color(white: 0.58), Color(white: 0.80), Color(white: 0.52), Color(white: 0.74)],
-        startPoint: .topLeading, endPoint: .bottomTrailing)
+    /// Behind the face: the plate's black.
+    static let caseBackground = Color(white: 0.09)
 
     static func face(_ context: CasioFaceContext) -> some View { GMWB5000Face(context: context) }
 

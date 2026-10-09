@@ -7,6 +7,9 @@ Small Home Screen widgets: live digital clocks drawn as Casio watches, one widge
   complication.
 - **A158W** (`CasioA158WWidget`): the same LCD module in a chrome case with a black face, a
   steel-blue octagon line and a WATER RESIST band.
+- **G-Shock GMW-B5000** (`CasioGMWB5000Widget`): brushed-steel octagon bezel (PROTECTION /
+  G-SHOCK), brick-pattern face, blue-grey LCD with PS / RCVD / DST marks and a dot-matrix date
+  (drawn as shapes; day or month first, following the device's date order).
 
 Self-contained Swift package — no
 dependencies on any app code. Its resources are fonts, all under the SIL Open Font License 1.1
@@ -26,6 +29,7 @@ Each face is laid out on a canvas measured from a front-on photo of the real wat
 are wider than tall, so their case is extended to fill the square widget (every element keeps
 its measured size; the groups spread apart). F-91W: Wikimedia Commons `Casio_F-91W_5051.jpg`;
 typefaces per Fonts In Use (fontsinuse.com/uses/74290). A158W: Wikimedia Commons `A158W.jpg`.
+GMW-B5000: Wikimedia Commons `Wikipedia-Casio-G-Shock-Edelstahl-800.jpg`.
 
 ## Add to a project
 
@@ -41,6 +45,7 @@ typefaces per Fonts In Use (fontsinuse.com/uses/74290). A158W: Wikimedia Commons
        var body: some Widget {
            CasioF91WWidget()
            CasioA158WWidget()
+           CasioGMWB5000Widget()
        }
    }
    ```
@@ -78,10 +83,12 @@ Sources/CasioClockWidget/
   CasioModel.swift   CasioModel protocol, CasioFaceContext, CasioModels.all
   Widget/            generic widget + watch complication widget, timeline provider, light intent
   LCD/               DSEG fonts, LCDStyle, LCDText, LiveSeconds, LCDWindow, DisplayParts,
-                     Module593Display (the shared display of module 593: F-91W, A158W, A168W…)
+                     Module593Display (the shared display of module 593: F-91W, A158W, A168W…),
+                     DotMatrixText (5×7 dot-matrix characters, drawn as shapes)
   Kit/               FaceCanvas + place(...) modifiers, CaseFont, BundledFonts, shapes, text effects
   Models/F91W/       the F-91W: model (palette, fonts, LCD style), face, complication, public widgets
   Models/A158W/      the A158W: model, face, public widget
+  Models/GMWB5000/   the G-Shock GMW-B5000: model, face, public widget
   Resources/         fonts and their licences (all models)
 ```
 

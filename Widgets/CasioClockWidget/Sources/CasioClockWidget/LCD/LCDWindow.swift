@@ -5,6 +5,8 @@ struct LCDWindow: View {
     /// Outer rectangle of the dark surround and its outline.
     let frame: CGRect
     var frameRadius: CGFloat = 20
+    /// Colour of the surround between the outline and the glass.
+    var surround: Color = .black
     var outline: Color = .white
     var outlineWidth: CGFloat = 1.75
     let glass: CGRect
@@ -14,7 +16,7 @@ struct LCDWindow: View {
 
     var body: some View {
         RoundedRectangle(cornerRadius: frameRadius, style: .continuous)
-            .fill(Color.black)
+            .fill(surround)
             .overlay(
                 RoundedRectangle(cornerRadius: frameRadius, style: .continuous)
                     .strokeBorder(outline, lineWidth: outlineWidth)

@@ -143,6 +143,7 @@ struct SmartTubeDownloadWidgetBundle: WidgetBundle {
         // and the package dependency to drop it.
         CasioF91WWidget()
         CasioA158WWidget()
+        CasioGMWB5000Widget()
         #if ENABLE_DOWNLOADS
         DownloadLiveActivityWidget()
         #endif

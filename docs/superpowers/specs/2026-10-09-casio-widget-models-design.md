@@ -21,7 +21,9 @@ new models; any visual change to the F-91W.
   survive the update.
 - **The tap light is per model:** tapping one model lights only widgets of that model.
 - **Models are internal to the package.** Public API: one widget type per model
-  (`CasioF91WWidget`) and the backlight intent. Opening the kit to other packages can come later.
+  (`CasioF91WWidget`, a small wrapper around the internal generic `CasioWatchWidget<Model>`, so
+  the protocol can stay internal) and the backlight intent. Opening the kit to other packages
+  can come later.
 - **No UIKit/AppKit in the kit or models**, so the watchOS part can reuse them. The watchOS
   platform itself is added with the watch work.
 
@@ -31,7 +33,7 @@ new models; any visual change to the F-91W.
 Sources/CasioClockWidget/
   CasioModel.swift          protocol CasioModel + CasioFaceContext
   Widget/
-    CasioWatchWidget.swift   generic Widget<Model>; public typealias per model
+    CasioWatchWidget.swift   internal generic Widget<Model>
     CasioClockProvider.swift generic timeline provider (minute entries, short lit timeline)
     CasioBacklightIntent.swift  intent with a `model` parameter; per-model defaults key
   LCD/
@@ -39,15 +41,18 @@ Sources/CasioClockWidget/
     LCDStyle.swift           glass, ink, unlit opacity, digit/letter fonts, backlight colour
     LCDText.swift            text with faint unlit segments, tracking, x-squeeze
     LiveSeconds.swift        timer text clipped to two digits
-    LCDGlass.swift           frame, glass, backlight glow
+    LCDWindow.swift          frame, glass, backlight glow
     DisplayParts.swift       time/date formatting (12/24 h, weekday, blank digits)
   Kit/
     FaceCanvas.swift         fixed-canvas container scaled to the widget + place(...) modifiers
-    CaseFont.swift           font registration + custom(postScriptName:size:)
+    BundledFonts.swift       registers every bundled font once
+    CaseFont.swift           custom(postScriptName, size)
     TextEffects.swift        emboldened, oblique
     Shapes.swift             CutCornerRect, Pointer
   Models/F91W/
-    CasioF91W.swift          the model: palette, fonts, measured layout (today's face)
+    CasioF91W.swift          the model: palette, fonts, LCD style
+    F91WFace.swift           the measured layout (today's face)
+    CasioF91WWidget.swift    public widget wrapper
   Resources/                 fonts + licences (unchanged; all models' fonts live here)
 ```
 
@@ -60,7 +65,8 @@ protocol CasioModel {
     static var displayName: String { get }     // "Casio F-91W"
     static var summary: String { get }         // gallery description
     static var canvas: CGSize { get }          // measured from the reference photo
-    static var caseBackground: AnyShapeStyle { get }  // container background
+    associatedtype CaseBackground: View
+    static var caseBackground: CaseBackground { get } // container background
     @ViewBuilder static func face(_ context: CasioFaceContext) -> Face
 }
 
@@ -73,7 +79,7 @@ struct CasioFaceContext {
 }
 ```
 
-`CasioWatchWidget<Model>` builds the `StaticConfiguration`: `Button(intent:
+The internal `CasioWatchWidget<Model>` builds the `StaticConfiguration`: `Button(intent:
 CasioBacklightIntent(model: Model.kind))` around `FaceCanvas(Model.canvas) { Model.face(ctx) }`,
 `supportedFamilies([.systemSmall])`, `contentMarginsDisabled()`.
 
@@ -81,9 +87,9 @@ CasioBacklightIntent(model: Model.kind))` around `FaceCanvas(Model.canvas) { Mod
 
 1. Add `Models/<Name>/Casio<Name>.swift` implementing `CasioModel`, drawn on its own measured
    canvas with kit parts. Add its fonts and licences to `Resources/`.
-2. Add `public typealias Casio<Name>Widget = CasioWatchWidget<Casio<Name>>`.
+2. Add a public wrapper `Casio<Name>Widget: Widget` whose body is `CasioWatchWidget<Casio<Name>>().body`.
 3. List `Casio<Name>Widget()` in the app's `WidgetBundle`.
-4. Add the model to the test that checks kinds are unique and fonts are bundled.
+4. Add the model to `CasioModels.all` (tests check unique kinds and bundled fonts).
 
 ## Behaviour that must not change
 

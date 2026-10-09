@@ -1,9 +1,9 @@
 // swift-tools-version:5.9
 import PackageDescription
 
-// Experimental, self-contained Home Screen widget: a live clock drawn as a Casio F-91W.
-// No dependencies on the app (its only resource is the generated LCD font) — add the library to any widget extension and list
-// `CasioClockWidget()` in its WidgetBundle (see README.md).
+// Experimental, self-contained Home Screen widgets: live clocks drawn as Casio watches, one
+// widget per model (today CasioF91WWidget). No dependencies on the app; resources are fonts.
+// Add the library to a widget extension and list the widgets in its WidgetBundle (README.md).
 let package = Package(
     name: "CasioClockWidget",
     platforms: [.iOS(.v17), .macOS(.v14)],

@@ -16,7 +16,9 @@ struct ShortsCardView: View {
     @Environment(\.innerTubeAPI) private var api
     @State private var watchLaterAlert: DownloadAlertItem?
     #if !os(tvOS)
+    #if ENABLE_DOWNLOADS
     @Environment(VideoDownloadService.self) private var downloadService
+    #endif
     #endif
 
     /// Primary thumbnail URL: portrait oardefault.jpg when the API provided one
@@ -168,7 +170,7 @@ struct ShortsCardView: View {
                     }
                 }
             }
-            #if !os(tvOS)
+            #if !os(tvOS) && ENABLE_DOWNLOADS
             Button {
                 downloadService.download(video: video)
             } label: {

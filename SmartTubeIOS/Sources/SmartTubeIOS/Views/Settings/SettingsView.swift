@@ -421,7 +421,7 @@ public struct SettingsView: View {
             Text("Experimental")
         } footer: {
             Text(
-                "Uses YouTube's official embedded player instead of the direct stream pipeline. Quality selection and downloads are unavailable. Ads will play. Useful for videos that refuse to play via the standard path."
+                "Uses YouTube's official embedded player instead of the direct stream pipeline. Quality selection is unavailable. Ads will play. Useful for videos that refuse to play via the standard path."
             )
         }
     }

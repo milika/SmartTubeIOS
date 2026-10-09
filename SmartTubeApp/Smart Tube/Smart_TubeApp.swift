@@ -19,7 +19,9 @@ struct SmartTubeTVApp: App {
     /// tvOS (where downloads are disabled in UI). Must be present in the environment
     /// or SwiftUI throws a fatal "No Observable object of type VideoDownloadService"
     /// error at launch.
+    #if ENABLE_DOWNLOADS
     @State private var cardDownloadService: VideoDownloadService
+    #endif
 
     init() {
         // #92: see AppEntry.swift's init() for why order matters here — settingsStore
@@ -40,7 +42,9 @@ struct SmartTubeTVApp: App {
         _authService = State(initialValue: AuthService())
         _browseViewModel = State(initialValue: BrowseViewModel(api: api))
         _settingsStore = State(initialValue: settingsStore)
+        #if ENABLE_DOWNLOADS
         _cardDownloadService = State(initialValue: VideoDownloadService(api: api))
+        #endif
     }
 
     var body: some Scene {
@@ -50,7 +54,9 @@ struct SmartTubeTVApp: App {
                 .environment(browseViewModel)
                 .environment(settingsStore)
                 .environment(\.innerTubeAPI, api)
+                #if ENABLE_DOWNLOADS
                 .environment(cardDownloadService)
+                #endif
                 .onChange(of: authService.accessToken, initial: true) { _, newToken in
                     Task {
                         await api.setAuthToken(newToken)

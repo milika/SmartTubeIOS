@@ -3,6 +3,8 @@ import SwiftUI
 import WidgetKit
 import SmartTubeIOSCore
 
+// Downloading is compiled out (App Store guideline 5.2.3). Define ENABLE_DOWNLOADS to build it.
+#if ENABLE_DOWNLOADS
 // MARK: - DownloadLiveActivity
 //
 // Live Activity widget displayed in the Dynamic Island and on the Lock Screen
@@ -125,6 +127,8 @@ private extension DownloadActivityAttributes.DownloadContentState.Phase {
     }
 }
 
+#endif  // ENABLE_DOWNLOADS
+
 // MARK: - Widget Bundle entry point
 
 @available(iOS 16.1, *)
@@ -134,6 +138,8 @@ struct SmartTubeDownloadWidgetBundle: WidgetBundle {
         // A widget extension needs at least one StaticConfiguration widget, or SpringBoard
         // fails with "Failed to get descriptors for extensionBundleID". The Home widget is it.
         HomeFeedWidget()
+        #if ENABLE_DOWNLOADS
         DownloadLiveActivityWidget()
+        #endif
     }
 }

@@ -39,12 +39,15 @@
 	<string>public.app-category.entertainment</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>SmartTube uses your local network to find AirPlay-compatible devices for casting videos to your TV.</string>
+	<!-- Downloading is compiled out (App Store guideline 5.2.3). When building with
+	     ENABLE_DOWNLOADS, restore these keys:
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>SmartTube needs access to save downloaded videos to your Photos library.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
 	<true/>
+	-->
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

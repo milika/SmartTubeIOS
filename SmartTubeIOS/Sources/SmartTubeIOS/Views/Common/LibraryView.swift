@@ -34,9 +34,9 @@ public struct LibraryView: View {
         case rss = "RSS Feeds"
         case downloads = "Downloads"
 
-        #if os(tvOS)
-        // Downloads saves to Photos library — not supported on tvOS.
-        // Exclude the chip by hiding it from allCases on tvOS.
+        #if os(tvOS) || !ENABLE_DOWNLOADS
+        // Downloads saves to Photos library — not supported on tvOS, and compiled out of
+        // App Store builds (guideline 5.2.3). Exclude the chip by hiding it from allCases.
         static var allCases: [LibrarySection] {
             [.subscriptions, .history, .playlists, .rss]
         }
@@ -134,8 +134,7 @@ public struct LibraryView: View {
                 if selectedSection == .rss {
                     RSSFeedsView()
                 } else if selectedSection == .downloads {
-                    DownloadsView()
-                        .environment(DownloadStore.shared)
+                    downloadsContent
                 } else if !auth.isSignedIn && selectedSection != .subscriptions {
                     segmentSignInPrompt
                 } else if browseVM.isLoading && browseVM.videoGroups.flatMap({ $0.videos }).isEmpty {
@@ -335,5 +334,14 @@ public struct LibraryView: View {
             .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+extension LibraryView {
+    @ViewBuilder fileprivate var downloadsContent: some View {
+        #if ENABLE_DOWNLOADS
+        DownloadsView()
+            .environment(DownloadStore.shared)
+        #endif
     }
 }

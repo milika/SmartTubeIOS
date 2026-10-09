@@ -26,6 +26,8 @@ struct LiveHoursMinutes: View {
     let trailing: CGFloat
     let baseline: CGFloat
     var xScale: CGFloat = 1
+    /// Extra space around the colon, in points before `xScale` (some modules space it wider than DSEG).
+    var colonGap: CGFloat = 0
     let style: LCDStyle
 
     var body: some View {
@@ -36,8 +38,8 @@ struct LiveHoursMinutes: View {
         let minutesWidth = 2 * font.digitAdvance * em
         // ":SS" to the right of the minutes in the timer text.
         let hiddenWidth = (font.colonAdvance + 2 * font.digitAdvance) * em
-        let width = (4 * font.digitAdvance + font.colonAdvance) * em
-        let hours = String(parts.hoursMinutes.prefix(while: { $0 != ":" })) + ":"
+        let width = (4 * font.digitAdvance + font.colonAdvance) * em + colonGap
+        let hours = String(parts.hoursMinutes.prefix(while: { $0 != ":" }))
         let minutes: AnyView =
             if context.previewSeconds != nil {
                 AnyView(Text(String(parts.hoursMinutes.suffix(2))).font(font.font(height: glyph)).lineLimit(1))
@@ -56,8 +58,15 @@ struct LiveHoursMinutes: View {
             if style.unlitOpacity > 0, let lit = font.allLit("88:88") {
                 Text(lit).font(font.font(height: glyph)).foregroundStyle(style.ink.opacity(style.unlitOpacity))
             }
-            Text(hours).font(font.font(height: glyph)).lineLimit(1)
-                .padding(.trailing, minutesWidth)
+            if colonGap == 0 {
+                Text(hours + ":").font(font.font(height: glyph)).lineLimit(1)
+                    .padding(.trailing, minutesWidth)
+            } else {
+                Text(hours).font(font.font(height: glyph)).lineLimit(1)
+                    .padding(.trailing, minutesWidth + font.colonAdvance * em + colonGap)
+                Text(":").font(font.font(height: glyph)).lineLimit(1)
+                    .padding(.trailing, minutesWidth + colonGap / 2)
+            }
             minutes
         }
         .foregroundStyle(style.ink)

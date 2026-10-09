@@ -237,28 +237,6 @@ struct GMWB5000Face: View {
     }
 }
 
-/// Staggered bricks (each row offset by half a brick), like the G-Shock 5000's face.
-private struct BrickPattern: Shape {
-    let brick: CGSize
-    let pitch: CGSize
-
-    func path(in rect: CGRect) -> Path {
-        var p = Path()
-        var row = 0
-        var y = rect.minY + (pitch.height - brick.height) / 2
-        while y < rect.maxY {
-            var x = rect.minX - (row % 2 == 0 ? 0 : pitch.width / 2)
-            while x < rect.maxX {
-                p.addRect(CGRect(x: x, y: y, width: brick.width, height: brick.height))
-                x += pitch.width
-            }
-            y += pitch.height
-            row += 1
-        }
-        return p
-    }
-}
-
 /// The SHOCK RESIST shield: cut top corners, straight sides, a point at the bottom.
 private struct ShockResistBadge: View {
     var body: some View {

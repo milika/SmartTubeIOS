@@ -144,6 +144,7 @@ struct SmartTubeDownloadWidgetBundle: WidgetBundle {
         CasioF91WWidget()
         CasioA158WWidget()
         CasioGMWB5000Widget()
+        CasioDW5000CWidget()
         #if ENABLE_DOWNLOADS
         DownloadLiveActivityWidget()
         #endif

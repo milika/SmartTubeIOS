@@ -25,6 +25,22 @@ struct ModelTests {
         #expect(CasioGMWB5000.kind == "CasioGMWB5000")
     }
 
+    @Test("the DW-5000C is a model with its own kind")
+    func dw5000c() {
+        #expect(CasioModels.all.contains { $0.kind == CasioDW5000C.kind })
+        #expect(CasioDW5000C.kind == "CasioDW5000C")
+    }
+
+    @Test("DW-5000C date: month first, each number right-aligned in two digits")
+    func dw5000cDate() {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "UTC")!
+        let d = cal.date(from: DateComponents(year: 2026, month: 11, day: 4))!
+        #expect(DW5000CFace.dateText(d, calendar: cal, blank: "!") == "11-!4")
+        let d2 = cal.date(from: DateComponents(year: 2026, month: 6, day: 28))!
+        #expect(DW5000CFace.dateText(d2, calendar: cal, blank: "!") == "!6-28")
+    }
+
     @Test("complication kinds are unique and differ from the iPhone kinds")
     func complicationKinds() {
         let kinds = CasioModels.all.map { $0.kind } + CasioModels.complications.map { $0.complicationKind }

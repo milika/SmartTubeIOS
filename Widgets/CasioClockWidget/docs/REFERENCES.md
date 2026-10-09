@@ -26,7 +26,7 @@ its reference again (`tools/casio_measure.py canvas …`, see [ADDING-A-MODEL.md
 | A168W (colours) | photo of a real A168WA-1 (1100 px) | supplied by the owner; colours only (the product render's are off) | — |
 | W-738H | product image, front (1200 px) | supplied by the owner; measured only | canvas = image − (280, 180) |
 | W-800H | W-800H-2AV (navy) product image (1000 px) | supplied by the owner; measured only (three more W-800H images archived for comparison) | canvas = image − (180, 160) |
-| G-Shock DW-5600E | DW-5600E-1V product image (2000 px, TACEQ) | supplied by the owner; measured only (an angled Amazon image archived for colours) | canvas = image − (540, 580) |
+| G-Shock DW-5600E | DW-5600E-1V product image (2000 px, TACEQ) | supplied by the owner; measured only (an angled Amazon image archived for colours) | canvas = image − (540, 580), before the case extension |
 
 How well each face matches its image (from the commits that added it): printed labels within
 about 0.5–1 pt, display characters within about 1–2 pt. Known differences are listed under each

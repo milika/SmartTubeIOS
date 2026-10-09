@@ -20,7 +20,7 @@ only resources are free fonts.
 | Casio W-738H | `CasioW738H` | W-738H display | segments glow | inverted (negative) display |
 | Casio CA-53W | `CasioCA53W` | module 3208 | bright mint | calculator watch; the real one has no light |
 | G-Shock DW-5000C | `CasioDW5000C` | module 240 | warm bulb | the first G-Shock (1983) |
-| G-Shock DW-5600E | `CasioDW5600E` | module 3229 | blue-green EL | |
+| G-Shock DW-5600E | `CasioDW5600E` | module 3229 | blue-green EL | the widget leaves the PROTECTION / G-SHOCK bezel out |
 | G-Shock GMW-B5000 | `CasioGMWB5000` | module 3459 | white-blue LED | the widget leaves the steel bezel out |
 
 Known differences from the real watches: DSEG's segment shapes stand in for Casio's (for example

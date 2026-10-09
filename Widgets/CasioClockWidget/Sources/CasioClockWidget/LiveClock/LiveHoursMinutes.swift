@@ -12,9 +12,56 @@ struct LiveHoursMinutes: View {
     var xScale: CGFloat = 1
     /// Extra space around the colon, in points before `xScale` (some modules space it wider than DSEG).
     var colonGap: CGFloat = 0
+    /// Extra space after each character, in points before `xScale`; negative packs the digits
+    /// tighter than DSEG's cells, as on some modules. The timer text itself is never tracked: each
+    /// live digit gets its own window (TimerDigit), so the clipping stays exact.
+    var tracking: CGFloat = 0
     let style: LCDStyle
 
     var body: some View {
+        if tracking == 0 { packedLayout } else { trackedLayout }
+    }
+
+    /// Each character in its own cell, `tracking` apart: hours and colon as text, minutes as two
+    /// TimerDigit windows (or plain digits in static renders).
+    private var trackedLayout: some View {
+        let parts = context.displayParts(blankDigit: font.blankDigit)
+        let em = glyph / font.glyphToEm
+        let cell = font.digitAdvance * em + tracking
+        let colonCell = font.colonAdvance * em + tracking
+        let width = 4 * cell + colonCell + colonGap
+        let hours = Array(parts.hoursMinutes.prefix(while: { $0 != ":" }))
+        let minutes = Array(parts.hoursMinutes.suffix(2))
+        let start = LiveClock.timerStart(for: context.date, calendar: context.calendar)
+        let digitFont = font.font(height: glyph)
+        // Leading x of each cell, left to right: H H : M M.
+        let colonX = 2 * cell + colonGap / 2
+        let minutesX = 2 * cell + colonCell + colonGap
+        return ZStack(alignment: .topLeading) {
+            ForEach(0..<hours.count, id: \.self) { index in
+                Text(String(hours[index])).font(digitFont).lineLimit(1).fixedSize()
+                    .offset(x: CGFloat(2 - hours.count + index) * cell)
+            }
+            Text(":").font(digitFont).lineLimit(1).fixedSize().offset(x: colonX)
+            ForEach(0..<2, id: \.self) { index in
+                Group {
+                    if context.previewSeconds != nil {
+                        Text(String(minutes[index])).font(digitFont).lineLimit(1).fixedSize()
+                    } else {
+                        // Minutes in "10:MM:SS": tens 4th from the end, units 3rd (after the colon).
+                        TimerDigit(start: start, font: font, em: em, charactersAfter: index == 0 ? 4 : 3)
+                    }
+                }
+                .offset(x: minutesX + CGFloat(index) * cell)
+            }
+        }
+        .foregroundStyle(style.ink)
+        .frame(width: width, alignment: .topLeading)
+        .scaleEffect(x: xScale, y: 1, anchor: .trailing)
+        .place(trailing: trailing, baseline: baseline, glyphHeight: glyph, font: font, width: width)
+    }
+
+    @ViewBuilder private var packedLayout: some View {
         let parts = context.displayParts(blankDigit: font.blankDigit)
         let em = glyph / font.glyphToEm
         let minutesWidth = 2 * font.digitAdvance * em

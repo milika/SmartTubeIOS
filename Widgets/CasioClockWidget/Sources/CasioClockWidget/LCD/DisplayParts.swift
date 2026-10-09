@@ -25,9 +25,17 @@ struct DisplayParts: Equatable {
     }
 
     /// A weekday in Casio's 7-segment letter shapes for a DSEG7 font: S is drawn as a full "5", U as
-    /// a full-height U (DSEG7's "V") and O as a full "0"; DSEG7's own S, U and O are small lower-case.
+    /// a full-height U (DSEG7's "V"), O as a full "0" and N as a full-height ∩ (DSEG7's "M"); DSEG7's
+    /// own S, U, O and N are small lower-case shapes.
     static func sevenSegmentLetters(_ weekday: String) -> String {
-        String(weekday.map { ["S": "5", "U": "V", "O": "0"][$0] ?? $0 })
+        String(weekday.map { ["S": "5", "U": "V", "O": "0", "N": "M"][$0] ?? $0 })
+    }
+
+    /// Three-letter weekdays, for displays that show them ("SUN").
+    static let weekdays3 = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
+
+    static func weekday3(for date: Date, calendar: Calendar) -> String {
+        weekdays3[(calendar.component(.weekday, from: date) - 1) % 7]
     }
 
     static func make(

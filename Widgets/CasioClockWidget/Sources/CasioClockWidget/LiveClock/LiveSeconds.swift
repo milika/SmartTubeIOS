@@ -11,9 +11,42 @@ struct LiveSeconds: View {
     let trailing: CGFloat
     let baseline: CGFloat
     var xScale: CGFloat = 1
+    /// Extra space after each digit, in points before `xScale` (see LiveHoursMinutes); each live
+    /// digit then gets its own TimerDigit window.
+    var tracking: CGFloat = 0
     let style: LCDStyle
 
     var body: some View {
+        if tracking == 0 { packedLayout } else { trackedLayout }
+    }
+
+    private var trackedLayout: some View {
+        let start = LiveClock.timerStart(for: context.date, calendar: context.calendar)
+        let font = style.digits
+        let em = glyph / font.glyphToEm
+        let cell = font.digitAdvance * em + tracking
+        let width = 2 * cell
+        let fixed = context.previewSeconds.map { String(format: "%02d", $0) }.map(Array.init)
+        return ZStack(alignment: .topLeading) {
+            ForEach(0..<2, id: \.self) { index in
+                Group {
+                    if let fixed {
+                        Text(String(fixed[index])).font(font.font(height: glyph)).lineLimit(1).fixedSize()
+                    } else {
+                        // Seconds in "10:MM:SS": tens 2nd from the end, units last.
+                        TimerDigit(start: start, font: font, em: em, charactersAfter: index == 0 ? 1 : 0)
+                    }
+                }
+                .offset(x: CGFloat(index) * cell)
+            }
+        }
+        .foregroundStyle(style.ink)
+        .frame(width: width, alignment: .topLeading)
+        .scaleEffect(x: xScale, y: 1, anchor: .trailing)
+        .place(trailing: trailing, baseline: baseline, glyphHeight: glyph, font: font, width: width)
+    }
+
+    @ViewBuilder private var packedLayout: some View {
         let start = LiveClock.timerStart(for: context.date, calendar: context.calendar)
         let font = style.digits
         let digitAdvance = glyph / font.glyphToEm * font.digitAdvance

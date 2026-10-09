@@ -124,4 +124,19 @@ struct TimelineTests {
         #expect(LiveClock.minutesTimerWidth(em: em) >= width)
         #expect(LiveClock.secondsTimerWidth(digitAdvance: digits.digitAdvance * em) >= width)
     }
+
+    @Test("tracked layouts: each timer digit's window hides exactly the characters to its right in 10:MM:SS")
+    func timerDigitWindows() {
+        let font = LCDFont.dseg7("Bold")
+        let em: CGFloat = 100
+        let digit = font.digitAdvance * em, colon = font.colonAdvance * em
+        // seconds units
+        #expect(abs(TimerDigit.hiddenWidth(charactersAfter: 0, font: font, em: em) - 0) < 0.001)
+        // seconds tens
+        #expect(abs(TimerDigit.hiddenWidth(charactersAfter: 1, font: font, em: em) - digit) < 0.001)
+        // minutes units
+        #expect(abs(TimerDigit.hiddenWidth(charactersAfter: 3, font: font, em: em) - (colon + 2 * digit)) < 0.001)
+        // minutes tens
+        #expect(abs(TimerDigit.hiddenWidth(charactersAfter: 4, font: font, em: em) - (colon + 3 * digit)) < 0.001)
+    }
 }

@@ -31,8 +31,9 @@ struct LiveSeconds: View {
                 .foregroundStyle(style.ink)
                 .multilineTextAlignment(.trailing)
                 .lineLimit(1)
-                // Room for the whole "10:MM:SS" so it isn't truncated; the window keeps the last two digits.
-                .frame(width: digitAdvance * 10, alignment: .trailing)
+                // Room for the whole "10:MM:SS" so it isn't truncated (LiveClock); the window keeps the
+                // last two digits.
+                .frame(width: LiveClock.secondsTimerWidth(digitAdvance: digitAdvance), alignment: .trailing)
                 .frame(width: window, alignment: .trailing)
                 .clipped()
                 .scaleEffect(x: xScale, y: 1, anchor: .trailing)

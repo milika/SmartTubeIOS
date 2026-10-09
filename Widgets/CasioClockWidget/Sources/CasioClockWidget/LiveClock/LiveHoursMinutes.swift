@@ -1,21 +1,5 @@
 import SwiftUI
 
-// How the time stays live with one timeline entry per hour:
-// - The hours (and date, weekday, PM / 24H) come from the entry, which changes on the hour.
-// - Minutes and seconds come from one WidgetKit timer text ("H:MM:SS") that animates itself, cut to
-//   the two digits needed. Before, each minute was its own timeline entry; for detailed faces an
-//   hour of fully drawn entries grew too large for WidgetKit (36 MB, rejected), and one timer keeps
-//   minutes and seconds in step.
-
-enum LiveClock {
-    /// The timer's start: 10 hours before the current hour, so it always reads "10:MM:SS" (two-digit
-    /// hours, zero-padded minutes and seconds) and the minutes are the two digits before the last colon.
-    static func timerStart(for date: Date, calendar: Calendar) -> Date {
-        let hourStart = calendar.dateInterval(of: .hour, for: date)?.start ?? date
-        return hourStart.addingTimeInterval(-10 * 3600)
-    }
-}
-
 /// "H:MM" in LCD digits: the hours from the timeline entry, the minutes live from the timer (cut
 /// out of "10:MM:SS"). Placed like `LCDText` with a trailing edge; `previewSeconds` (static renders)
 /// draws the minutes as plain text.
@@ -47,7 +31,7 @@ struct LiveHoursMinutes: View {
                         .font(font.font(height: glyph))
                         .multilineTextAlignment(.trailing)
                         .lineLimit(1)
-                        .frame(width: 8 * em, alignment: .trailing)
+                        .frame(width: LiveClock.minutesTimerWidth(em: em), alignment: .trailing)
                         .offset(x: hiddenWidth)
                         .frame(width: minutesWidth, alignment: .trailing)
                         .clipped())

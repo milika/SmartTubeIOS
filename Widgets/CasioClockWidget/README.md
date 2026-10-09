@@ -93,8 +93,10 @@ Sources/CasioClockWidget/
   CasioCatalogue.swift  the catalogue: CasioModels (registry), CasioWidgets (public widgets),
                      CasioComplicationGallery; registering a model happens only here
   CasioModel.swift   CasioModel / CasioComplicationModel protocols, CasioFaceContext
-  Widget/            generic widget + watch complication widget, timeline provider, light intent
-  LCD/               DSEG fonts, LCDStyle, LCDText, LiveSeconds, LCDWindow, DisplayParts,
+  Widget/            generic widget + watch complication widget, timeline provider (WidgetKit
+                     adapter), light intent
+  LiveClock/         the live clock: entry schedule, timer start, LiveHoursMinutes, LiveSeconds
+  LCD/               DSEG fonts, LCDStyle, LCDText, LCDWindow, DisplayParts,
                      DotMatrixText (5×7 dot-matrix characters, drawn as shapes), and the module
                      displays (LCDModuleDisplay): Module593Display (F-91W, A158W, A168W…) and its
                      compact Module593Complication, Module3459Display (GMW-B5000, GW-B5600…),
@@ -138,10 +140,14 @@ F-91W's is `"CasioClockWidget"`, from when it was the only model.)
 
 ## How it stays live
 
+One module, `LiveClock/`, owns all of it: the entry schedule, the timer start, the two live
+views and the contract between them (written out at the top of `LiveClock.swift`); the widget's
+timeline provider only hands the schedule to WidgetKit.
+
 - Hours, date, weekday, PM / 24H: a timeline with one entry per hour (12 at a time).
 - Minutes and seconds: one `Text(date, style: .timer)` started 10 hours before the hour, so it
   reads "10:MM:SS"; `LiveHoursMinutes` shows its minutes and `LiveSeconds` its last two digits
-  (see `LCD/LiveClock.swift`). Widgets can't redraw every second, but timer text animates itself.
+  Widgets can't redraw every second, but timer text animates itself.
   A timeline of minute entries stores a full drawing per minute; for a detailed face (the
   GMW-B5000) that grew to 36 MB and WidgetKit rejected it. Hourly entries keep it to a few MB.
 - The light: a lit entry for 3 s, then two hourly entries and a reload (a short lit timeline
@@ -151,6 +157,7 @@ F-91W's is `"CasioClockWidget"`, from when it was the only model.)
 
 ## Tests
 
-`swift test` in this folder: formatting, timeline entries, models (unique kinds, the light per
+`swift test` in this folder: formatting, the live-clock contract (at every minute of a timeline
+the right hour and "10:MM:SS", across a DST change; timer frames fit "10:59:59"), models (unique kinds, the light per
 model), fonts (the bundled files are exactly `CaseFont.all` plus DSEG, and they register), and
 rendering (every model draws its face and its light changes it).

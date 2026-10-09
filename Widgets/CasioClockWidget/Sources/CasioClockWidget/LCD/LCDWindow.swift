@@ -27,7 +27,7 @@ struct LCDWindow: View {
         RoundedRectangle(cornerRadius: glassRadius, style: .continuous)
             .fill(LinearGradient(colors: [style.glass, style.glass.opacity(0.9)], startPoint: .top, endPoint: .bottom))
             .overlay {
-                if backlit {
+                if backlit && style.litInk == nil {
                     RoundedRectangle(cornerRadius: glassRadius, style: .continuous)
                         .fill(
                             LinearGradient(

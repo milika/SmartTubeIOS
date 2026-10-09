@@ -17,6 +17,17 @@ struct LCDStyle {
     var backlightFalloff: [Double] = [1, 1, 0.9]
     /// Depth: the frame's shadow on the glass and the segments' shadow on the reflector.
     var shadow = LCDShadow()
+    /// For an inverted (negative) display: the light shines through the segments, so when lit the
+    /// segments take this colour and the dark glass stays dark. nil: the light brightens the glass.
+    var litInk: Color?
+
+    /// The style as drawn with the light on or off (an inverted display swaps its ink when lit).
+    func lit(_ backlit: Bool) -> LCDStyle {
+        guard backlit, let litInk else { return self }
+        var style = self
+        style.ink = litInk
+        return style
+    }
 }
 
 /// The LCD's shadows, the same for every model (in canvas points, light from the top left):

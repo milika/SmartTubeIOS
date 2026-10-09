@@ -23,6 +23,9 @@ published together as `CasioWidgets.homeScreen`:
 - **A168W** (`CasioA168W`): chrome case, black face with blue and white octagon lines, the blue
   ElectroLuminescence banner, ◀ILLUMINATOR▶, WATER [WR] RESIST, the module-3298 display (signal
   and alarm marks, PM, weekday and date top right) and a blue-green EL light.
+- **W-738H** (`CasioW738H`): black resin with a grained octagon bezel, VIBRATION ALARM and a
+  LIGHT button, and an inverted (negative) display: light segments on dark glass; lit, the
+  segments glow (`LCDStyle.litInk`) while the glass stays dark.
 
 Self-contained Swift package — no
 dependencies on any app code. Its resources are fonts, all under the SIL Open Font License 1.1
@@ -49,7 +52,8 @@ typefaces per Fonts In Use (fontsinuse.com/uses/74290). A158W: Wikimedia Commons
 GMW-B5000: Wikimedia Commons `Wikipedia-Casio-G-Shock-Edelstahl-800.jpg`. DW-5000C:
 Wikimedia Commons `DW-5000.jpg`; W-59: Wikimedia Commons `Casio W-59 digital watch.jpg`
 (public domain); CA-53W: Wikimedia Commons `Casio CA-53W, 1.jpg` by Morn (CC BY-SA 4.0), levelled
-by 0.8°; A168W: Casio's A168WA-1W product image (supplied by the owner; measured only, not shipped); its printed labels are `InkText`, glyph outlines stretched to
+by 0.8°; A168W: Casio's A168WA-1W product image (supplied by the owner; measured only, not shipped), colours
+from the owner's photo of a real A168W; W-738H: a product image supplied by the owner (measured only); its printed labels are `InkText`, glyph outlines stretched to
 the ink boxes measured on the photo. Known difference: the DW-5000C draws a double-width W in
 the weekday; DSEG14's W is single width.
 
@@ -113,7 +117,8 @@ Sources/CasioClockWidget/
                      displays (LCDModuleDisplay): Module593Display (F-91W, A158W, A168W…) and its
                      compact Module593Complication, Module3459Display (GMW-B5000, GW-B5600…),
                      Module240Display (DW-5000C), Module590Display (W-59),
-                     Module3208Display (CA-53W), Module3298Display (A168W)
+                     Module3208Display (CA-53W), Module3298Display (A168W),
+                     W738HDisplay (W-738H); LCDMarks (signal and alarm marks)
   Kit/               FaceCanvas + place(...) modifiers, CaseFont, BundledFonts, shapes (incl. the
                      G-Shock BrickPattern), text effects, InkText (a label filling a measured ink box)
   Models/F91W/       the F-91W: model (palette, LCD style, Xcode previews), face, complication
@@ -123,6 +128,7 @@ Sources/CasioClockWidget/
   Models/W59/        the W-59: model, face
   Models/CA53W/      the CA-53W calculator watch: model, face (display section and keypad)
   Models/A168W/      the A168W: model, face
+  Models/W738H/      the W-738H (negative display): model, face
   Resources/         fonts and their licences (all models)
 ```
 

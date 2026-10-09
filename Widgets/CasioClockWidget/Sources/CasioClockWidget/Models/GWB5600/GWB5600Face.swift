@@ -10,15 +10,15 @@ struct GWB5600Face: View {
     private var style: LCDStyle { CasioGWB5600.lcd }
     /// The case extension: face and panel grow by it, the LCD window by half; side labels and the
     /// print below move down.
-    private var extra: CGFloat { CasioGWB5600.caseExtension }
+    private var stretch: CaseExtension { CaseExtension(amount: CasioGWB5600.caseExtension) }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             faceAndPanel
             topPrint
             sideLabels
-            lcd.offset(y: extra / 4)
-            bottomPrint.offset(y: extra)
+            lcd.band(.display, of: stretch)
+            bottomPrint.band(.bottom, of: stretch)
         }
     }
 
@@ -29,11 +29,11 @@ struct GWB5600Face: View {
         return ZStack(alignment: .topLeading) {
             faceShape.fill(CasioGWB5600.face)
                 .overlay(Camouflage().fill(CasioGWB5600.camo).clipShape(faceShape))
-                .frame(width: 609, height: 535 + extra)
+                .frame(width: 609, height: 535 + stretch.caseGrowth)
                 .offset(x: 8, y: 12)
             RoundedRectangle(cornerRadius: 34, style: .continuous)
                 .fill(CasioGWB5600.panel)
-                .frame(width: 483, height: 378 + extra)
+                .frame(width: 483, height: 378 + stretch.caseGrowth)
                 .offset(x: 72, y: 79)
         }
     }
@@ -66,7 +66,7 @@ struct GWB5600Face: View {
                     .placed(
                         vertical: CGRect(x: 577, y: 177.5, width: 14.5, height: 60), angle: 90, color: white, bold: 0.4)
             }
-            .offset(y: extra / 4)
+            .band(.upperSides, of: stretch)
             ZStack(alignment: .topLeading) {
                 ink("MODE", CaseFont.michroma)
                     .placed(
@@ -79,7 +79,7 @@ struct GWB5600Face: View {
                     )
                 dot(x: 585, y: 395)
             }
-            .offset(y: 3 * extra / 4)
+            .band(.lowerSides, of: stretch)
         }
     }
 
@@ -110,9 +110,9 @@ struct GWB5600Face: View {
     // MARK: LCD
 
     private var lcd: some View {
-        let glass = CGRect(x: 115, y: 154, width: 396, height: 258 + extra / 2)
+        let glass = CGRect(x: 115, y: 154, width: 396, height: 258 + stretch.windowGrowth)
         return LCDPanel(
-            display: GWB5600Display.self, frame: CGRect(x: 104, y: 139, width: 418, height: 283 + extra / 2),
+            display: GWB5600Display.self, frame: CGRect(x: 104, y: 139, width: 418, height: 283 + stretch.windowGrowth),
             frameRadius: 26, surround: Color(white: 0.02), outline: .clear, outlineWidth: 0, glass: glass,
             glassRadius: 16, context: context, style: style)
     }

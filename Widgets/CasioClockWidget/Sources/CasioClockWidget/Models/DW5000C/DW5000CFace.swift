@@ -8,15 +8,15 @@ struct DW5000CFace: View {
     private var style: LCDStyle { CasioDW5000C.lcd }
     /// The case extension: the recess, red line and bricks grow by it, the LCD window by half;
     /// side labels and the groups below move down to share the space.
-    private var extra: CGFloat { CasioDW5000C.caseExtension }
+    private var stretch: CaseExtension { CaseExtension(amount: CasioDW5000C.caseExtension) }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             faceAndBricks
             topPrint
             sideLabels
-            lcd.offset(y: extra / 4)
-            bottomPrint.offset(y: extra)
+            lcd.band(.display, of: stretch)
+            bottomPrint.band(.bottom, of: stretch)
         }
     }
 
@@ -26,23 +26,23 @@ struct DW5000CFace: View {
         ZStack(alignment: .topLeading) {
             CutCornerRect(cut: CGSize(width: 70, height: 70), radius: 30)
                 .fill(CasioDW5000C.recess)
-                .frame(width: 525, height: 440 + extra)
+                .frame(width: 525, height: 440 + stretch.caseGrowth)
                 .offset(x: 48.5, y: 35)
             // Light mortar between dark bricks, inside the red line.
             ZStack(alignment: .topLeading) {
                 CasioDW5000C.mortar
                 BrickPattern(brick: CGSize(width: 19.2, height: 7.1), pitch: CGSize(width: 20.5, height: 8.417))
                     .fill(CasioDW5000C.brick)
-                    .frame(width: 420, height: 330 + extra)
+                    .frame(width: 420, height: 330 + stretch.caseGrowth)
                     .offset(x: 105.4 - 113.5, y: 102 - 103)
             }
-            .frame(width: 397, height: 310.5 + extra)
+            .frame(width: 397, height: 310.5 + stretch.caseGrowth)
             .clipped()
             .mask(CutCornerRect(cut: CGSize(width: 54, height: 58), radius: 10))
             .offset(x: 113.5, y: 103)
             CutCornerRect(cut: CGSize(width: 61, height: 65), radius: 14)
                 .stroke(CasioDW5000C.red, lineWidth: 6.5)
-                .frame(width: 416.5, height: 329 + extra)
+                .frame(width: 416.5, height: 329 + stretch.caseGrowth)
                 .offset(x: 102.75, y: 93.75)
         }
     }
@@ -93,14 +93,14 @@ struct DW5000CFace: View {
                 vertical("LIGHT", CGRect(x: 530.5, y: 188, width: 10, height: 40), angle: 90)
                 dot(x: 535.75, y: 176.5)
             }
-            .offset(y: extra / 4)
+            .band(.upperSides, of: stretch)
             Group {
                 vertical("MODE", CGRect(x: 80.5, y: 286.5, width: 11, height: 42.5), angle: -90)
                 dot(x: 86, y: 340)
                 vertical("24HR", CGRect(x: 530, y: 292, width: 10, height: 37.5), angle: 90)
                 dot(x: 535.25, y: 341)
             }
-            .offset(y: 3 * extra / 4)
+            .band(.lowerSides, of: stretch)
         }
     }
 
@@ -135,9 +135,10 @@ struct DW5000CFace: View {
     // MARK: LCD
 
     private var lcd: some View {
-        let glass = CGRect(x: 152, y: 163.5, width: 317.5, height: 190.5 + extra / 2)
+        let glass = CGRect(x: 152, y: 163.5, width: 317.5, height: 190.5 + stretch.windowGrowth)
         return LCDPanel(
-            display: Module240Display.self, frame: CGRect(x: 145.5, y: 157, width: 330.5, height: 203.5 + extra / 2),
+            display: Module240Display.self,
+            frame: CGRect(x: 145.5, y: 157, width: 330.5, height: 203.5 + stretch.windowGrowth),
             frameRadius: 10, surround: Color(white: 0.08), outline: CasioDW5000C.silver, outlineWidth: 6.5,
             glass: glass, glassRadius: 4, context: context, style: style)
     }

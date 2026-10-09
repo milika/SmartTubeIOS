@@ -7,15 +7,15 @@ struct GMWB5000Face: View {
     private var style: LCDStyle { CasioGMWB5000.lcd }
     /// The case extension: bezel, plate and frame lines grow by it, the LCD window by half; side
     /// labels and the groups below move down to share the space.
-    private var extra: CGFloat { CasioGMWB5000.caseExtension }
+    private var stretch: CaseExtension { CaseExtension(amount: CasioGMWB5000.caseExtension) }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             bezelAndPlate
             topPrint
             sideLabels
-            lcd.offset(y: extra / 4)
-            bottomPrint.offset(y: extra)
+            lcd.band(.display, of: stretch)
+            bottomPrint.band(.bottom, of: stretch)
         }
     }
 
@@ -29,29 +29,30 @@ struct GMWB5000Face: View {
                     CutCornerRect(cut: Self.bezelCut, bottomCut: Self.bezelBottomCut, radius: 45)
                         .stroke(CasioGMWB5000.steelEdge, lineWidth: 1.5)
                 )
-                .frame(width: 569, height: 526 + extra)
+                .frame(width: 569, height: 526 + stretch.caseGrowth)
                 .offset(x: 18, y: 19)
             engraved("PROTECTION", size: 23.6, tracking: 6.3).place(centerX: 308.5, centerY: 59.25)
             // Polished bevel, black plate.
             RoundedRectangle(cornerRadius: 62, style: .continuous)
                 .fill(CasioGMWB5000.bevel)
-                .frame(width: 461, height: 395 + extra)
+                .frame(width: 461, height: 395 + stretch.caseGrowth)
                 .offset(x: 76, y: 82)
             RoundedRectangle(cornerRadius: 58, style: .continuous)
                 .fill(CasioGMWB5000.plate)
-                .frame(width: 451, height: 383 + extra)
+                .frame(width: 451, height: 383 + stretch.caseGrowth)
                 .offset(x: 81, y: 87)
             // Brick pattern inside the grey line.
             BrickPattern(brick: CGSize(width: 16, height: 4.6), pitch: CGSize(width: 18.8, height: 7.75))
                 .fill(CasioGMWB5000.brick)
-                .frame(width: 384, height: 317 + extra)
+                .frame(width: 384, height: 317 + stretch.caseGrowth)
                 .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
                 .offset(x: 116, y: 121)
             RoundedRectangle(cornerRadius: 30, style: .continuous)
                 .stroke(CasioGMWB5000.frameLine, lineWidth: 3)
-                .frame(width: 384, height: 317 + extra)
+                .frame(width: 384, height: 317 + stretch.caseGrowth)
                 .offset(x: 116, y: 121)
-            engraved("G-SHOCK", size: 34.6, tracking: 6.5).place(centerX: 305.75, centerY: 499 + extra)
+            engraved("G-SHOCK", size: 34.6, tracking: 6.5).place(
+                centerX: 305.75, centerY: 499 + stretch.offset(.bottom))
         }
     }
 
@@ -114,14 +115,15 @@ struct GMWB5000Face: View {
     /// each with a dot by its button.
     private var sideLabels: some View {
         ZStack(alignment: .topLeading) {
-            vertical("ADJUST", centerX: 99.75, centerY: 233.75 + extra / 4, angle: -90, tracking: 0.5)
-            dot(x: 98.5, y: 190 + extra / 4)
-            vertical("MODE", centerX: 98.5, centerY: 330.5 + 3 * extra / 4, angle: -90, tracking: 1.4)
-            dot(x: 98.5, y: 365 + 3 * extra / 4)
-            vertical("SET [–]", centerX: 516.5, centerY: 227.75 + extra / 4, angle: 90, tracking: 3.75)
-            dot(x: 516.5, y: 190 + extra / 4)
-            vertical("SET [+]", centerX: 516, centerY: 335 + 3 * extra / 4, angle: 90, tracking: 2.8)
-            dot(x: 516.5, y: 368 + 3 * extra / 4)
+            vertical("ADJUST", centerX: 99.75, centerY: 233.75 + stretch.offset(.upperSides), angle: -90, tracking: 0.5)
+            dot(x: 98.5, y: 190 + stretch.offset(.upperSides))
+            vertical("MODE", centerX: 98.5, centerY: 330.5 + stretch.offset(.lowerSides), angle: -90, tracking: 1.4)
+            dot(x: 98.5, y: 365 + stretch.offset(.lowerSides))
+            vertical(
+                "SET [–]", centerX: 516.5, centerY: 227.75 + stretch.offset(.upperSides), angle: 90, tracking: 3.75)
+            dot(x: 516.5, y: 190 + stretch.offset(.upperSides))
+            vertical("SET [+]", centerX: 516, centerY: 335 + stretch.offset(.lowerSides), angle: 90, tracking: 2.8)
+            dot(x: 516.5, y: 368 + stretch.offset(.lowerSides))
         }
     }
 
@@ -168,9 +170,10 @@ struct GMWB5000Face: View {
     // MARK: LCD
 
     private var lcd: some View {
-        let glass = CGRect(x: 151, y: 176, width: 313, height: 207 + extra / 2)
+        let glass = CGRect(x: 151, y: 176, width: 313, height: 207 + stretch.windowGrowth)
         return LCDPanel(
-            display: Module3459Display.self, frame: CGRect(x: 147, y: 172, width: 321, height: 215 + extra / 2),
+            display: Module3459Display.self,
+            frame: CGRect(x: 147, y: 172, width: 321, height: 215 + stretch.windowGrowth),
             frameRadius: 18, surround: CasioGMWB5000.surround, outline: CasioGMWB5000.surround, outlineWidth: 0,
             glass: glass, glassRadius: 14, context: context, style: style)
     }

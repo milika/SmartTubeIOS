@@ -6,14 +6,14 @@ struct W59Face: View {
 
     private var style: LCDStyle { CasioW59.lcd }
     /// The case extension: lines grow by it, the LCD window by half; the print below moves down.
-    private var extra: CGFloat { CasioW59.caseExtension }
+    private var stretch: CaseExtension { CaseExtension(amount: CasioW59.caseExtension) }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             lines
             topPrint
-            lcd.offset(y: extra / 4)
-            bottomPrint.offset(y: extra)
+            lcd.band(.display, of: stretch)
+            bottomPrint.band(.bottom, of: stretch)
         }
     }
 
@@ -23,19 +23,19 @@ struct W59Face: View {
         ZStack(alignment: .topLeading) {
             CutCornerRect(cut: CGSize(width: 34, height: 44), bottomCut: CGSize(width: 22, height: 22), radius: 16)
                 .fill(CasioW59.plate)
-                .frame(width: 466, height: 410.5 + extra)
+                .frame(width: 466, height: 410.5 + stretch.caseGrowth)
                 .offset(x: 37.75, y: 26)
             // Outer white line: near-diagonal cut corners. Blue band: wide curves, wider at the bottom.
             CutCornerRect(cut: CGSize(width: 62, height: 66), bottomCut: CGSize(width: 58, height: 48), radius: 26)
                 .stroke(CasioW59.line, lineWidth: 2.5)
-                .frame(width: 442, height: 386.5 + extra)
+                .frame(width: 442, height: 386.5 + stretch.caseGrowth)
                 .offset(x: 49.75, y: 38)
             UnevenRoundedRectangle(
                 topLeadingRadius: 40, bottomLeadingRadius: 55, bottomTrailingRadius: 55, topTrailingRadius: 40,
                 style: .continuous
             )
             .stroke(CasioW59.blue, lineWidth: 10)
-            .frame(width: 406.5, height: 263.25 + extra)
+            .frame(width: 406.5, height: 263.25 + stretch.caseGrowth)
             .offset(x: 68, y: 96.25)
         }
     }
@@ -84,9 +84,10 @@ struct W59Face: View {
     // MARK: LCD (module 590)
 
     private var lcd: some View {
-        let glass = CGRect(x: 103, y: 160.5, width: 336.5, height: 163.5 + extra / 2)
+        let glass = CGRect(x: 103, y: 160.5, width: 336.5, height: 163.5 + stretch.windowGrowth)
         return LCDPanel(
-            display: Module590Display.self, frame: CGRect(x: 89.5, y: 147, width: 362.5, height: 190.75 + extra / 2),
+            display: Module590Display.self,
+            frame: CGRect(x: 89.5, y: 147, width: 362.5, height: 190.75 + stretch.windowGrowth),
             frameRadius: 16, surround: Color(white: 0.09), outline: CasioW59.line, outlineWidth: 2, glass: glass,
             glassRadius: 9, context: context, style: style)
     }

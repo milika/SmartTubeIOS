@@ -10,15 +10,15 @@ struct DW5600EFace: View {
     private var style: LCDStyle { CasioDW5600E.lcd }
     /// The case extension: the face and its line grow by it, the LCD window by half; side labels
     /// and the print below move down to share the space.
-    private var extra: CGFloat { CasioDW5600E.caseExtension }
+    private var stretch: CaseExtension { CaseExtension(amount: CasioDW5600E.caseExtension) }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             face
             topPrint
             sideLabels
-            lcd.offset(y: extra / 4)
-            bottomPrint.offset(y: extra)
+            lcd.band(.display, of: stretch)
+            bottomPrint.band(.bottom, of: stretch)
         }
     }
 
@@ -30,11 +30,11 @@ struct DW5600EFace: View {
         ZStack(alignment: .topLeading) {
             CutCornerRect(cut: CGSize(width: 100, height: 108), bottomCut: CGSize(width: 90, height: 92), radius: 30)
                 .fill(CasioDW5600E.face)
-                .frame(width: 600, height: 520 + extra)
+                .frame(width: 600, height: 520 + stretch.caseGrowth)
                 .offset(x: 136, y: 108)
             CutCornerRect(cut: CGSize(width: 92, height: 100), bottomCut: CGSize(width: 80, height: 84), radius: 26)
                 .stroke(CasioDW5600E.printWhite, lineWidth: 3)
-                .frame(width: 558, height: 474 + extra)
+                .frame(width: 558, height: 474 + stretch.caseGrowth)
                 .offset(x: 157.5, y: 130.5)
         }
     }
@@ -80,7 +80,7 @@ struct DW5600EFace: View {
                         vertical: CGRect(x: 684, y: 264, width: 12.5, height: 123.5), angle: 90, color: white,
                         bold: 0.35)
             }
-            .offset(y: extra / 4)
+            .band(.upperSides, of: stretch)
             ZStack(alignment: .topLeading) {
                 ink("MODE", CaseFont.michroma)
                     .placed(
@@ -92,7 +92,7 @@ struct DW5600EFace: View {
                     )
                 dot(x: 689.25, y: 485.25)
             }
-            .offset(y: 3 * extra / 4)
+            .band(.lowerSides, of: stretch)
         }
     }
 
@@ -139,9 +139,10 @@ struct DW5600EFace: View {
     // MARK: LCD (module 3229)
 
     private var lcd: some View {
-        let glass = CGRect(x: 240, y: 243.5, width: 392.5, height: 248 + extra / 2)
+        let glass = CGRect(x: 240, y: 243.5, width: 392.5, height: 248 + stretch.windowGrowth)
         return LCDPanel(
-            display: Module3229Display.self, frame: CGRect(x: 229.5, y: 234, width: 413, height: 266 + extra / 2),
+            display: Module3229Display.self,
+            frame: CGRect(x: 229.5, y: 234, width: 413, height: 266 + stretch.windowGrowth),
             frameRadius: 16, surround: CasioDW5600E.face, outline: CasioDW5600E.printWhite, outlineWidth: 2.5,
             glass: glass, glassRadius: 10, context: context, style: style)
     }

@@ -7,15 +7,15 @@ struct W86Face: View {
     private var style: LCDStyle { CasioW86.lcd }
     /// The case extension: ring and face grow by it, the LCD window by half; side labels and the
     /// print below move down.
-    private var extra: CGFloat { CasioW86.caseExtension }
+    private var stretch: CaseExtension { CaseExtension(amount: CasioW86.caseExtension) }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             ringAndPlate
             topPrint
             sideLabels
-            lcd.offset(y: extra / 4)
-            bottomPrint.offset(y: extra)
+            lcd.band(.display, of: stretch)
+            bottomPrint.band(.bottom, of: stretch)
         }
     }
 
@@ -25,11 +25,11 @@ struct W86Face: View {
         ZStack(alignment: .topLeading) {
             CutCornerRect(cut: CGSize(width: 72, height: 80), bottomCut: CGSize(width: 66, height: 62), radius: 26)
                 .fill(CasioW86.ring)
-                .frame(width: 701.5, height: 579.5 + extra)
+                .frame(width: 701.5, height: 579.5 + stretch.caseGrowth)
                 .offset(x: 7.5, y: 26.5)
             CutCornerRect(cut: CGSize(width: 64, height: 72), bottomCut: CGSize(width: 58, height: 54), radius: 22)
                 .fill(CasioW86.plate)
-                .frame(width: 671, height: 556 + extra)
+                .frame(width: 671, height: 556 + stretch.caseGrowth)
                 .offset(x: 24, y: 40)
         }
     }
@@ -66,7 +66,7 @@ struct W86Face: View {
                     .placed(
                         vertical: CGRect(x: 41, y: 200.5, width: 20, height: 68.5), angle: 90, color: white, bold: 0.6)
             }
-            .offset(y: extra / 4)
+            .band(.upperSides, of: stretch)
             ZStack(alignment: .topLeading) {
                 ink("MODE", CaseFont.michroma)
                     .placed(
@@ -79,7 +79,7 @@ struct W86Face: View {
                         bold: 0.6)
                 dot(x: 673, y: 445)
             }
-            .offset(y: 3 * extra / 4)
+            .band(.lowerSides, of: stretch)
         }
     }
 
@@ -109,9 +109,9 @@ struct W86Face: View {
     // MARK: LCD
 
     private var lcd: some View {
-        let glass = CGRect(x: 88, y: 200, width: 536.5, height: 255 + extra / 2)
+        let glass = CGRect(x: 88, y: 200, width: 536.5, height: 255 + stretch.windowGrowth)
         return LCDPanel(
-            display: W86Display.self, frame: CGRect(x: 68, y: 170, width: 581, height: 301 + extra / 2),
+            display: W86Display.self, frame: CGRect(x: 68, y: 170, width: 581, height: 301 + stretch.windowGrowth),
             frameRadius: 32, surround: CasioW86.frame, outline: .clear, outlineWidth: 0, glass: glass, glassRadius: 18,
             context: context, style: style)
     }

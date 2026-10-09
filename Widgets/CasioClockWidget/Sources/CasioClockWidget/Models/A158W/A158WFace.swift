@@ -7,14 +7,14 @@ struct A158WFace: View {
     private var style: LCDStyle { CasioA158W.lcd }
     /// The case extension: plate and lines grow by it, the LCD window by half, and the groups
     /// below move down to share the space evenly.
-    private var extra: CGFloat { CasioA158W.caseExtension }
+    private var stretch: CaseExtension { CaseExtension(amount: CasioA158W.caseExtension) }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             plate
             topPrint
-            lcd.offset(y: extra / 4)
-            bottomPrint.offset(y: extra)
+            lcd.band(.display, of: stretch)
+            bottomPrint.band(.bottom, of: stretch)
         }
     }
 
@@ -24,15 +24,15 @@ struct A158WFace: View {
         ZStack(alignment: .topLeading) {
             CutCornerRect(cut: CGSize(width: 60, height: 75), bottomCut: CGSize(width: 45, height: 45), radius: 20)
                 .fill(CasioA158W.plate)
-                .frame(width: 544.5, height: 453 + extra)
+                .frame(width: 544.5, height: 453 + stretch.caseGrowth)
                 .offset(x: 33, y: 22.5)
             CutCornerRect(cut: CGSize(width: 52, height: 66), bottomCut: CGSize(width: 38, height: 38), radius: 16)
                 .stroke(CasioA158W.line, lineWidth: 1.5)
-                .frame(width: 514.5, height: 423 + extra)
+                .frame(width: 514.5, height: 423 + stretch.caseGrowth)
                 .offset(x: 48, y: 37.5)
             CutCornerRect(cut: CGSize(width: 42, height: 55), bottomCut: CGSize(width: 30, height: 30), radius: 14)
                 .stroke(CasioA158W.blue, lineWidth: 8)
-                .frame(width: 480, height: 387 + extra)
+                .frame(width: 480, height: 387 + stretch.caseGrowth)
                 .offset(x: 65.25, y: 59.25)
         }
     }
@@ -109,10 +109,11 @@ struct A158WFace: View {
     // MARK: LCD (module 593, like the F-91W)
 
     private var lcd: some View {
-        let glass = CGRect(x: 117, y: 177, width: 370.5, height: 175.5 + extra / 2)
+        let glass = CGRect(x: 117, y: 177, width: 370.5, height: 175.5 + stretch.windowGrowth)
         // The A158W's window shows the LCD 9.5 pt lower than the F-91W's (measured).
         return LCDPanel(
-            display: Module593Display.self, frame: CGRect(x: 105, y: 168, width: 390, height: 195 + extra / 2),
+            display: Module593Display.self,
+            frame: CGRect(x: 105, y: 168, width: 390, height: 195 + stretch.windowGrowth),
             frameRadius: 14, outline: CasioA158W.line, outlineWidth: 1.5, glass: glass, glassRadius: 6,
             displayShift: 9.5, context: context, style: style)
     }

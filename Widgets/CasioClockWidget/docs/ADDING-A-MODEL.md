@@ -56,9 +56,10 @@ In `Sources/CasioClockWidget/Models/<Name>/`:
   printed labels as `InkText(...).placed(in: measuredBox, color:)` (vertical ones with
   `placed(vertical:angle:)`), then an `LCDPanel`: the window's frame and glass and which module display it shows.
 
-If the face is wider than tall, a `caseExtension` makes the case taller so the widget is filled
-(see the F-91W); elements keep their measured size, the LCD window grows by half and the groups
-below move down.
+If the face is wider than tall, a `caseExtension` makes the case taller so the widget is filled:
+draw everything in the reference's coordinates and put each group in its `CaseExtension` band
+(`.band(.display, of: stretch)`, `stretch.windowGrowth`, …); the rule itself lives in
+`Kit/CaseExtension.swift`. Set `caseExtension` to 0 while comparing with the reference.
 
 ## 5. The display
 

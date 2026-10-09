@@ -35,7 +35,8 @@ stays live.
 Each model draws its face on its own canvas, in points measured from its reference image
 ([REFERENCES.md](REFERENCES.md)). `FaceCanvas` scales the model's `widgetArea` (a square part of
 the canvas) to the widget. Faces that are wider than tall extend their case (`caseExtension`) so
-the square widget is filled without stretching anything.
+the square widget is filled without stretching anything; `CaseExtension` shares the extra height
+out by band (case, window, side labels, print below), and a face moves each group into its band.
 
 Printed labels are `InkText`: the label's glyph outlines in a free stand-in font, stretched to
 fill the ink box measured on the reference, so font metrics don't move them.

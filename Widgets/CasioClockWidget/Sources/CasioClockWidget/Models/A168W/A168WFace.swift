@@ -7,15 +7,15 @@ struct A168WFace: View {
     private var style: LCDStyle { CasioA168W.lcd }
     /// The case extension: lines grow by it, the LCD window by half; side labels and the print below
     /// move down to share the space.
-    private var extra: CGFloat { CasioA168W.caseExtension }
+    private var stretch: CaseExtension { CaseExtension(amount: CasioA168W.caseExtension) }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             plateAndLines
             topPrint
             sideLabels
-            lcd.offset(y: extra / 4)
-            bottomPrint.offset(y: extra)
+            lcd.band(.display, of: stretch)
+            bottomPrint.band(.bottom, of: stretch)
         }
     }
 
@@ -25,15 +25,15 @@ struct A168WFace: View {
         ZStack(alignment: .topLeading) {
             CutCornerRect(cut: CGSize(width: 64, height: 74), bottomCut: CGSize(width: 66, height: 52), radius: 28)
                 .fill(CasioA168W.plate)
-                .frame(width: 430, height: 380 + extra)
+                .frame(width: 430, height: 380 + stretch.caseGrowth)
                 .offset(x: 60, y: 49)
             CutCornerRect(cut: CGSize(width: 58, height: 68), bottomCut: CGSize(width: 60, height: 46), radius: 24)
                 .stroke(CasioA168W.blue, lineWidth: 5.5)
-                .frame(width: 398.5, height: 345.75 + extra)
+                .frame(width: 398.5, height: 345.75 + stretch.caseGrowth)
                 .offset(x: 77.25, y: 66.75)
             CutCornerRect(cut: CGSize(width: 50, height: 60), bottomCut: CGSize(width: 52, height: 38), radius: 20)
                 .stroke(CasioA168W.line, lineWidth: 2.5)
-                .frame(width: 377.75, height: 326 + extra)
+                .frame(width: 377.75, height: 326 + stretch.caseGrowth)
                 .offset(x: 88, y: 76)
         }
     }
@@ -74,21 +74,21 @@ struct A168WFace: View {
                     vertical: CGRect(x: 105.5, y: 172, width: 12, height: 53.5), angle: 90,
                     color: CasioA168W.printWhite, bold: 0.55
                 )
-                .offset(y: extra / 4)
+                .band(.upperSides, of: stretch)
             ink("MODE", CaseFont.michroma)
                 .placed(
                     vertical: CGRect(x: 104.5, y: 259.5, width: 13.5, height: 54.5), angle: 90,
                     color: CasioA168W.printWhite, bold: 0.55
                 )
-                .offset(y: 3 * extra / 4)
-            dot(x: 113, y: 327).offset(y: extra)
+                .band(.lowerSides, of: stretch)
+            dot(x: 113, y: 327).band(.bottom, of: stretch)
             ink("START/STOP", CaseFont.michroma)
                 .placed(
                     vertical: CGRect(x: 435, y: 188.5, width: 16.5, height: 126), angle: -90,
                     color: CasioA168W.printWhite, bold: 0.55
                 )
-                .offset(y: extra / 2)
-            dot(x: 439, y: 327.5).offset(y: extra)
+                .band(.middleSides, of: stretch)
+            dot(x: 439, y: 327.5).band(.bottom, of: stretch)
         }
     }
 
@@ -119,9 +119,10 @@ struct A168WFace: View {
     // MARK: LCD (module 3298)
 
     private var lcd: some View {
-        let glass = CGRect(x: 136, y: 171, width: 280.5, height: 138 + extra / 2)
+        let glass = CGRect(x: 136, y: 171, width: 280.5, height: 138 + stretch.windowGrowth)
         return LCDPanel(
-            display: Module3298Display.self, frame: CGRect(x: 131, y: 166, width: 290.5, height: 148 + extra / 2),
+            display: Module3298Display.self,
+            frame: CGRect(x: 131, y: 166, width: 290.5, height: 148 + stretch.windowGrowth),
             frameRadius: 12, surround: Color(white: 0.08), outline: .clear, outlineWidth: 0, glass: glass,
             glassRadius: 9, context: context, style: style)
     }

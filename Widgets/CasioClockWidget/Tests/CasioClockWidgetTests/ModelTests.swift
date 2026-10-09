@@ -49,6 +49,22 @@ struct ModelTests {
         #expect(DisplayParts.sevenSegmentLetters("WE") == "WE")
     }
 
+    @Test("case extension: the window's extra space is equal above and below; bands move top to bottom")
+    func caseExtension() {
+        let stretch = CaseExtension(amount: 80)
+        // Above the window: its offset. Below it: the case's growth minus the offset and the window's growth.
+        let above = stretch.offset(.display)
+        let below = stretch.caseGrowth - stretch.offset(.display) - stretch.windowGrowth
+        #expect(above == below)
+        let bands: [CaseExtension.Band] = [.top, .upperSides, .middleSides, .lowerSides, .bottom]
+        let offsets = bands.map { stretch.offset($0) }
+        #expect(offsets == offsets.sorted())
+        #expect(stretch.offset(.top) == 0 && stretch.offset(.bottom) == stretch.caseGrowth)
+        // Side labels stay level with the part of the window they sit beside.
+        #expect(stretch.offset(.middleSides) == stretch.offset(.display) + stretch.windowGrowth / 2)
+        #expect(stretch.offset(.lowerSides) == stretch.offset(.display) + stretch.windowGrowth)
+    }
+
     @Test("complication kinds are unique and differ from the iPhone kinds")
     func complicationKinds() {
         let kinds = CasioModels.all.map { $0.kind } + CasioModels.complications.map { $0.complicationKind }

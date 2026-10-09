@@ -1,0 +1,32 @@
+{
+  "model": "CasioF105W",
+  "image": "F-105W - owner, F-105W-1A product image (measured).jpg",
+  "canvas": {"origin": [250, 230], "scale": 0.75, "size": [640, 640]},
+  "time": "2024-06-30T22:58:50",
+  "twelveHour": true,
+  "masks": {"print": {"lum": [150, null], "sat": [null, 45]}, "beige": {"lum": [150, null], "r-b": [10, null]}, "labelBlue": {"lum": [140, null], "b-r": [30, null]}, "brown": {"lum": [null, 90], "r-b": [15, null]}, "ill": {"lum": [150, null], "b-r": [10, null]}, "notch": {"b-r": [null, 60]}, "glass": {"lum": [60, null]}},
+  "notes": ["The image is a product render; colours sampled from it."],
+  "elements": [
+    {"name": "CASIO", "mask": "print", "box": [149, 116, 266, 144]},
+    {"name": "ALARM CHRONO", "mask": "print", "box": [277, 119, 497, 145]},
+    {"name": "arrow L", "mask": "beige", "box": [125, 165, 169, 193]},
+    {"name": "ILLUMINATOR", "mask": "ill", "box": [168, 162, 478, 197]},
+    {"name": "arrow R", "mask": "beige", "box": [475, 168, 522, 193]},
+    {"name": "dot 1", "mask": "beige", "box": [117, 425, 139, 448]},
+    {"name": "EL BACKLIGHT", "mask": "brown", "box": [150, 429, 347, 446]},
+    {"name": "dot 2", "mask": "beige", "box": [116, 448, 138, 470]},
+    {"name": "MODE", "mask": "labelBlue", "box": [143, 448, 207, 468]},
+    {"name": "START·STOP", "mask": "labelBlue", "box": [247, 448, 494, 471]},
+    {"name": "dot R", "mask": "beige", "box": [497, 451, 520, 473]},
+    {"name": "WATER RESIST", "mask": "print", "box": [168, 480, 467, 511]},
+    {"name": "notch L", "mask": "notch", "box": [100, 296, 119, 328]},
+    {"name": "signal", "mask": "dark", "box": [142, 237, 188, 260]},
+    {"name": "bell", "mask": "dark", "box": [197, 235, 222, 263]},
+    {"name": "PM", "mask": "dark", "box": [142, 265, 186, 291]},
+    {"name": "weekday", "mask": "dark", "box": [253, 236, 329, 285]},
+    {"name": "day", "mask": "dark", "box": [412, 236, 489, 290]},
+    {"name": "HHMM", "mask": "dark", "box": [195, 300, 394, 398]},
+    {"name": "sec", "mask": "dark", "box": [402, 322, 490, 398]},
+    {"name": "LCD glass", "mask": "glass", "box": [123, 213, 521, 417], "kind": "edges"}
+  ]
+}

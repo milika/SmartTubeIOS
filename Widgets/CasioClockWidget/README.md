@@ -24,6 +24,7 @@ only resources are free fonts.
 | Casio A178W | `CasioA178W` | A178W display | blue-green EL | thin upright digits (DSEG Light) |
 | Casio A700W | `CasioA700W` | A700W display | blue-green EL | slim; coloured ALARM / SIG / SPL / CHRONO labels |
 | Casio A700W Negative | `CasioA700WNegative` | A700W display (negative) | segments glow | black face, cyan print, inverted display |
+| Casio F-105W | `CasioF105W` | F-105W display | blue-green EL | black resin, blue face, ILLUMINATOR band |
 | G-Shock DW-5000C | `CasioDW5000C` | module 240 | warm bulb | the first G-Shock (1983) |
 | G-Shock DW-5600E | `CasioDW5600E` | module 3229 | blue-green EL | the widget leaves the PROTECTION / G-SHOCK bezel out |
 | G-Shock GW-B5600 | `CasioGWB5600` | GW-B5600 display | white LED | Midnight Green (GW-B5600MG), face only; the camouflage is a stand-in |

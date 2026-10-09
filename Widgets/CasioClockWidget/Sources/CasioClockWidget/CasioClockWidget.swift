@@ -75,8 +75,10 @@ enum F91WFont {
 // MARK: - Watch face
 //
 // Laid out on a fixed 594×530 canvas whose coordinates were measured from a front-on photo of
-// an F-91W (Wikimedia Commons, Casio_F-91W_5051.jpg), then scaled to the widget. Printed text
-// is Eurostile Extended / Microgramma on the watch; SF Pro Expanded is the closest system face.
+// an F-91W (Wikimedia Commons, Casio_F-91W_5051.jpg), then scaled to the widget.
+// Typefaces per Fonts In Use (fontsinuse.com/uses/74290): CASIO logo Microgramma; "F-91W"
+// Neue Helvetica Extended Black; "ALARM CHRONOGRAPH" regular-width Medium; the other labels
+// Eurostile Extended Regular / Medium. SF Pro Expanded stands in for the extended faces.
 
 struct CasioWatchFace: View {
     let date: Date
@@ -149,22 +151,22 @@ struct CasioWatchFace: View {
             // ◀ LIGHT   ALARM CHRONOGRAPH
             Pointer(left: true).fill(Self.red).frame(width: 16, height: 7).position(x: 96, y: 155)
             Text("LIGHT")
-                .font(.system(size: 14, weight: .medium).width(.expanded))
+                .font(.system(size: 14, weight: .regular).width(.expanded))
                 .foregroundStyle(Self.printWhite)
                 .place(leading: 116, centerY: 155)
             Text("ALARM CHRONOGRAPH")
-                .font(.system(size: 17.5, weight: .semibold).width(.expanded))
+                .font(.system(size: 21, weight: .medium))
                 .foregroundStyle(Self.gold)
                 .place(trailing: 497, centerY: 154, width: 290)
 
             // ◀ MODE   ALARM ON·OFF/24HR ▶
             Pointer(left: true).fill(Self.red).frame(width: 18, height: 7).position(x: 97, y: 400)
             Text("MODE")
-                .font(.system(size: 15.5, weight: .medium).width(.expanded))
+                .font(.system(size: 15.5, weight: .regular).width(.expanded))
                 .foregroundStyle(Self.printWhite)
                 .place(leading: 116, centerY: 400)
             Text("ALARM ON·OFF/24HR")
-                .font(.system(size: 16.5, weight: .medium).width(.expanded))
+                .font(.system(size: 16.5, weight: .regular).width(.expanded))
                 .foregroundStyle(Self.printWhite)
                 .place(trailing: 472, centerY: 400, width: 240)
             Pointer(left: false).fill(Self.red).frame(width: 18, height: 7).position(x: 491, y: 400)

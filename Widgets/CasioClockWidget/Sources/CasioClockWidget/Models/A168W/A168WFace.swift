@@ -72,20 +72,20 @@ struct A168WFace: View {
             ink("LIGHT", CaseFont.michroma)
                 .placed(
                     vertical: CGRect(x: 105.5, y: 172, width: 12, height: 53.5), angle: 90,
-                    color: CasioA168W.printWhite, bold: 0.3
+                    color: CasioA168W.printWhite, bold: 0.55
                 )
                 .offset(y: extra / 4)
             ink("MODE", CaseFont.michroma)
                 .placed(
                     vertical: CGRect(x: 104.5, y: 259.5, width: 13.5, height: 54.5), angle: 90,
-                    color: CasioA168W.printWhite, bold: 0.3
+                    color: CasioA168W.printWhite, bold: 0.55
                 )
                 .offset(y: 3 * extra / 4)
             dot(x: 113, y: 327).offset(y: extra)
             ink("START/STOP", CaseFont.michroma)
                 .placed(
                     vertical: CGRect(x: 435, y: 188.5, width: 16.5, height: 126), angle: -90,
-                    color: CasioA168W.printWhite, bold: 0.3
+                    color: CasioA168W.printWhite, bold: 0.55
                 )
                 .offset(y: extra / 2)
             dot(x: 439, y: 327.5).offset(y: extra)

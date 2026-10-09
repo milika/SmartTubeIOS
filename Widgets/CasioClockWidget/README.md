@@ -69,7 +69,8 @@ Sources/CasioClockWidget/
        public var body: some WidgetConfiguration { CasioWatchWidget<Casio<Name>>().body }
    }
    ```
-3. Add the model to `CasioModels.all` (tests check unique kinds and bundled fonts).
+3. Add the model to `CasioModels.all` (tests check unique kinds and bundled fonts), and copy the
+   `#Preview` from `CasioF91WWidget.swift` to tune the face live in Xcode's canvas.
 4. List `Casio<Name>Widget()` in the app's `WidgetBundle`.
 
 A model's `kind` must never change once shipped: it identifies the widgets people placed. (The

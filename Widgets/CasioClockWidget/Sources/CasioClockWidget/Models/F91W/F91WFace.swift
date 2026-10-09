@@ -4,11 +4,6 @@ import SwiftUI
 struct F91WFace: View {
     let context: CasioFaceContext
 
-    private var date: Date { context.date }
-    private var calendar: Calendar { context.calendar }
-    private var uses12HourClock: Bool { context.uses12HourClock }
-    private var backlit: Bool { context.backlit }
-    private var previewSeconds: Int? { context.previewSeconds }
     private var style: LCDStyle { CasioF91W.lcd }
     /// The case extension (see CasioF91W.caseExtension): the frame lines grow by it, the LCD
     /// window by half of it, and the groups below move down to share the space evenly.
@@ -159,7 +154,7 @@ struct F91WFace: View {
             // Silver outline, dark surround, grey-green glass, and the module 593 display.
             LCDWindow(
                 frame: CGRect(x: 89, y: 174 + e / 4, width: 414.5, height: 214 + e / 2), outline: CasioF91W.silver,
-                glass: glass, backlit: backlit, style: style)
+                glass: glass, backlit: context.backlit, style: style)
             Module593Display.placed(in: glass, context: context, style: style)
         }
     }

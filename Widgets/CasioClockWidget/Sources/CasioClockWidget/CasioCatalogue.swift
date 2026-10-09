@@ -10,7 +10,7 @@ import WidgetKit
 /// Every model (and every model with a complication). Keep in step with CasioWidgets below.
 enum CasioModels {
     static let all: [any CasioModel.Type] = [
-        CasioF91W.self, CasioA158W.self, CasioGMWB5000.self, CasioDW5000C.self, CasioW59.self,
+        CasioF91W.self, CasioA158W.self, CasioGMWB5000.self, CasioDW5000C.self, CasioW59.self, CasioCA53W.self,
     ]
     static let complications: [any CasioComplicationModel.Type] = [CasioF91W.self]
 }
@@ -26,6 +26,7 @@ public enum CasioWidgets {
         CasioWatchWidget<CasioGMWB5000>()
         CasioWatchWidget<CasioDW5000C>()
         CasioWatchWidget<CasioW59>()
+        CasioWatchWidget<CasioCA53W>()
     }
     #else
     /// Every model's rectangular complication: `CasioWidgets.complications` in the watch

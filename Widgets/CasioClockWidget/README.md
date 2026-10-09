@@ -16,12 +16,17 @@ published together as `CasioWidgets.homeScreen`:
   a box; its bulb lights the display warm yellow.
 - **W-59** (`CasioW59`): black resin, a blue band between two white lines, gold and red print,
   the module-590 display (its own layout of 24H, weekday, date, H:MM and seconds).
+- **CA-53W** (`CasioCA53W`): the calculator watch: display section (CASIO, blue WATER RESIST /
+  ALARM CHRONO, gold WR, upright 7-segment LCD with seconds as large as the minutes) above the
+  keypad (16 keys, white digits, red operators, tan function labels). The real watch has no
+  light; the widget keeps tap-for-light.
 
 Self-contained Swift package — no
 dependencies on any app code. Its resources are fonts, all under the SIL Open Font License 1.1
 (licenses in `Resources/`):
 
-- LCD: DSEG7 / DSEG14 Classic Bold Italic by Keshikan (keshikan.net).
+- LCD: DSEG7 / DSEG14 Classic Bold Italic by Keshikan (keshikan.net); DSEG7 Classic Bold (upright)
+  for the CA-53W.
 - Printed text (all models), free look-alikes of the watch's typefaces (Google Fonts): Michroma for
   Microgramma / Eurostile Extended, Archivo Expanded Black (a static instance of Archivo's
   variable font, wght 900 / wdth 125) for Neue Helvetica Extended Black, Saira Medium for
@@ -40,7 +45,8 @@ its measured size; the groups spread apart). F-91W: Wikimedia Commons `Casio_F-9
 typefaces per Fonts In Use (fontsinuse.com/uses/74290). A158W: Wikimedia Commons `A158W.jpg`.
 GMW-B5000: Wikimedia Commons `Wikipedia-Casio-G-Shock-Edelstahl-800.jpg`. DW-5000C:
 Wikimedia Commons `DW-5000.jpg`; W-59: Wikimedia Commons `Casio W-59 digital watch.jpg`
-(public domain); its printed labels are `InkText`, glyph outlines stretched to
+(public domain); CA-53W: Wikimedia Commons `Casio CA-53W, 1.jpg` by Morn (CC BY-SA 4.0), levelled
+by 0.8°; its printed labels are `InkText`, glyph outlines stretched to
 the ink boxes measured on the photo. Known difference: the DW-5000C draws a double-width W in
 the weekday; DSEG14's W is single width.
 
@@ -103,7 +109,8 @@ Sources/CasioClockWidget/
                      DotMatrixText (5×7 dot-matrix characters, drawn as shapes), and the module
                      displays (LCDModuleDisplay): Module593Display (F-91W, A158W, A168W…) and its
                      compact Module593Complication, Module3459Display (GMW-B5000, GW-B5600…),
-                     Module240Display (DW-5000C), Module590Display (W-59)
+                     Module240Display (DW-5000C), Module590Display (W-59),
+                     Module3208Display (CA-53W)
   Kit/               FaceCanvas + place(...) modifiers, CaseFont, BundledFonts, shapes (incl. the
                      G-Shock BrickPattern), text effects, InkText (a label filling a measured ink box)
   Models/F91W/       the F-91W: model (palette, LCD style, Xcode previews), face, complication
@@ -111,6 +118,7 @@ Sources/CasioClockWidget/
   Models/GMWB5000/   the G-Shock GMW-B5000: model, face
   Models/DW5000C/    the G-Shock DW-5000C: model, face
   Models/W59/        the W-59: model, face
+  Models/CA53W/      the CA-53W calculator watch: model, face (display section and keypad)
   Resources/         fonts and their licences (all models)
 ```
 

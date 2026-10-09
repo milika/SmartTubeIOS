@@ -41,6 +41,14 @@ struct ModelTests {
         #expect(Module240Display.dateText(date2, calendar: cal, blank: "!") == "!6-28")
     }
 
+    @Test("CA-53W weekday: S, U and O in the module's full-height 7-segment shapes")
+    func ca53wWeekdayLetters() {
+        #expect(Module3208Display.segmentLetters("SU") == "5V")
+        #expect(Module3208Display.segmentLetters("MO") == "M0")
+        #expect(Module3208Display.segmentLetters("TU") == "TV")
+        #expect(Module3208Display.segmentLetters("WE") == "WE")
+    }
+
     @Test("complication kinds are unique and differ from the iPhone kinds")
     func complicationKinds() {
         let kinds = CasioModels.all.map { $0.kind } + CasioModels.complications.map { $0.complicationKind }

@@ -38,6 +38,26 @@ Wikimedia Commons `Casio_F-91W_5051.jpg`; typefaces per Fonts In Use (fontsinuse
 
 Requires iOS 17 / macOS 14 (uses `containerBackground` and `contentMarginsDisabled`).
 
+### Apple Watch complication
+
+Apps can't make watch faces; models with a complication (`CasioComplicationModel`) provide a
+rectangular one for Apple's faces (Modular, Modular Duo, Infograph Modular) and the Smart Stack:
+the LCD with day/date, H:MM and live seconds — grey-green glass on full-colour faces, the face's
+tint on tinted ones. No light (complications can't run a tap action). watchOS 10. List it in a
+watchOS widget extension inside a watch app:
+
+```swift
+@main
+struct CasioComplications: WidgetBundle {
+    var body: some Widget {
+        CasioF91WComplication()
+    }
+}
+```
+
+`CasioF91WComplicationPreview()` is the same view for the watch app's own screen. In SmartTube:
+`SmartTubeApp/Watch` (watch app) and `SmartTubeApp/WatchComplications` (extension).
+
 ## Remove
 
 Delete the `Casio…Widget()` lines and the package dependency.
@@ -47,10 +67,10 @@ Delete the `Casio…Widget()` lines and the package dependency.
 ```
 Sources/CasioClockWidget/
   CasioModel.swift   CasioModel protocol, CasioFaceContext, CasioModels.all
-  Widget/            generic widget, timeline provider, the light intent (per model)
+  Widget/            generic widget + watch complication widget, timeline provider, light intent
   LCD/               DSEG fonts, LCDStyle, LCDText, LiveSeconds, LCDWindow, DisplayParts
   Kit/               FaceCanvas + place(...) modifiers, CaseFont, BundledFonts, shapes, text effects
-  Models/F91W/       the F-91W: model (palette, fonts, LCD style), face layout, public widget
+  Models/F91W/       the F-91W: model (palette, fonts, LCD style), face, complication, public widgets
   Resources/         fonts and their licences (all models)
 ```
 
@@ -72,6 +92,10 @@ Sources/CasioClockWidget/
 3. Add the model to `CasioModels.all` (tests check unique kinds and bundled fonts), and copy the
    `#Preview` from `CasioF91WWidget.swift` to tune the face live in Xcode's canvas.
 4. List `Casio<Name>Widget()` in the app's `WidgetBundle`.
+5. Optional Apple Watch complication: conform to `CasioComplicationModel` (complication kind,
+   name, summary, `rectangularComplication(_:)`, see `Models/F91W/F91WComplication.swift`), add a
+   public wrapper like `CasioF91WComplication`, add it to `CasioModels.complications`, and list it
+   in the watch extension's `WidgetBundle`.
 
 A model's `kind` must never change once shipped: it identifies the widgets people placed. (The
 F-91W's is `"CasioClockWidget"`, from when it was the only model.)

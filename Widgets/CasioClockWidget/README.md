@@ -1,13 +1,19 @@
 # CasioClockWidget (experimental)
 
-Small Home Screen widgets: live digital clocks drawn as Casio watches, one widget per model.
-Today the **F-91W** (black resin case, blue bezel lines, gold labels, grey-green LCD with
-seven-segment digits, day/date, PM marker, running seconds). Self-contained Swift package — no
+Small Home Screen widgets: live digital clocks drawn as Casio watches, one widget per model:
+
+- **F-91W** (`CasioF91WWidget`): black resin case, blue bezel lines, gold labels, grey-green
+  LCD with seven-segment digits, day/date, PM marker, running seconds. Also an Apple Watch
+  complication.
+- **A158W** (`CasioA158WWidget`): the same LCD module in a chrome case with a black face, a
+  steel-blue octagon line and a WATER RESIST band.
+
+Self-contained Swift package — no
 dependencies on any app code. Its resources are fonts, all under the SIL Open Font License 1.1
 (licenses in `Resources/`):
 
 - LCD: DSEG7 / DSEG14 Classic Bold Italic by Keshikan (keshikan.net).
-- F-91W printed text, free look-alikes of the watch's typefaces (Google Fonts): Michroma for
+- Printed text (both models), free look-alikes of the watch's typefaces (Google Fonts): Michroma for
   Microgramma / Eurostile Extended, Archivo Expanded Black (a static instance of Archivo's
   variable font, wght 900 / wdth 125) for Neue Helvetica Extended Black, Saira Medium for
   Eurostile Medium, and Saira Expanded SemiBold (a static instance of Saira's variable font,
@@ -16,10 +22,10 @@ dependencies on any app code. Its resources are fonts, all under the SIL Open Fo
 Tap a widget for the backlight (an `AppIntent`, iOS 17 interactive widgets): that model's LCD
 lights for 3 seconds (the F-91W glows green from the left, like its LED).
 
-Each face is laid out on a canvas measured from a front-on photo of the real watch. The F-91W's
-face is wider than tall, so its case is extended 75 pt to fill the square widget (every element
-keeps its measured size; the groups spread apart). F-91W:
-Wikimedia Commons `Casio_F-91W_5051.jpg`; typefaces per Fonts In Use (fontsinuse.com/uses/74290).
+Each face is laid out on a canvas measured from a front-on photo of the real watch. Both faces
+are wider than tall, so their case is extended to fill the square widget (every element keeps
+its measured size; the groups spread apart). F-91W: Wikimedia Commons `Casio_F-91W_5051.jpg`;
+typefaces per Fonts In Use (fontsinuse.com/uses/74290). A158W: Wikimedia Commons `A158W.jpg`.
 
 ## Add to a project
 
@@ -34,6 +40,7 @@ Wikimedia Commons `Casio_F-91W_5051.jpg`; typefaces per Fonts In Use (fontsinuse
    struct MyWidgets: WidgetBundle {
        var body: some Widget {
            CasioF91WWidget()
+           CasioA158WWidget()
        }
    }
    ```
@@ -73,6 +80,7 @@ Sources/CasioClockWidget/
   LCD/               DSEG fonts, LCDStyle, LCDText, LiveSeconds, LCDWindow, DisplayParts
   Kit/               FaceCanvas + place(...) modifiers, CaseFont, BundledFonts, shapes, text effects
   Models/F91W/       the F-91W: model (palette, fonts, LCD style), face, complication, public widgets
+  Models/A158W/      the A158W: model, face, public widget
   Resources/         fonts and their licences (all models)
 ```
 

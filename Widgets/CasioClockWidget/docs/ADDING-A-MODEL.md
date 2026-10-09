@@ -54,7 +54,7 @@ In `Sources/CasioClockWidget/Models/<Name>/`:
   (copy one from an existing model). The header comment names the reference and the mapping.
 - `<Name>Face.swift`: the face — case shapes (`CutCornerRect`, `BrickPattern`, own `Shape`s),
   printed labels as `InkText(...).placed(in: measuredBox, color:)` (vertical ones with
-  `placed(vertical:angle:)`), then an `LCDWindow` with the module's display placed in the glass.
+  `placed(vertical:angle:)`), then an `LCDPanel`: the window's frame and glass and which module display it shows.
 
 If the face is wider than tall, a `caseExtension` makes the case taller so the widget is filled
 (see the F-91W); elements keep their measured size, the LCD window grows by half and the groups
@@ -63,7 +63,7 @@ below move down.
 ## 5. The display
 
 If the watch uses a module that already has a display (REFERENCES.md, *Casio LCD modules*),
-place that display: `Module593Display.placed(in: glass, context:, style:)`. Otherwise write
+show that display: `LCDPanel(display: Module593Display.self, frame:, glass:, …)`. Otherwise write
 `LCD/Module<number>Display.swift` (or `<Name>Display` without a number), an `LCDModuleDisplay`
 measured in the reference's canvas coordinates: give it its `glass` size and `canvasOrigin` (where
 the glass sits on that canvas), and write its `body` as `inGlass(style: style) { … }`:

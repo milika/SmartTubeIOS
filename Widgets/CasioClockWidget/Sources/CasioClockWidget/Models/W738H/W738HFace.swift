@@ -4,7 +4,7 @@ import SwiftUI
 struct W738HFace: View {
     let context: CasioFaceContext
 
-    private var style: LCDStyle { CasioW738H.lcd.lit(context.backlit) }
+    private var style: LCDStyle { CasioW738H.lcd }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -93,13 +93,10 @@ struct W738HFace: View {
 
     private var lcd: some View {
         let glass = CGRect(x: 152.5, y: 204, width: 333.5, height: 248)
-        return ZStack(alignment: .topLeading) {
-            LCDWindow(
-                frame: CGRect(x: 150.5, y: 202, width: 337.5, height: 252), frameRadius: 20,
-                surround: Color(white: 0.06), outline: Color(white: 0.30), outlineWidth: 1,
-                glass: glass, glassRadius: 18, backlit: context.backlit, style: style)
-            W738HDisplay.placed(in: glass, context: context, style: style)
-        }
+        return LCDPanel(
+            display: W738HDisplay.self, frame: CGRect(x: 150.5, y: 202, width: 337.5, height: 252), frameRadius: 20,
+            surround: Color(white: 0.06), outline: Color(white: 0.30), outlineWidth: 1, glass: glass, glassRadius: 18,
+            context: context, style: style)
     }
 
     // MARK: LIGHT button

@@ -120,13 +120,10 @@ struct A168WFace: View {
 
     private var lcd: some View {
         let glass = CGRect(x: 136, y: 171, width: 280.5, height: 138 + extra / 2)
-        return ZStack(alignment: .topLeading) {
-            LCDWindow(
-                frame: CGRect(x: 131, y: 166, width: 290.5, height: 148 + extra / 2), frameRadius: 12,
-                surround: Color(white: 0.08), outline: .clear, outlineWidth: 0,
-                glass: glass, glassRadius: 9, backlit: context.backlit, style: style)
-            Module3298Display.placed(in: glass, context: context, style: style)
-        }
+        return LCDPanel(
+            display: Module3298Display.self, frame: CGRect(x: 131, y: 166, width: 290.5, height: 148 + extra / 2),
+            frameRadius: 12, surround: Color(white: 0.08), outline: .clear, outlineWidth: 0, glass: glass,
+            glassRadius: 9, context: context, style: style)
     }
 }
 

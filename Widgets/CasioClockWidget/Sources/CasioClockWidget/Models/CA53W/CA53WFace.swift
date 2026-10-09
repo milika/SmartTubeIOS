@@ -74,13 +74,10 @@ struct CA53WFace: View {
 
     private var lcd: some View {
         let glass = CGRect(x: 108.5, y: 113.5, width: 430, height: 174.5)
-        return ZStack(alignment: .topLeading) {
-            LCDWindow(
-                frame: CGRect(x: 93, y: 106, width: 452, height: 190), frameRadius: 10,
-                surround: Color(white: 0.07), outline: .clear, outlineWidth: 0,
-                glass: glass, glassRadius: 5, backlit: context.backlit, style: style)
-            Module3208Display.placed(in: glass, context: context, style: style)
-        }
+        return LCDPanel(
+            display: Module3208Display.self, frame: CGRect(x: 93, y: 106, width: 452, height: 190), frameRadius: 10,
+            surround: Color(white: 0.07), outline: .clear, outlineWidth: 0, glass: glass, glassRadius: 5,
+            context: context, style: style)
     }
 
     // MARK: Keypad

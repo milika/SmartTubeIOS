@@ -99,12 +99,9 @@ struct W800HFace: View {
 
     private var lcd: some View {
         let glass = CGRect(x: 147, y: 205, width: 287, height: 253)
-        return ZStack(alignment: .topLeading) {
-            LCDWindow(
-                frame: CGRect(x: 142, y: 200, width: 297, height: 263), frameRadius: 20,
-                surround: Color(white: 0.06), outline: .clear, outlineWidth: 0,
-                glass: glass, glassRadius: 18, backlit: context.backlit, style: style)
-            W800HDisplay.placed(in: glass, context: context, style: style)
-        }
+        return LCDPanel(
+            display: W800HDisplay.self, frame: CGRect(x: 142, y: 200, width: 297, height: 263), frameRadius: 20,
+            surround: Color(white: 0.06), outline: .clear, outlineWidth: 0, glass: glass, glassRadius: 18,
+            context: context, style: style)
     }
 }

@@ -111,13 +111,10 @@ struct GWB5600Face: View {
 
     private var lcd: some View {
         let glass = CGRect(x: 115, y: 154, width: 396, height: 258 + extra / 2)
-        return ZStack(alignment: .topLeading) {
-            LCDWindow(
-                frame: CGRect(x: 104, y: 139, width: 418, height: 283 + extra / 2), frameRadius: 26,
-                surround: Color(white: 0.02), outline: .clear, outlineWidth: 0,
-                glass: glass, glassRadius: 16, backlit: context.backlit, style: style)
-            GWB5600Display.placed(in: glass, context: context, style: style)
-        }
+        return LCDPanel(
+            display: GWB5600Display.self, frame: CGRect(x: 104, y: 139, width: 418, height: 283 + extra / 2),
+            frameRadius: 26, surround: Color(white: 0.02), outline: .clear, outlineWidth: 0, glass: glass,
+            glassRadius: 16, context: context, style: style)
     }
 }
 

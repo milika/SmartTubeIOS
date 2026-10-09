@@ -140,12 +140,9 @@ struct DW5600EFace: View {
 
     private var lcd: some View {
         let glass = CGRect(x: 240, y: 243.5, width: 392.5, height: 248 + extra / 2)
-        return ZStack(alignment: .topLeading) {
-            LCDWindow(
-                frame: CGRect(x: 229.5, y: 234, width: 413, height: 266 + extra / 2), frameRadius: 16,
-                surround: CasioDW5600E.face, outline: CasioDW5600E.printWhite, outlineWidth: 2.5,
-                glass: glass, glassRadius: 10, backlit: context.backlit, style: style)
-            Module3229Display.placed(in: glass, context: context, style: style)
-        }
+        return LCDPanel(
+            display: Module3229Display.self, frame: CGRect(x: 229.5, y: 234, width: 413, height: 266 + extra / 2),
+            frameRadius: 16, surround: CasioDW5600E.face, outline: CasioDW5600E.printWhite, outlineWidth: 2.5,
+            glass: glass, glassRadius: 10, context: context, style: style)
     }
 }

@@ -110,14 +110,11 @@ struct A158WFace: View {
 
     private var lcd: some View {
         let glass = CGRect(x: 117, y: 177, width: 370.5, height: 175.5 + extra / 2)
-        return ZStack(alignment: .topLeading) {
-            LCDWindow(
-                frame: CGRect(x: 105, y: 168, width: 390, height: 195 + extra / 2), frameRadius: 14,
-                outline: CasioA158W.line, outlineWidth: 1.5,
-                glass: glass, glassRadius: 6, backlit: context.backlit, style: style)
-            // The A158W's window shows the LCD 9.5 pt lower than the F-91W's (measured).
-            Module593Display.placed(in: glass, shift: 9.5, context: context, style: style)
-        }
+        // The A158W's window shows the LCD 9.5 pt lower than the F-91W's (measured).
+        return LCDPanel(
+            display: Module593Display.self, frame: CGRect(x: 105, y: 168, width: 390, height: 195 + extra / 2),
+            frameRadius: 14, outline: CasioA158W.line, outlineWidth: 1.5, glass: glass, glassRadius: 6,
+            displayShift: 9.5, context: context, style: style)
     }
 }
 

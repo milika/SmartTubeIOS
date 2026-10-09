@@ -67,6 +67,28 @@ struct RenderTests {
         #expect(try lcdTextPixels("SU", font: dseg14) != lcdTextPixels("5V", font: dseg14))
     }
 
+    private func windowPixels(_ style: LCDStyle, lit: Bool) throws -> [UInt8] {
+        let window = LCDWindow(
+            frame: CGRect(x: 0, y: 0, width: 80, height: 50), glass: CGRect(x: 5, y: 5, width: 70, height: 40),
+            backlit: lit, style: style.lit(lit))
+        let view = ZStack(alignment: .topLeading) { window }.frame(width: 80, height: 50, alignment: .topLeading)
+        let image = try #require(ImageRenderer(content: view).cgImage)
+        return [UInt8](try #require(image.dataProvider?.data as Data?))
+    }
+
+    @Test("the light: a normal LCD's glass glows; an inverted one's glass stays dark and its ink changes")
+    func lightOnNormalAndInvertedLCDs() throws {
+        let normal = LCDStyle()
+        #expect(try windowPixels(normal, lit: true) != windowPixels(normal, lit: false))
+        var inverted = LCDStyle(glass: Color(white: 0.1), ink: Color(white: 0.7))
+        inverted.litInk = .white
+        let litPixels = try windowPixels(inverted, lit: true), offPixels = try windowPixels(inverted, lit: false)
+        let largest = zip(litPixels, offPixels).map { abs(Int($0) - Int($1)) }.max() ?? 0
+        #expect(largest <= 3)
+        #expect(inverted.lit(true).ink == .white)
+        #expect(inverted.lit(false).ink == Color(white: 0.7))
+    }
+
     @Test("every model draws its face, and the light changes it")
     func facesRender() throws {
         for model in CasioModels.all {

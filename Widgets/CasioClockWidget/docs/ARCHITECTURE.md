@@ -11,7 +11,8 @@ Sources/CasioClockWidget/
                         provider (a thin WidgetKit adapter), the light intent
   LiveClock/            the live clock: entry schedule, timer start, LiveHoursMinutes,
                         LiveSeconds, TimerDigit
-  LCD/                  LCDStyle (fonts, glass, ink, light, shadow), LCDText, LCDWindow, LCDFont,
+  LCD/                  LCDPanel (window + display + light), LCDStyle (fonts, glass, ink, light,
+                        shadow), LCDText, LCDWindow, LCDFont,
                         DisplayParts (the strings a display shows), DotMatrixText, LCDMarks, and
                         the module displays (LCDModuleDisplay)
   Kit/                  FaceCanvas + place(...) modifiers, InkText, CaseFont, BundledFonts,
@@ -41,7 +42,8 @@ fill the ink box measured on the reference, so font metrics don't move them.
 
 ## Displays (LCD modules)
 
-A face draws only the case and an `LCDWindow`; the characters come from its module's display,
+A face draws only the case and an `LCDPanel` (the window, its glass and light, and the display);
+the characters come from its module's display,
 an `LCDModuleDisplay` measured once in a glass of `glass` size and `placed(in:)` any watch's glass
 (scaled to its width, centred vertically). The F-91W and A158W share `Module593Display`; the F-91W
 complication uses `Module593Complication`, a compact layout of the same module for the

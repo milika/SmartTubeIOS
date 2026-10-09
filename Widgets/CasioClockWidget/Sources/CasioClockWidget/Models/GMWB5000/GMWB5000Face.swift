@@ -169,13 +169,10 @@ struct GMWB5000Face: View {
 
     private var lcd: some View {
         let glass = CGRect(x: 151, y: 176, width: 313, height: 207 + extra / 2)
-        return ZStack(alignment: .topLeading) {
-            LCDWindow(
-                frame: CGRect(x: 147, y: 172, width: 321, height: 215 + extra / 2), frameRadius: 18,
-                surround: CasioGMWB5000.surround, outline: CasioGMWB5000.surround, outlineWidth: 0,
-                glass: glass, glassRadius: 14, backlit: context.backlit, style: style)
-            Module3459Display.placed(in: glass, context: context, style: style)
-        }
+        return LCDPanel(
+            display: Module3459Display.self, frame: CGRect(x: 147, y: 172, width: 321, height: 215 + extra / 2),
+            frameRadius: 18, surround: CasioGMWB5000.surround, outline: CasioGMWB5000.surround, outlineWidth: 0,
+            glass: glass, glassRadius: 14, context: context, style: style)
     }
 }
 

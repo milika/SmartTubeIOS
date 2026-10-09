@@ -148,13 +148,10 @@ struct F91WFace: View {
 
     private var lcd: some View {
         let glass = CGRect(x: 104, y: 191.5 + extra / 4, width: 389.5, height: 184.5 + extra / 2)
-        return ZStack(alignment: .topLeading) {
-            // Silver outline, dark surround, grey-green glass, and the module 593 display.
-            LCDWindow(
-                frame: CGRect(x: 89, y: 174 + extra / 4, width: 414.5, height: 214 + extra / 2),
-                outline: CasioF91W.silver,
-                glass: glass, backlit: context.backlit, style: style)
-            Module593Display.placed(in: glass, context: context, style: style)
-        }
+        // Silver outline, dark surround, grey-green glass, and the module 593 display.
+        return LCDPanel(
+            display: Module593Display.self,
+            frame: CGRect(x: 89, y: 174 + extra / 4, width: 414.5, height: 214 + extra / 2), outline: CasioF91W.silver,
+            glass: glass, context: context, style: style)
     }
 }

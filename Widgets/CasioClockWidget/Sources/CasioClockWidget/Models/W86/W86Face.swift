@@ -110,13 +110,10 @@ struct W86Face: View {
 
     private var lcd: some View {
         let glass = CGRect(x: 88, y: 200, width: 536.5, height: 255 + extra / 2)
-        return ZStack(alignment: .topLeading) {
-            LCDWindow(
-                frame: CGRect(x: 68, y: 170, width: 581, height: 301 + extra / 2), frameRadius: 32,
-                surround: CasioW86.frame, outline: .clear, outlineWidth: 0,
-                glass: glass, glassRadius: 18, backlit: context.backlit, style: style)
-            W86Display.placed(in: glass, context: context, style: style)
-        }
+        return LCDPanel(
+            display: W86Display.self, frame: CGRect(x: 68, y: 170, width: 581, height: 301 + extra / 2),
+            frameRadius: 32, surround: CasioW86.frame, outline: .clear, outlineWidth: 0, glass: glass, glassRadius: 18,
+            context: context, style: style)
     }
 }
 

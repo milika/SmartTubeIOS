@@ -85,12 +85,9 @@ struct W59Face: View {
 
     private var lcd: some View {
         let glass = CGRect(x: 103, y: 160.5, width: 336.5, height: 163.5 + extra / 2)
-        return ZStack(alignment: .topLeading) {
-            LCDWindow(
-                frame: CGRect(x: 89.5, y: 147, width: 362.5, height: 190.75 + extra / 2), frameRadius: 16,
-                surround: Color(white: 0.09), outline: CasioW59.line, outlineWidth: 2,
-                glass: glass, glassRadius: 9, backlit: context.backlit, style: style)
-            Module590Display.placed(in: glass, context: context, style: style)
-        }
+        return LCDPanel(
+            display: Module590Display.self, frame: CGRect(x: 89.5, y: 147, width: 362.5, height: 190.75 + extra / 2),
+            frameRadius: 16, surround: Color(white: 0.09), outline: CasioW59.line, outlineWidth: 2, glass: glass,
+            glassRadius: 9, context: context, style: style)
     }
 }

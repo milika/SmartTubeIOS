@@ -4,10 +4,9 @@ import SwiftUI
 /// window that keeps only the last two digits. Widgets can't redraw every second, but timer text
 /// animates itself.
 struct LiveSeconds: View {
-    let date: Date
-    let calendar: Calendar
-    /// Fixed seconds for static renders (the timer only animates inside a widget).
-    let previewSeconds: Int?
+    /// The entry's time; `context.previewSeconds` fixes the seconds for static renders (the
+    /// timer only animates inside a widget).
+    let context: CasioFaceContext
     let glyph: CGFloat
     let trailing: CGFloat
     let baseline: CGFloat
@@ -15,11 +14,11 @@ struct LiveSeconds: View {
     let style: LCDStyle
 
     var body: some View {
-        let start = LiveClock.timerStart(for: date, calendar: calendar)
+        let start = LiveClock.timerStart(for: context.date, calendar: context.calendar)
         let font = style.digits
         let digitAdvance = glyph / font.glyphToEm * font.digitAdvance
         let window = digitAdvance * 2.02
-        let live: Text = previewSeconds.map { Text(String(format: "%02d", $0)) } ?? Text(start, style: .timer)
+        let live: Text = context.previewSeconds.map { Text(String(format: "%02d", $0)) } ?? Text(start, style: .timer)
         ZStack(alignment: .topLeading) {
             if style.unlitOpacity > 0, let lit = font.allLit("00") {
                 Text(lit).font(font.font(height: glyph))

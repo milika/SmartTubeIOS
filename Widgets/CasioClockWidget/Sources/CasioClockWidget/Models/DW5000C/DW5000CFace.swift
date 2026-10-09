@@ -159,8 +159,7 @@ struct DW5000CFace: View {
                     context: context, font: style.digits, glyph: 74.5, trailing: 378, baseline: 335.5, xScale: 0.83,
                     colonGap: 9.5, style: style)
                 LiveSeconds(
-                    date: context.date, calendar: context.calendar, previewSeconds: context.previewSeconds,
-                    glyph: 53, trailing: 461, baseline: 335.5, xScale: 0.83, style: style)
+                    context: context, glyph: 53, trailing: 461, baseline: 335.5, xScale: 0.83, style: style)
             }
             .lcdSegmentShadow(style)
             .offset(y: e / 4)

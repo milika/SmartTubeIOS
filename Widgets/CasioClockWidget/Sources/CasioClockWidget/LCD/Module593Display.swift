@@ -39,8 +39,7 @@ struct Module593Display: View {
                 context: context, font: style.digits, glyph: 88.5, trailing: 279, baseline: 166,
                 xScale: Self.digitSqueeze, style: style)
             LiveSeconds(
-                date: context.date, calendar: context.calendar, previewSeconds: context.previewSeconds, glyph: 67,
-                trailing: 382, baseline: 166, xScale: Self.digitSqueeze, style: style)
+                context: context, glyph: 67, trailing: 382, baseline: 166, xScale: Self.digitSqueeze, style: style)
         }
         .lcdSegmentShadow(style)
         .frame(width: Self.glass.width, height: Self.glass.height, alignment: .topLeading)

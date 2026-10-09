@@ -45,8 +45,8 @@ struct F91WComplication: View {
                     context: context, font: style.digits, glyph: 44, trailing: 148, baseline: 75,
                     xScale: CasioF91W.digitSqueeze, style: style)
                 LiveSeconds(
-                    date: context.date, calendar: context.calendar, previewSeconds: context.previewSeconds,
-                    glyph: 32, trailing: 196, baseline: 75, xScale: CasioF91W.digitSqueeze, style: style)
+                    context: context, glyph: 32, trailing: 196, baseline: 75, xScale: CasioF91W.digitSqueeze,
+                    style: style)
             }
             .widgetAccentable()
         }

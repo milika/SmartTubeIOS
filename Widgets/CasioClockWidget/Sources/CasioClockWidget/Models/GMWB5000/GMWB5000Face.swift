@@ -200,8 +200,7 @@ struct GMWB5000Face: View {
                     context: context, font: style.digits, glyph: 76, trailing: 372, baseline: 362.5, xScale: 0.85,
                     style: style)
                 LiveSeconds(
-                    date: context.date, calendar: context.calendar, previewSeconds: context.previewSeconds,
-                    glyph: 50, trailing: 450, baseline: 360.5, xScale: 0.93, style: style)
+                    context: context, glyph: 50, trailing: 450, baseline: 360.5, xScale: 0.93, style: style)
             }
             .lcdSegmentShadow(style)
             .offset(y: e / 4)

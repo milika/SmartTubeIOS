@@ -16,6 +16,18 @@ struct DotMatrixTests {
         #expect(DotMatrixText.glyph(" ").joined().contains("#") == false)
     }
 
+    @Test("both glyph sets cover the date's characters in 5×7")
+    func glyphSets() {
+        for glyphs in [DotMatrixText.Glyphs.round5x7, .bold5x7] {
+            for ch in "0123456789.-" {
+                let rows = glyphs.glyph(ch)
+                #expect(rows.count == 7 && rows.allSatisfy { $0.count == 5 }, "\(glyphs) \(ch)")
+                #expect(rows.joined().contains("#"), "\(glyphs) \(ch)")
+            }
+        }
+        #expect(DotMatrixText.Glyphs.bold5x7.glyph("8") != DotMatrixText.Glyphs.round5x7.glyph("8"))
+    }
+
     @Test("G-Shock date: day first ('28. 6') or month first (' 6-28') like the locale")
     func dateText() throws {
         var cal = Calendar(identifier: .gregorian)

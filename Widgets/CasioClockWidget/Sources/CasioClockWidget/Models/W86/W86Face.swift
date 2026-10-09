@@ -99,19 +99,17 @@ struct W86Face: View {
             Pointer(left: false).fill(CasioW86.plate).frame(width: 50.5, height: 19).offset(x: 559, y: 489.5)
             ink("WATER 50M RESIST", CaseFont.michroma)
                 .placed(in: CGRect(x: 123, y: 541.5, width: 461.5, height: 29), color: CasioW86.printWhite, bold: 1.2)
-            Text("u")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(CasioW86.printWhite.opacity(0.85))
-                .place(centerX: 352, centerY: 584.75)
+            InkText(text: "u", font: CaseFont.saira)
+                .placed(in: CGRect(x: 348, y: 580.5, width: 8, height: 8.5), color: CasioW86.printWhite.opacity(0.85))
         }
     }
 
     // MARK: LCD
 
     private var lcd: some View {
-        let glass = CGRect(x: 88, y: 200, width: 536.5, height: 255 + stretch.windowGrowth)
+        let glass = CGRect(x: 86, y: 201.5, width: 536.5, height: 237.5 + stretch.windowGrowth)
         return LCDPanel(
-            display: W86Display.self, frame: CGRect(x: 68, y: 170, width: 581, height: 301 + stretch.windowGrowth),
+            display: W86Display.self, frame: CGRect(x: 68, y: 170, width: 581, height: 287 + stretch.windowGrowth),
             frameRadius: 32, surround: CasioW86.frame, outline: .clear, outlineWidth: 0, glass: glass, glassRadius: 18,
             context: context, style: style)
     }

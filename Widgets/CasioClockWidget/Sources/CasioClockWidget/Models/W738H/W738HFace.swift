@@ -20,7 +20,7 @@ struct W738HFace: View {
     private var caseAndBezel: some View {
         ZStack(alignment: .topLeading) {
             ink("VIBRATION ALARM", CaseFont.michroma)
-                .placed(in: CGRect(x: 184, y: 47, width: 270, height: 19), color: CasioW738H.caseGrey, bold: 0.6)
+                .placed(in: CGRect(x: 184, y: 47, width: 270, height: 13.5), color: CasioW738H.caseGrey, bold: 0.6)
             CutCornerRect(cut: CGSize(width: 70, height: 70), radius: 14)
                 .fill(CasioW738H.bezel)
                 .overlay(

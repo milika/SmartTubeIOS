@@ -4,7 +4,7 @@
   "canvas": {"origin": [322.8229166666667, 455.75], "scale": 1.8989583333333333, "size": [620, 500]},
   "time": "2026-11-04T19:46:24",
   "twelveHour": false,
-  "masks": {"white": {"lum": [140, null], "|r-b|": [null, 45]}, "gold": {"r": [110, null], "r-b": [55, null], "g": [80, null]}, "teal": {"g": [110, null], "b": [100, null], "g-r": [25, null]}, "red": {"r": [110, null], "r-g": [60, null]}, "ink": {"lum": [null, 70]}},
+  "masks": {"white": {"lum": [140, null], "|r-b|": [null, 45]}, "gold": {"r": [110, null], "r-b": [55, null], "g": [80, null]}, "teal": {"g": [110, null], "b": [100, null], "g-r": [25, null]}, "red": {"r": [110, null], "r-g": [60, null]}, "ink": {"lum": [null, 70]}, "glass": {"lum": [140, null]}},
   "elements": [
     {"name": "CASIO", "mask": "white", "box": [170, 55, 295, 90]},
     {"name": "Lithium", "mask": "gold", "box": [295, 55, 380, 90]},
@@ -22,10 +22,11 @@
     {"name": "SIG", "mask": "white", "box": [330, 388, 450, 404]},
     {"name": "JAPAN", "mask": "white", "box": [360, 404, 420, 415]},
     {"name": "ALARM CHRONO", "mask": "gold", "box": [190, 428, 430, 458]},
-    {"name": "weekday", "mask": "ink", "box": [165, 172, 255, 222]},
+    {"name": "weekday", "mask": "ink", "box": [171, 178, 252, 222]},
     {"name": "datebox", "mask": "ink", "box": [290, 168, 465, 245]},
     {"name": "24H", "mask": "ink", "box": [220, 232, 280, 253]},
     {"name": "HHMM", "mask": "ink", "box": [180, 255, 395, 340]},
-    {"name": "sec", "mask": "ink", "box": [390, 275, 465, 340]}
+    {"name": "sec", "mask": "ink", "box": [390, 275, 465, 340]},
+    {"name": "LCD glass", "mask": "glass", "box": [147, 158, 475, 360], "kind": "edges"}
   ]
 }

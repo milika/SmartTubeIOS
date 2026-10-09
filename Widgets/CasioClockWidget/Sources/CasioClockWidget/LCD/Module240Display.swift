@@ -13,17 +13,28 @@ struct Module240Display: LCDModuleDisplay {
     let style: LCDStyle
 
     // Measured character runs (canvas points).
-    // The DW-5000C's W is double width; DSEG's is not. Wide enough for WE, not too wide for FR.
-    static let weekday = LCDRun(glyph: 36, edge: .leading(173), baseline: 218.5, tracking: 10)
+    // The weekday's two letters sit in fixed cells; the first cell is double width, and a W fills it
+    // as two narrow cells, an L and a U (as on the DW-5000C photo).
+    static let firstLetter = LCDRun(glyph: 36, edge: .leading(173), baseline: 218.5)
+    static let doubleWLeft = LCDRun(glyph: 36, edge: .leading(171.5), baseline: 218.5, xScale: 0.9)
+    static let doubleWRight = LCDRun(glyph: 36, edge: .leading(186), baseline: 218.5, xScale: 0.94)
+    static let secondLetter = LCDRun(glyph: 36, edge: .leading(224.5), baseline: 218.5, xScale: 0.83)
     static let date = LCDRun(glyph: 44, edge: .trailing(456), baseline: 230.5, xScale: 0.877)
     static let time = LCDRun(glyph: 74.5, edge: .trailing(378), baseline: 335.5, xScale: 0.83, colonGap: 9.5)
     static let seconds = LCDRun(glyph: 53, edge: .trailing(461), baseline: 335.5, xScale: 0.83)
-    static let runs = [weekday, date, time, seconds]
+    static let runs = [firstLetter, doubleWLeft, doubleWRight, secondLetter, date, time, seconds]
 
     var body: some View {
         let parts = context.displayParts(blankDigit: style.digits.blankDigit)
         inGlass(style: style) {
-            LCDText(text: parts.weekday, font: style.letters, run: Self.weekday, style: style)
+            let first = String(parts.weekday.prefix(1)), second = String(parts.weekday.dropFirst())
+            if first == "W" {
+                LCDText(text: "L", font: style.letters, run: Self.doubleWLeft, style: style)
+                LCDText(text: "U", font: style.letters, run: Self.doubleWRight, style: style)
+            } else {
+                LCDText(text: first, font: style.letters, run: Self.firstLetter, style: style)
+            }
+            LCDText(text: second, font: style.letters, run: Self.secondLetter, style: style)
             if let marker = parts.marker {
                 InkText(text: marker, font: CaseFont.michroma)
                     .placed(

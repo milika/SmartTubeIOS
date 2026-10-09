@@ -4,12 +4,12 @@ import SwiftUI
 /// three-letter weekday, SNZ / ALM / SIG with their bars, P for PM, a large H:MM and seconds, and
 /// the year and month-date under a divider, in upright 7-segment characters. Measured on a
 /// front-on product image of the W-800H, in that face's canvas coordinates; `canvasOrigin` is where
-/// its 287 × 253 glass sits on that canvas (`placed(in:)`). The bars show the alarms on, as in the
+/// its 294.5 × 259 glass sits on that canvas (`placed(in:)`). The bars show the alarms on, as in the
 /// image.
 struct W800HDisplay: LCDModuleDisplay {
-    static let glass = CGSize(width: 287, height: 253)
+    static let glass = CGSize(width: 294.5, height: 259)
     /// The glass's top-left corner on the W-800H canvas the numbers below were measured on.
-    static let canvasOrigin = CGPoint(x: 147, y: 205)
+    static let canvasOrigin = CGPoint(x: 140, y: 202.5)
 
     let context: CasioFaceContext
     let style: LCDStyle
@@ -61,7 +61,7 @@ struct W800HDisplay: LCDModuleDisplay {
     static let weekday = LCDRun(glyph: 39, edge: .leading(188.5), baseline: 274, xScale: 1, tracking: 2)
     static let time = LCDRun(
         glyph: 84, edge: .trailing(342.5), baseline: 383, xScale: 0.78, tracking: -13.4, colonGap: 10)
-    static let seconds = LCDRun(glyph: 62, edge: .trailing(419.5), baseline: 383, xScale: 0.8, tracking: -8.1)
+    static let seconds = LCDRun(glyph: 62, edge: .trailing(417.5), baseline: 383, xScale: 0.8, tracking: -8.1)
     /// Anchored at its last group; the other groups use `.trailing(_:)`.
     static let bottomRow = LCDRun(glyph: 35.5, edge: .trailing(409.5), baseline: 438.5, xScale: 0.89)
     static let runs = [weekday, time, seconds, bottomRow]

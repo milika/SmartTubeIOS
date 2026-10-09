@@ -59,16 +59,13 @@ struct A158WFace: View {
             marker(x: 100.5, centerY: 132)
             marker(x: 100.5, centerY: 150)
             label("LIGHT / LAP · RESET", leading: 127.5, centerY: 131.5, tracking: 0.9)
-            label("MODE", leading: 127.5, centerY: 149.5, tracking: 0.9)
-            Text("Lithium")
-                .font(CasioA158W.saira(14.5))
-                .foregroundStyle(CasioA158W.paleGold)
-                .place(trailing: 450.5, centerY: 127.25, width: 120)
-            Text("START · STOP / 12 · 24H")
-                .font(CasioA158W.saira(14.3))
-                .tracking(0.9)
-                .foregroundStyle(CasioA158W.printWhite)
-                .place(trailing: 474, centerY: 147, width: 220)
+            // Ink boxes measured on the photo.
+            InkText(text: "MODE", font: CaseFont.saira, tracking: 0.063)
+                .placed(in: CGRect(x: 127.5, y: 144, width: 45.5, height: 12), color: CasioA158W.printWhite)
+            InkText(text: "Lithium", font: CaseFont.saira)
+                .placed(in: CGRect(x: 385, y: 119.5, width: 71, height: 14), color: CasioA158W.paleGold)
+            InkText(text: "START · STOP / 12 · 24H", font: CaseFont.saira, tracking: 0.063)
+                .placed(in: CGRect(x: 295.5, y: 140.5, width: 176.5, height: 13.5), color: CasioA158W.printWhite)
             marker(x: 480, centerY: 147)
         }
     }
@@ -91,12 +88,8 @@ struct A158WFace: View {
             Rectangle().fill(CasioA158W.line).frame(width: 423, height: 2).offset(x: 90, y: 386)
             // WATER RESIST on a steel-blue band whose right end is slanted.
             Slant().fill(CasioA158W.band).frame(width: 272.5, height: 27).offset(x: 112.5, y: 400.5)
-            Text("WATER RESIST")
-                .font(CasioA158W.michroma(16.8))
-                .tracking(2)
-                .foregroundStyle(CasioA158W.gold)
-                .emboldened(0.8)
-                .place(leading: 147.5, centerY: 414.25, width: 240)
+            InkText(text: "WATER RESIST", font: CaseFont.michroma, tracking: 0.12)
+                .placed(in: CGRect(x: 142.5, y: 406, width: 214, height: 17.5), color: CasioA158W.gold, bold: 0.8)
             Text("WR")
                 .font(CasioA158W.sairaExpanded(25.6))
                 .foregroundStyle(CasioA158W.maroon)
@@ -106,16 +99,15 @@ struct A158WFace: View {
         }
     }
 
-    // MARK: LCD (module 593, like the F-91W)
+    // MARK: LCD (module 593, measured on the A158W photo)
 
     private var lcd: some View {
-        let glass = CGRect(x: 117, y: 177, width: 370.5, height: 175.5 + stretch.windowGrowth)
-        // The A158W's window shows the LCD 9.5 pt lower than the F-91W's (measured).
+        let glass = CGRect(x: 115, y: 176, width: 368.5, height: 177.5 + stretch.windowGrowth)
         return LCDPanel(
-            display: Module593Display.self,
-            frame: CGRect(x: 105, y: 168, width: 390, height: 195 + stretch.windowGrowth),
+            display: A158WDisplay.self,
+            frame: CGRect(x: 103.25, y: 164.25, width: 394, height: 203.5 + stretch.windowGrowth),
             frameRadius: 14, outline: CasioA158W.line, outlineWidth: 1.5, glass: glass, glassRadius: 6,
-            displayShift: 9.5, context: context, style: style)
+            context: context, style: style)
     }
 }
 

@@ -3,12 +3,12 @@ import SwiftUI
 /// The W-86's display (named after the watch; its module number is not checked here): signal and
 /// alarm marks, 24H (PM on a 12-hour clock), weekday and day of month on top, a large italic H:MM
 /// and seconds below. Measured on a front-on photo of a W-86, in that face's canvas coordinates;
-/// `canvasOrigin` is where its 536.5 × 255 glass sits on that canvas (`placed(in:)`). The marks are
+/// `canvasOrigin` is where its 536.5 × 237.5 glass sits on that canvas (`placed(in:)`). The marks are
 /// shown on, as in the photo.
 struct W86Display: LCDModuleDisplay {
-    static let glass = CGSize(width: 536.5, height: 255)
+    static let glass = CGSize(width: 536.5, height: 237.5)
     /// The glass's top-left corner on the W-86 canvas the numbers below were measured on.
-    static let canvasOrigin = CGPoint(x: 88, y: 200)
+    static let canvasOrigin = CGPoint(x: 86, y: 201.5)
 
     let context: CasioFaceContext
     let style: LCDStyle

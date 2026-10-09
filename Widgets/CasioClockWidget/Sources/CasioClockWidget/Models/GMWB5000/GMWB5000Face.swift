@@ -73,24 +73,20 @@ struct GMWB5000Face: View {
 
     private var topPrint: some View {
         ZStack(alignment: .topLeading) {
-            Text("CASIO")
-                .font(CasioGMWB5000.michroma(15.2))
-                .tracking(2.6)
-                .foregroundStyle(CasioGMWB5000.printWhite)
-                .emboldened(0.6)
-                .place(leading: 188, centerY: 104.25, width: 100)
-            Text("TOUGH SOLAR")
-                .font(CasioGMWB5000.michroma(12.4))
-                .tracking(1.6)
-                .foregroundStyle(CasioGMWB5000.printGrey)
-                .place(leading: 278.5, centerY: 106.25, width: 180)
+            // Ink boxes measured on the photo.
+            InkText(text: "CASIO", font: CaseFont.michroma, tracking: 0.17)
+                .placed(in: CGRect(x: 188, y: 98, width: 74.5, height: 13), color: CasioGMWB5000.printWhite, bold: 0.6)
+            InkText(text: "TOUGH SOLAR", font: CaseFont.michroma, tracking: 0.13)
+                .placed(in: CGRect(x: 279.5, y: 102.5, width: 146.5, height: 9.5), color: CasioGMWB5000.printGrey)
             ShockResistBadge()
                 .frame(width: 53.5, height: 30)
                 .offset(x: 195, y: 130)
             Pointer(left: true).fill(CasioGMWB5000.printWhite).frame(width: 8, height: 9).position(x: 334, y: 144.5)
             label("SPLIT·RESET", trailing: 440, centerY: 144.5, tracking: 0.25)
-            label("LIGHT", trailing: 426, centerY: 160.25, tracking: -0.4)
-            Pointer(left: false).fill(CasioGMWB5000.printWhite).frame(width: 8, height: 9).position(x: 436, y: 160.75)
+            InkText(text: "LIGHT", font: CaseFont.michroma)
+                .placed(
+                    in: CGRect(x: 388.5, y: 156.5, width: 28, height: 8.5), color: CasioGMWB5000.labelGrey, bold: 0.25)
+            Pointer(left: false).fill(CasioGMWB5000.printWhite).frame(width: 8, height: 9).position(x: 437.5, y: 160.75)
         }
     }
 
@@ -119,10 +115,19 @@ struct GMWB5000Face: View {
             dot(x: 98.5, y: 190 + stretch.offset(.upperSides))
             vertical("MODE", centerX: 98.5, centerY: 330.5 + stretch.offset(.lowerSides), angle: -90, tracking: 1.4)
             dot(x: 98.5, y: 365 + stretch.offset(.lowerSides))
-            vertical(
-                "SET [–]", centerX: 516.5, centerY: 227.75 + stretch.offset(.upperSides), angle: 90, tracking: 3.75)
-            dot(x: 516.5, y: 190 + stretch.offset(.upperSides))
-            vertical("SET [+]", centerX: 516, centerY: 335 + stretch.offset(.lowerSides), angle: 90, tracking: 2.8)
+            InkText(text: "SET [–]", font: CaseFont.michroma, tracking: 0.39)
+                .placed(
+                    vertical: CGRect(x: 511.5, y: 205.5, width: 10.5, height: 56), angle: 90,
+                    color: CasioGMWB5000.labelGrey, bold: 0.25
+                )
+                .offset(y: stretch.offset(.upperSides))
+            dot(x: 516.5, y: 192.5 + stretch.offset(.upperSides))
+            InkText(text: "SET [+]", font: CaseFont.michroma, tracking: 0.29)
+                .placed(
+                    vertical: CGRect(x: 511, y: 300, width: 10.5, height: 56), angle: 90,
+                    color: CasioGMWB5000.labelGrey, bold: 0.25
+                )
+                .offset(y: stretch.offset(.lowerSides))
             dot(x: 516.5, y: 368 + stretch.offset(.lowerSides))
         }
     }
@@ -149,7 +154,9 @@ struct GMWB5000Face: View {
     private var bottomPrint: some View {
         ZStack(alignment: .topLeading) {
             label("WATER RESIST", leading: 172, centerY: 400, tracking: 3.4)
-            label("20BAR", leading: 212, centerY: 415.25, tracking: 4)
+            InkText(text: "20BAR", font: CaseFont.michroma, tracking: 0.4)
+                .placed(
+                    in: CGRect(x: 206.5, y: 410.5, width: 73, height: 10), color: CasioGMWB5000.labelGrey, bold: 0.25)
             label("RECEIVING", trailing: 426.5, centerY: 400, tracking: 0.5)
             Pointer(left: false).fill(CasioGMWB5000.printWhite).frame(width: 8, height: 9).position(x: 436, y: 399.5)
             label("START·STOP", trailing: 426.5, centerY: 416.5, tracking: 0)

@@ -100,7 +100,7 @@ struct DW5600EFace: View {
         let white = CasioDW5600E.printWhite
         return ZStack(alignment: .topLeading) {
             ink("ELECTRO LUMINESCENT BACKLIGHT", CaseFont.archivoBlack, slant: 0.22)
-                .placed(in: CGRect(x: 258.5, y: 513.5, width: 330, height: 13.5), color: white)
+                .placed(in: CGRect(x: 258.5, y: 513.5, width: 323.5, height: 13.5), color: white)
             Pointer(left: false).fill(white).frame(width: 16, height: 9).offset(x: 594.5, y: 516)
             ink("ALARM", CaseFont.michroma)
                 .placed(in: CGRect(x: 258.5, y: 555.5, width: 89, height: 18), color: CasioDW5600E.gold, bold: 0.6)
@@ -130,9 +130,9 @@ struct DW5600EFace: View {
                 width: 134.5, height: 58
             ).offset(x: 366, y: 538)
             InkText(text: "SHOCK", font: CaseFont.michroma)
-                .placed(in: CGRect(x: 386, y: 546, width: 95, height: 12), color: CasioDW5600E.gold, bold: 0.5)
+                .placed(in: CGRect(x: 380, y: 547.5, width: 102.5, height: 10.5), color: CasioDW5600E.gold, bold: 0.5)
             InkText(text: "RESIST", font: CaseFont.michroma)
-                .placed(in: CGRect(x: 386, y: 561, width: 95, height: 12), color: CasioDW5600E.gold, bold: 0.5)
+                .placed(in: CGRect(x: 381, y: 562, width: 102, height: 10), color: CasioDW5600E.gold, bold: 0.5)
         }
     }
 

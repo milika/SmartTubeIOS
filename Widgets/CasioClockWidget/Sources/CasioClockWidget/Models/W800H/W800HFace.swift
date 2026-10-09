@@ -73,15 +73,19 @@ struct W800HFace: View {
                 .placed(in: CGRect(x: 285.5, y: 178.5, width: 124, height: 13), color: white, bold: 0.5)
             ink("ADJUST", CaseFont.michroma)
                 .placed(
-                    vertical: CGRect(x: 125.5, y: 219.5, width: 13, height: 83.5), angle: -90, color: white, bold: 0.3)
+                    vertical: CGRect(x: 129.5, y: 222.5, width: 10, height: 80.5), angle: -90, color: white, bold: 0.3)
             ink("MODE", CaseFont.michroma)
                 .placed(vertical: CGRect(x: 128, y: 374, width: 9, height: 64.5), angle: -90, color: white, bold: 0.3)
             ink("LIGHT", CaseFont.michroma)
                 .placed(
-                    vertical: CGRect(x: 438.5, y: 218, width: 13.5, height: 68.5), angle: 90, color: white, bold: 0.3)
-            ink("12/24H", CaseFont.michroma)
-                .placed(
-                    vertical: CGRect(x: 436.5, y: 366.5, width: 15.5, height: 75.5), angle: 90, color: white, bold: 0.3)
+                    vertical: CGRect(x: 439, y: 224, width: 10, height: 63), angle: 90, color: white, bold: 0.3)
+            // 12/24H in three pieces: Michroma's slash drops below the baseline, the watch's doesn't.
+            ink("12", CaseFont.michroma)
+                .placed(vertical: CGRect(x: 436.5, y: 366, width: 9, height: 20), angle: 90, color: white, bold: 0.3)
+            ink("/", CaseFont.michroma)
+                .placed(vertical: CGRect(x: 436.5, y: 390.5, width: 9, height: 9), angle: 90, color: white, bold: 0.3)
+            ink("24H", CaseFont.michroma)
+                .placed(vertical: CGRect(x: 436.5, y: 402, width: 9, height: 40.5), angle: 90, color: white, bold: 0.3)
             ink("WATER", CaseFont.michroma)
                 .placed(in: CGRect(x: 172, y: 476, width: 72, height: 13.5), color: white, bold: 0.6)
             CutCornerRect(cut: CGSize(width: 8, height: 8), radius: 4)
@@ -98,9 +102,9 @@ struct W800HFace: View {
     // MARK: LCD
 
     private var lcd: some View {
-        let glass = CGRect(x: 147, y: 205, width: 287, height: 253)
+        let glass = CGRect(x: 140, y: 202.5, width: 294.5, height: 259)
         return LCDPanel(
-            display: W800HDisplay.self, frame: CGRect(x: 142, y: 200, width: 297, height: 263), frameRadius: 20,
+            display: W800HDisplay.self, frame: CGRect(x: 137, y: 199.5, width: 298.5, height: 265), frameRadius: 20,
             surround: Color(white: 0.06), outline: .clear, outlineWidth: 0, glass: glass, glassRadius: 18,
             context: context, style: style)
     }

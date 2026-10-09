@@ -59,7 +59,7 @@ struct F91WFace: View {
                 .emboldened(0.6)
                 .oblique()
                 .place(centerX: 398, centerY: 93.5)
-            bar(x: 70, y: 125, width: 453)
+            bar(x: 70, y: 123.5, width: 453, height: 9)
 
             // ◀ LIGHT   ALARM  CHRONOGRAPH
             Pointer(left: true).fill(CasioF91W.red).frame(width: 21, height: 7).position(x: 96.75, y: 157.75)
@@ -152,7 +152,7 @@ struct F91WFace: View {
 
     private var lcd: some View {
         let glass = CGRect(
-            x: 104, y: 191.5 + stretch.offset(.display), width: 389.5, height: 184.5 + stretch.windowGrowth)
+            x: 100.5, y: 185 + stretch.offset(.display), width: 391, height: 192.5 + stretch.windowGrowth)
         // Silver outline, dark surround, grey-green glass, and the module 593 display.
         return LCDPanel(
             display: Module593Display.self,

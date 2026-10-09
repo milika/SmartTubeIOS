@@ -16,7 +16,7 @@ struct Module3229Display: LCDModuleDisplay {
         let parts = context.displayParts(blankDigit: style.digits.blankDigit)
         let date = context.calendar.dateComponents([.month, .day], from: context.date)
         inGlass(style: style) {
-            SignalMark().fill(style.ink).frame(width: 35.5, height: 13.5).offset(x: 255, y: 286.5)
+            SignalMark().fill(style.ink).frame(width: 35.5, height: 15.5).offset(x: 255, y: 286.5)
             BellMark().fill(style.ink).frame(width: 22, height: 27).offset(x: 261.5, y: 308)
             LCDText(text: parts.weekday, font: style.letters, run: Self.weekday, style: style)
             RoundedRectangle(cornerRadius: 9).stroke(style.ink, lineWidth: 2.5)

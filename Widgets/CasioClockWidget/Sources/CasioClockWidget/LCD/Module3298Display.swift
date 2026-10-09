@@ -16,7 +16,7 @@ struct Module3298Display: LCDModuleDisplay {
     var body: some View {
         let parts = context.displayParts(blankDigit: style.digits.blankDigit)
         inGlass(style: style) {
-            SignalMark().fill(style.ink).frame(width: 18, height: 11.5).offset(x: 156.5, y: 184)
+            SignalMark().fill(style.ink).frame(width: 29, height: 11.5).offset(x: 156.5, y: 184)
             BellMark().fill(style.ink).frame(width: 13, height: 18.5).offset(x: 196, y: 182.5)
             if parts.isPM {
                 InkText(text: "PM", font: CaseFont.saira)

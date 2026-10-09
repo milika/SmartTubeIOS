@@ -4,19 +4,20 @@
   "canvas": {"origin": [110, 175], "scale": 0.6666666666666666, "size": [600, 488]},
   "time": "2024-06-24T14:17:13",
   "twelveHour": false,
-  "masks": {"white": {"r": [150, null], "g": [150, null], "b": [150, null], "|r-b|": [null, 45]}, "gold": {"r": [120, null], "r-b": [35, null], "g": [90, null]}, "red": {"r-g": [25, null], "r": [60, null]}, "dark": {"lum": [null, 80]}},
+  "masks": {"white": {"r": [150, null], "g": [150, null], "b": [150, null], "|r-b|": [null, 45]}, "gold": {"r": [120, null], "r-b": [35, null], "g": [90, null]}, "red": {"r-g": [25, null], "r": [60, null]}, "dark": {"lum": [null, 80]}, "photoWhite": {"lum": [82, null], "sat": [null, 35]}, "photoGold": {"lum": [75, null], "r-b": [12, null]}, "glass": {"lum": [23, null]}},
   "elements": [
     {"name": "CASIO", "mask": "white", "box": [100, 75, 290, 104]},
     {"name": "ALARM CHRONO", "mask": "gold", "box": [270, 72, 485, 100]},
-    {"name": "LIGHT/LAP", "mask": "white", "box": [120, 120, 300, 141]},
-    {"name": "MODE", "mask": "white", "box": [120, 142, 200, 159]},
-    {"name": "Lithium", "mask": "gold", "box": [370, 110, 470, 136]},
-    {"name": "START·STOP", "mask": "white", "box": [285, 138, 480, 157]},
-    {"name": "WATER RESIST", "mask": "gold", "box": [125, 402, 382, 427]},
+    {"name": "LIGHT/LAP", "mask": "photoWhite", "box": [120, 120, 300, 141], "renderMask": "white"},
+    {"name": "MODE", "mask": "photoWhite", "box": [120, 142, 200, 159], "renderMask": "white"},
+    {"name": "Lithium", "mask": "photoGold", "box": [370, 110, 470, 136], "renderMask": "gold"},
+    {"name": "START·STOP", "mask": "photoWhite", "box": [285, 138, 480, 157], "renderMask": "white"},
+    {"name": "WATER RESIST", "mask": "photoGold", "box": [125, 402, 382, 427], "renderMask": "gold"},
     {"name": "24H", "mask": "dark", "box": [180, 225, 225, 250]},
-    {"name": "weekday", "mask": "dark", "box": [240, 190, 330, 240]},
-    {"name": "day", "mask": "dark", "box": [390, 190, 475, 240]},
+    {"name": "weekday", "mask": "dark", "box": [240, 196, 318, 242]},
+    {"name": "day", "mask": "dark", "box": [394, 196, 478, 246]},
     {"name": "HMM", "mask": "dark", "box": [150, 252, 385, 350]},
-    {"name": "sec", "mask": "dark", "box": [405, 272, 480, 350]}
+    {"name": "sec", "mask": "dark", "box": [405, 272, 480, 350]},
+    {"name": "LCD glass", "mask": "glass", "box": [110, 171, 489, 359], "kind": "edges"}
   ]
 }

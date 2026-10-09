@@ -92,7 +92,8 @@ struct RenderTests {
     @Test("every module display's measured runs sit inside its glass")
     func runsInsideGlass() {
         let displays: [any LCDModuleDisplay.Type] = [
-            Module593Display.self, Module3459Display.self, Module240Display.self, Module590Display.self,
+            Module593Display.self, A158WDisplay.self, Module3459Display.self, Module240Display.self,
+            Module590Display.self,
             Module3208Display.self, Module3298Display.self, Module3229Display.self, W738HDisplay.self,
             W800HDisplay.self, GWB5600Display.self, W86Display.self,
         ]

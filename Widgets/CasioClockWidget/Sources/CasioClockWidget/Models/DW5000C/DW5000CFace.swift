@@ -126,7 +126,7 @@ struct DW5000CFace: View {
                 .placed(in: CGRect(x: 342.5, y: 392, width: 93, height: 9.5), color: CasioDW5000C.labelWhite, bold: 0.3)
             pointer(x: 443.5, y: 392.5, width: 17, height: 9)
             ink("JAPAN S", CaseFont.michroma)
-                .placed(in: CGRect(x: 375, y: 406.5, width: 35, height: 5), color: CasioDW5000C.labelWhite)
+                .placed(in: CGRect(x: 375, y: 406.5, width: 35, height: 5), color: CasioDW5000C.labelWhite, bold: 0.5)
             ink("ALARM CHRONOGRAPH", CaseFont.saira)
                 .placed(in: CGRect(x: 197.5, y: 436, width: 224, height: 14), color: CasioDW5000C.gold)
         }

@@ -1,25 +1,35 @@
 import SwiftUI
 
-// Fixed LCD marks shared by module displays (A168W, W-738H).
+// Fixed LCD marks shared by module displays.
 
-/// The hourly-signal mark: three bars and a sound arc.
+/// The hourly time signal mark: a filled "D" followed by `arcs` arcs of the same curvature, as
+/// Casio's LCDs show it. The rect is the mark's ink box.
 struct SignalMark: Shape {
+    var arcs = 4
+
     func path(in rect: CGRect) -> Path {
+        // In units of one arc's thickness: the D is 1.6 units wide, each arc 1 after a 0.6 gap,
+        // and every right edge bulges 0.8.
+        let unit = rect.width / (1.6 + 1.6 * CGFloat(arcs) + 0.8)
+        let bulge = 0.8 * unit
+        let top = rect.minY, bottom = rect.maxY, mid = rect.midY
         var path = Path()
-        let barWidth = rect.width * 0.14
-        for index in 0..<3 {
-            path.addRect(
-                CGRect(
-                    x: rect.minX + CGFloat(index) * rect.width * 0.24, y: rect.minY, width: barWidth,
-                    height: rect.height))
+        // The D: straight left edge, curved right edge.
+        let dRight = rect.minX + 1.6 * unit
+        path.move(to: CGPoint(x: rect.minX, y: top))
+        path.addLine(to: CGPoint(x: dRight, y: top))
+        path.addQuadCurve(to: CGPoint(x: dRight, y: bottom), control: CGPoint(x: dRight + 2 * bulge, y: mid))
+        path.addLine(to: CGPoint(x: rect.minX, y: bottom))
+        path.closeSubpath()
+        // The arcs: a crescent between two curves bulging right.
+        for index in 0..<arcs {
+            let left = dRight + 0.6 * unit + CGFloat(index) * 1.6 * unit
+            path.move(to: CGPoint(x: left, y: top))
+            path.addQuadCurve(to: CGPoint(x: left, y: bottom), control: CGPoint(x: left + 2 * bulge, y: mid))
+            path.addLine(to: CGPoint(x: left + unit, y: bottom))
+            path.addQuadCurve(to: CGPoint(x: left + unit, y: top), control: CGPoint(x: left + unit + 2 * bulge, y: mid))
+            path.closeSubpath()
         }
-        let arc = Path { arc in
-            arc.addArc(
-                center: CGPoint(x: rect.minX + rect.width * 0.5, y: rect.midY),
-                radius: min(rect.width * 0.42, rect.height * 0.6),
-                startAngle: .degrees(-55), endAngle: .degrees(55), clockwise: false)
-        }
-        path.addPath(arc.strokedPath(StrokeStyle(lineWidth: barWidth, lineCap: .butt)))
         return path
     }
 }

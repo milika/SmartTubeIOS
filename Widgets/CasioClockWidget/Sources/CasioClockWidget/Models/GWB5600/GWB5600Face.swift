@@ -110,7 +110,7 @@ struct GWB5600Face: View {
     // MARK: LCD
 
     private var lcd: some View {
-        let glass = CGRect(x: 115, y: 154, width: 396, height: 258 + stretch.windowGrowth)
+        let glass = CGRect(x: 115, y: 151.5, width: 396, height: 260.5 + stretch.windowGrowth)
         return LCDPanel(
             display: GWB5600Display.self, frame: CGRect(x: 104, y: 139, width: 418, height: 283 + stretch.windowGrowth),
             frameRadius: 26, surround: Color(white: 0.02), outline: .clear, outlineWidth: 0, glass: glass,

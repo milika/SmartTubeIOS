@@ -28,7 +28,7 @@ struct W738HDisplay: LCDModuleDisplay {
                 InkText(text: "P", font: CaseFont.saira)
                     .placed(in: CGRect(x: 164, y: 309, width: 13.5, height: 14.5), color: style.ink, bold: 0.6)
             }
-            SignalMark().fill(style.ink).frame(width: 27.5, height: 14).offset(x: 411.5, y: 322)
+            SignalMark(arcs: 3).fill(style.ink).frame(width: 27.5, height: 14).offset(x: 411.5, y: 322)
             BellMark().fill(style.ink).frame(width: 20, height: 25.5).offset(x: 452, y: 316)
             LCDText(text: parts.weekday, font: style.letters, run: Self.weekday, style: style)
             // Month, a narrow printed dash, day (the dash isn't a full digit cell on this display).
@@ -52,7 +52,7 @@ struct W738HDisplay: LCDModuleDisplay {
     // Measured on the W-738H image (canvas points).
     static let weekday = LCDRun(glyph: 53, edge: .leading(257), baseline: 286, xScale: 0.71, tracking: 9)
     static let date = LCDRun(glyph: 53, edge: .trailing(399), baseline: 286, xScale: 0.66)
-    static let time = LCDRun(glyph: 92, edge: .trailing(392.5), baseline: 414, xScale: 0.70, colonGap: 16)
-    static let seconds = LCDRun(glyph: 63.5, edge: .trailing(473.5), baseline: 414, xScale: 0.70)
+    static let time = LCDRun(glyph: 92, edge: .trailing(390.5), baseline: 414, xScale: 0.70, colonGap: 14)
+    static let seconds = LCDRun(glyph: 63.5, edge: .trailing(476), baseline: 414, xScale: 0.66, tracking: 7)
     static let runs = [weekday, date, time, seconds]
 }

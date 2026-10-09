@@ -73,7 +73,7 @@ struct CA53WFace: View {
     }
 
     private var lcd: some View {
-        let glass = CGRect(x: 108.5, y: 113.5, width: 430, height: 174.5)
+        let glass = CGRect(x: 106.5, y: 116, width: 429, height: 173)
         return LCDPanel(
             display: Module3208Display.self, frame: CGRect(x: 93, y: 106, width: 452, height: 190), frameRadius: 10,
             surround: Color(white: 0.07), outline: .clear, outlineWidth: 0, glass: glass, glassRadius: 5,
@@ -117,9 +117,9 @@ struct CA53WFace: View {
             digit("2", CGRect(x: 190, y: 540.5, width: 23.5, height: 22))
             digit("3", CGRect(x: 318, y: 540, width: 23.5, height: 22))
             digit("0", CGRect(x: 61.5, y: 616.5, width: 25, height: 22))
-            Rectangle().fill(CasioCA53W.printWhite).frame(width: 5.5, height: 5.5).offset(x: 194.5, y: 614)
+            Rectangle().fill(CasioCA53W.printWhite).frame(width: 10, height: 10.5).offset(x: 196.5, y: 614)
             ink("PM", CaseFont.michroma)
-                .placed(in: CGRect(x: 187.5, y: 621, width: 19, height: 11), color: CasioCA53W.printWhite, bold: 0.3)
+                .placed(in: CGRect(x: 186.5, y: 630.5, width: 29, height: 14), color: CasioCA53W.printWhite, bold: 0.3)
         }
     }
 

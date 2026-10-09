@@ -14,7 +14,7 @@ struct Module3459Display: LCDModuleDisplay {
 
     // Measured character runs (canvas points).
     static let weekday = LCDRun(glyph: 41.5, edge: .leading(227), baseline: 251.5, tracking: 2)
-    static let time = LCDRun(glyph: 76, edge: .trailing(372), baseline: 362.5, xScale: 0.85)
+    static let time = LCDRun(glyph: 76, edge: .trailing(372), baseline: 362.5, xScale: 0.85, colonGap: -5)
     static let seconds = LCDRun(glyph: 50, edge: .trailing(450), baseline: 360.5, xScale: 0.93)
     static let runs = [weekday, time, seconds]
 

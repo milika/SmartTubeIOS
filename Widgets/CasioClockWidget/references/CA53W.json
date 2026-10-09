@@ -5,15 +5,16 @@
   "renderOffset": [40, 0],
   "time": "2024-06-30T17:06:18",
   "twelveHour": false,
-  "masks": {"white": {"lum": [150, null], "sat": [null, 70]}, "blue": {"b": [130, null], "b-r": [40, null]}, "gold": {"r": [120, null], "r-b": [45, null], "lum": [null, 210]}, "tan": {"r": [90, null], "r-b": [25, null], "lum": [80, 190]}, "red": {"r": [70, null], "r-g": [25, null], "r-b": [35, null]}, "ink": {"lum": [null, 75]}, "bar": {"b": [95, null], "b-r": [12, null], "lum": [70, 160]}},
+  "notes": ["HHMM and sec leave out the 1s: the CA-53W's 1 is thicker and further left than DSEG's (a font limitation)."],
+  "masks": {"white": {"lum": [150, null], "sat": [null, 70]}, "blue": {"b": [130, null], "b-r": [40, null]}, "gold": {"r": [120, null], "r-b": [45, null], "lum": [null, 210]}, "tan": {"r": [90, null], "r-b": [25, null], "lum": [80, 190]}, "red": {"r": [70, null], "r-g": [25, null], "r-b": [35, null]}, "ink": {"lum": [null, 75]}, "bar": {"b": [95, null], "b-r": [12, null], "lum": [70, 160]}, "glass": {"lum": [102, null]}},
   "elements": [
     {"name": "CASIO", "mask": "white", "box": [85, 50, 220, 85]},
     {"name": "WATER RESIST", "mask": "blue", "box": [240, 45, 420, 66]},
     {"name": "ALARM CHRONO", "mask": "blue", "box": [240, 68, 428, 90]},
     {"name": "WR", "mask": "gold", "box": [435, 48, 555, 92]},
     {"name": "vert ADJ..", "mask": "white", "box": [565, 110, 600, 295]},
-    {"name": "HHMM", "mask": "ink", "box": [130, 185, 380, 280]},
-    {"name": "sec", "mask": "ink", "box": [440, 185, 535, 280]},
+    {"name": "HHMM", "mask": "ink", "box": [160, 185, 380, 280]},
+    {"name": "sec", "mask": "ink", "box": [476, 185, 535, 280]},
     {"name": "weekday", "mask": "ink", "box": [440, 125, 535, 185]},
     {"name": "bar", "mask": "bar", "box": [80, 345, 595, 375]},
     {"name": "7", "mask": "white", "box": [62, 380, 95, 415]},
@@ -26,8 +27,8 @@
     {"name": "2", "mask": "white", "box": [190, 530, 222, 565]},
     {"name": "3", "mask": "white", "box": [318, 530, 350, 565]},
     {"name": "0", "mask": "white", "box": [55, 605, 95, 645]},
-    {"name": "PMdot", "mask": "white", "box": [193, 600, 206, 612]},
-    {"name": "PM", "mask": "white", "box": [183, 614, 214, 632]},
+    {"name": "PMdot", "mask": "white", "box": [188, 606, 214, 627]},
+    {"name": "PM", "mask": "white", "box": [178, 628, 224, 656]},
     {"name": "div", "mask": "red", "box": [440, 385, 475, 415]},
     {"name": "mul", "mask": "red", "box": [440, 460, 475, 490]},
     {"name": "minus", "mask": "red", "box": [440, 537, 475, 565]},
@@ -37,6 +38,7 @@
     {"name": "DATE/ST-Hour", "mask": "tan", "box": [365, 425, 530, 446]},
     {"name": "SIG ON-OFF", "mask": "tan", "box": [380, 500, 530, 522]},
     {"name": "LAP-RESET", "mask": "tan", "box": [125, 578, 265, 600]},
-    {"name": "START-STOP", "mask": "tan", "box": [372, 578, 530, 600]}
+    {"name": "START-STOP", "mask": "tan", "box": [372, 578, 530, 600]},
+    {"name": "LCD glass", "mask": "glass", "box": [101, 111, 541, 295], "kind": "edges"}
   ]
 }

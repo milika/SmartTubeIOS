@@ -102,62 +102,6 @@ struct CasioClockProvider: TimelineProvider {
     }
 }
 
-// MARK: - LCD fonts
-//
-// DSEG7 / DSEG14 Classic Bold Italic by Keshikan (SIL OFL 1.1, Resources/DSEG-LICENSE.txt)
-// for digits and letters.
-
-struct LCDFont: Equatable {
-    let postScriptName: String
-    /// Glyph height as a fraction of the em.
-    let glyphToEm: CGFloat
-    /// Baseline position from the top of the line box, in ems.
-    let baselineFromTop: CGFloat
-    /// Advance of one digit, in ems.
-    let digitAdvance: CGFloat
-    /// A character with every segment lit ("8" / "~"), for the faint unlit segments; nil if none.
-    let allSegments: Character?
-    /// A digit-wide blank ("!" in DSEG), for an empty leading hour digit.
-    let blankDigit: String
-
-    static func dseg7(_ style: String) -> LCDFont {
-        LCDFont(
-            postScriptName: "DSEG7Classic-\(style)", glyphToEm: 1, baselineFromTop: 1, digitAdvance: 0.816,
-            allSegments: "8", blankDigit: "!")
-    }
-    static func dseg14(_ style: String) -> LCDFont {
-        LCDFont(
-            postScriptName: "DSEG14Classic-\(style)", glyphToEm: 1, baselineFromTop: 1, digitAdvance: 0.816,
-            allSegments: "~", blankDigit: "!")
-    }
-
-    /// The font whose glyphs are `height` points tall.
-    func font(height: CGFloat) -> Font {
-        BundledFonts.register()
-        return .custom(postScriptName, fixedSize: height / glyphToEm)
-    }
-
-    /// `text` with every character replaced by the all-segments glyph (digits by `allSegments`,
-    /// keeping colons), for the unlit-segment layer.
-    func allLit(_ text: String) -> String? {
-        guard let allSegments else { return nil }
-        return String(text.map { $0 == ":" ? ":" : allSegments })
-    }
-}
-
-/// Look options for the face; the widget uses `.standard` (chosen from prototypes: DSEG Bold
-/// Italic with unlit segments on grey-green glass).
-struct CasioFaceStyle {
-    var digits: LCDFont = .dseg7("BoldItalic")
-    var letters: LCDFont = .dseg14("BoldItalic")
-    /// Opacity of the unlit segments behind the digits; 0 = off.
-    var unlitOpacity: Double = 0.055
-    var glass: Color = Color(red: 0.67, green: 0.74, blue: 0.68)
-    var ink: Color = Color(red: 0.11, green: 0.16, blue: 0.19)
-
-    static let standard = CasioFaceStyle()
-}
-
 // MARK: - Watch face
 //
 // Laid out on a fixed 594×530 canvas whose coordinates were measured from a front-on photo of
@@ -172,8 +116,8 @@ struct CasioFaceStyle {
 struct CasioWatchFace: View {
     let date: Date
     var calendar: Calendar = .current
-    var uses12HourClock: Bool = CasioWatchFace.localeUses12HourClock
-    var style: CasioFaceStyle = .standard
+    var uses12HourClock: Bool = DisplayParts.localeUses12HourClock
+    var style = LCDStyle()
     /// The LIGHT button's green backlight.
     var backlit = false
     /// Fixed seconds instead of the live timer (static previews; the timer only animates
@@ -190,11 +134,6 @@ struct CasioWatchFace: View {
     static let gold = Color(red: 0.90, green: 0.78, blue: 0.40)
     static let printWhite = Color(white: 0.94)
     static let red = Color(red: 0.95, green: 0.13, blue: 0.13)
-    static let backlight = Color(red: 0.36, green: 0.86, blue: 0.62)
-
-    static var localeUses12HourClock: Bool {
-        DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: .current)?.contains("a") ?? true
-    }
 
     var body: some View {
         FaceCanvas(size: Self.canvas) {
@@ -336,38 +275,13 @@ struct CasioWatchFace: View {
     // MARK: LCD
 
     private var lcd: some View {
-        let parts = Self.displayParts(
+        let parts = DisplayParts.make(
             for: date, calendar: calendar, twelveHour: uses12HourClock, blankDigit: style.digits.blankDigit)
         return ZStack(alignment: .topLeading) {
-            // Silver frame, dark surround, grey-green glass.
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color.black)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .strokeBorder(Self.silver, lineWidth: 1.75)
-                )
-                .frame(width: 414.5, height: 214)
-                .offset(x: 89, y: 174)
-            RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [style.glass, style.glass.opacity(0.9)],
-                        startPoint: .top, endPoint: .bottom)
-                )
-                .overlay {
-                    if backlit {
-                        // The F-91W's light is one green LED at the left edge, so the glow is
-                        // strongest on the left and fades toward the right.
-                        RoundedRectangle(cornerRadius: 11, style: .continuous)
-                            .fill(
-                                LinearGradient(
-                                    colors: [Self.backlight, Self.backlight.opacity(0.75), Self.backlight.opacity(0.45)],
-                                    startPoint: .leading, endPoint: .trailing)
-                            )
-                    }
-                }
-                .frame(width: 389.5, height: 184.5)
-                .offset(x: 104, y: 191.5)
+            // Silver outline, dark surround, grey-green glass.
+            LCDWindow(
+                frame: CGRect(x: 89, y: 174, width: 414.5, height: 214), outline: Self.silver,
+                glass: CGRect(x: 104, y: 191.5, width: 389.5, height: 184.5), backlit: backlit, style: style)
 
             // PM in the afternoon on a 12-hour clock; 24H on a 24-hour clock, like the watch.
             if let marker = parts.marker {
@@ -377,103 +291,23 @@ struct CasioWatchFace: View {
                     .place(centerX: 141, centerY: 243.5)
             }
             // Day of week and date share the top row.
-            lcdText(parts.weekday, font: style.letters, glyph: 43, leading: 234, baseline: 247, tracking: 7.5)
-            lcdText(parts.day, font: style.digits, glyph: 47.5, trailing: 484.7, baseline: 251.5, width: 120, tracking: 4.5)
+            LCDText(
+                text: parts.weekday, font: style.letters, glyph: 43, edge: .leading(234), baseline: 247, tracking: 7.5,
+                style: style)
+            LCDText(
+                text: parts.day, font: style.digits, glyph: 47.5, edge: .trailing(484.7), baseline: 251.5, width: 120,
+                tracking: 4.5, style: style)
             // H:MM; the watch's digits are narrower than DSEG's.
-            lcdText(
-                parts.hoursMinutes, font: style.digits, glyph: 88.5, trailing: 383, baseline: 357.5, width: 320,
-                xScale: Self.digitSqueeze)
-            seconds
+            LCDText(
+                text: parts.hoursMinutes, font: style.digits, glyph: 88.5, edge: .trailing(383), baseline: 357.5,
+                width: 320, xScale: Self.digitSqueeze, style: style)
+            LiveSeconds(
+                date: date, calendar: calendar, previewSeconds: previewSeconds, glyph: 67, trailing: 486,
+                baseline: 357.5, xScale: Self.digitSqueeze, style: style)
         }
     }
 
     /// Width of the big digits relative to DSEG's (measured from the photo).
     static let digitSqueeze: CGFloat = 0.9
 
-    /// LCD text with its unlit segments faintly behind it.
-    @ViewBuilder
-    private func lcdText(
-        _ text: String, font: LCDFont, glyph: CGFloat, leading: CGFloat? = nil, trailing: CGFloat? = nil,
-        baseline: CGFloat, width: CGFloat = 200, tracking: CGFloat = 0, xScale: CGFloat = 1
-    ) -> some View {
-        let layers: [(String, Double)] =
-            [(font.allLit(text), style.unlitOpacity), (text, 1)].compactMap { item in
-                guard let t = item.0, item.1 > 0 else { return nil }
-                return (t, item.1)
-            }
-        ForEach(Array(layers.enumerated()), id: \.offset) { _, layer in
-            let view = Text(layer.0).font(font.font(height: glyph)).tracking(tracking)
-                .foregroundStyle(style.ink.opacity(layer.1))
-                .scaleEffect(x: xScale, y: 1, anchor: leading != nil ? .leading : .trailing)
-            if let leading {
-                view.place(leading: leading, baseline: baseline, glyphHeight: glyph, font: font, width: width)
-            } else if let trailing {
-                view.place(trailing: trailing, baseline: baseline, glyphHeight: glyph, font: font, width: width)
-            }
-        }
-    }
-
-    /// Live seconds: timer text counting up from the start of this minute ("0:23"), shown
-    /// through a right-aligned window that keeps only the last two digits.
-    private var seconds: some View {
-        let minuteStart = calendar.dateInterval(of: .minute, for: date)?.start ?? date
-        let glyph: CGFloat = 67
-        let font = style.digits
-        let digitAdvance = glyph / font.glyphToEm * font.digitAdvance
-        let live: Text =
-            previewSeconds.map { Text(String(format: "%02d", $0)) } ?? Text(minuteStart, style: .timer)
-        return ZStack(alignment: .topLeading) {
-            if style.unlitOpacity > 0, let lit = font.allLit("00") {
-                Text(lit).font(font.font(height: glyph))
-                    .foregroundStyle(style.ink.opacity(style.unlitOpacity))
-                    .scaleEffect(x: Self.digitSqueeze, y: 1, anchor: .trailing)
-                    .place(trailing: 486, baseline: 357.5, glyphHeight: glyph, font: font, width: digitAdvance * 2.02)
-            }
-            live
-                .font(font.font(height: glyph))
-                .foregroundStyle(style.ink)
-                .multilineTextAlignment(.trailing)
-                .lineLimit(1)
-                .frame(width: digitAdvance * 6, alignment: .trailing)
-                .frame(width: digitAdvance * 2.02, alignment: .trailing)
-                .clipped()
-                .scaleEffect(x: Self.digitSqueeze, y: 1, anchor: .trailing)
-                .place(trailing: 486, baseline: 357.5, glyphHeight: glyph, font: font, width: digitAdvance * 2.02)
-        }
-    }
-
-    // MARK: Formatting
-
-    struct DisplayParts: Equatable {
-        /// "H:MM" with a figure space for a blank leading hour digit ("\u{2007}6:04").
-        let hoursMinutes: String
-        let isPM: Bool
-        /// "PM", "24H" or nil (morning on a 12-hour clock).
-        let marker: String?
-        let weekday: String
-        /// Right-aligned day of month ("\u{2007}9", "26").
-        let day: String
-    }
-
-    static let weekdays = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"]
-    static let figureSpace = "\u{2007}"
-
-    static func displayParts(
-        for date: Date, calendar: Calendar, twelveHour: Bool, blankDigit: String = figureSpace
-    ) -> DisplayParts {
-        let c = calendar.dateComponents([.hour, .minute, .weekday, .day], from: date)
-        let hour24 = c.hour ?? 0
-        let hour = twelveHour ? (hour24 % 12 == 0 ? 12 : hour24 % 12) : hour24
-        // Like the watch, a 12-hour time has no leading zero ("6:04", not "06:04").
-        let hourText = hour < 10 ? (twelveHour ? blankDigit : "0") + "\(hour)" : "\(hour)"
-        let minute = c.minute ?? 0
-        let dayOfMonth = c.day ?? 1
-        return DisplayParts(
-            hoursMinutes: hourText + ":" + (minute < 10 ? "0" : "") + "\(minute)",
-            isPM: twelveHour && hour24 >= 12,
-            marker: twelveHour ? (hour24 >= 12 ? "PM" : nil) : "24H",
-            weekday: weekdays[((c.weekday ?? 1) - 1) % 7],
-            day: (dayOfMonth < 10 ? blankDigit : "") + "\(dayOfMonth)"
-        )
-    }
 }

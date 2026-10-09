@@ -15,11 +15,11 @@ struct CasioClockWidgetTests {
         calendar.date(from: DateComponents(year: y, month: m, day: d, hour: h, minute: min, second: s))!
     }
 
-    private let fs = CasioWatchFace.figureSpace
+    private let fs = DisplayParts.figureSpace
 
     @Test("12-hour: 16:20 on Saturday the 2nd reads 4:20 PM, SA 2 — no leading zero")
     func twelveHourAfternoon() {
-        let parts = CasioWatchFace.displayParts(for: date(2026, 5, 2, 16, 20), calendar: calendar, twelveHour: true)
+        let parts = DisplayParts.make(for: date(2026, 5, 2, 16, 20), calendar: calendar, twelveHour: true)
         #expect(parts.hoursMinutes == fs + "4:20")
         #expect(parts.isPM)
         #expect(parts.marker == "PM")
@@ -29,18 +29,18 @@ struct CasioClockWidgetTests {
 
     @Test("12-hour: midnight and noon read 12")
     func twelveHourMidnightNoon() {
-        let midnight = CasioWatchFace.displayParts(for: date(2026, 5, 2, 0, 5), calendar: calendar, twelveHour: true)
+        let midnight = DisplayParts.make(for: date(2026, 5, 2, 0, 5), calendar: calendar, twelveHour: true)
         #expect(midnight.hoursMinutes == "12:05")
         #expect(!midnight.isPM)
         #expect(midnight.marker == nil)
-        let noon = CasioWatchFace.displayParts(for: date(2026, 5, 2, 12, 5), calendar: calendar, twelveHour: true)
+        let noon = DisplayParts.make(for: date(2026, 5, 2, 12, 5), calendar: calendar, twelveHour: true)
         #expect(noon.hoursMinutes == "12:05")
         #expect(noon.isPM)
     }
 
     @Test("24-hour: 09:07 keeps the leading zero and no PM; two-digit day")
     func twentyFourHour() {
-        let parts = CasioWatchFace.displayParts(for: date(2026, 5, 26, 9, 7), calendar: calendar, twelveHour: false)
+        let parts = DisplayParts.make(for: date(2026, 5, 26, 9, 7), calendar: calendar, twelveHour: false)
         #expect(parts.hoursMinutes == "09:07")
         #expect(!parts.isPM)
         #expect(parts.marker == "24H")

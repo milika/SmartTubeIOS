@@ -12,9 +12,11 @@ import WidgetKit
 //   timer text ("10:MM:SS"), clipped to the digits each needs (LiveClock, LiveSeconds).
 // - Tapping the widget runs CasioBacklightIntent for that model: the LCD lights for 3 s.
 
-/// The small Home Screen widget for one model. Internal: each model exposes a public wrapper
-/// (see CasioF91WWidget) so the model protocol stays internal.
-struct CasioWatchWidget<Model: CasioModel>: Widget {
+/// The small Home Screen widget for one model. Internal: the catalogue publishes them all
+/// (CasioWidgets.homeScreen), so the model protocol stays internal.
+struct CasioWatchWidget<Model: CasioModel>: Widget, CasioModelWidget {
+    var modelKind: String { Model.kind }
+
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: Model.kind, provider: CasioClockProvider(model: Model.kind)) { entry in
             Button(intent: CasioBacklightIntent(model: Model.kind)) {
@@ -32,3 +34,8 @@ struct CasioWatchWidget<Model: CasioModel>: Widget {
     }
 }
 #endif
+
+/// A catalogue widget, by its model's kind (tests check the catalogue against CasioModels).
+protocol CasioModelWidget {
+    var modelKind: String { get }
+}

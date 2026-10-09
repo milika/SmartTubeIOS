@@ -54,6 +54,15 @@ Naming a new module after a concept not listed here requires adding the term in 
 - **Live suite / Smoke suite** — a *Live* UI-test suite hits real YouTube over the network; a
   *Smoke* suite (WS3-T3.4, not yet implemented) is hermetic and stubbed, safe to run on every PR.
 
+## Casio clock widgets (`Widgets/CasioClockWidget`)
+
+- **Watch model** — one Casio watch the package draws (`CasioF91W`, `CasioGMWB5000`, …): its
+  widget kind, canvas measured from a reference photo, palette and face. *Rejected*: "watch face"
+  for the model (Apple's *watch faces* are the watchOS faces our complication sits on).
+- **Catalogue** — the single list of what the package publishes (`CasioCatalogue.swift`): the
+  model registry and the Home Screen widgets / watch complications built from it. Registering a
+  watch model happens only there; the app's extensions list the catalogue once.
+
 ## Architecture vocabulary
 
 From the `improve-codebase-architecture` skill's `LANGUAGE.md` — use these exactly; never

@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 
 // The Casio A158W: the F-91W's LCD module in a chrome metal case with a black face, one
 // steel-blue octagon line and a WATER RESIST band. Laid out on a canvas measured from a
@@ -38,3 +39,13 @@ enum CasioA158W: CasioModel {
     /// The same LCD module (593) as the F-91W: same glass, ink and layout (Module593Display).
     static let lcd = LCDStyle()
 }
+
+#if !os(watchOS)
+// Xcode canvas: tune the widget live (normal and lit).
+#Preview("A158W", as: .systemSmall) {
+    CasioWatchWidget<CasioA158W>()
+} timeline: {
+    CasioClockEntry(date: .now)
+    CasioClockEntry(date: .now, backlit: true)
+}
+#endif

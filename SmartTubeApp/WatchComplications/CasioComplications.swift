@@ -6,6 +6,6 @@ import WidgetKit
 @main
 struct CasioComplications: WidgetBundle {
     var body: some Widget {
-        CasioF91WComplication()
+        CasioWidgets.complications
     }
 }

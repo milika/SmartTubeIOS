@@ -1,16 +1,17 @@
 # CasioClockWidget (experimental)
 
-Small Home Screen widgets: live digital clocks drawn as Casio watches, one widget per model:
+Small Home Screen widgets: live digital clocks drawn as Casio watches, one widget per model, all
+published together as `CasioWidgets.homeScreen`:
 
-- **F-91W** (`CasioF91WWidget`): black resin case, blue bezel lines, gold labels, grey-green
+- **F-91W** (`CasioF91W`): black resin case, blue bezel lines, gold labels, grey-green
   LCD with seven-segment digits, day/date, PM marker, running seconds. Also an Apple Watch
   complication.
-- **A158W** (`CasioA158WWidget`): the same LCD module in a chrome case with a black face, a
+- **A158W** (`CasioA158W`): the same LCD module in a chrome case with a black face, a
   steel-blue octagon line and a WATER RESIST band.
-- **G-Shock GMW-B5000** (`CasioGMWB5000Widget`): the black face inside the steel bezel (the
+- **G-Shock GMW-B5000** (`CasioGMWB5000`): the black face inside the steel bezel (the
   widget leaves the bezel out), brick pattern, blue-grey LCD with PS / RCVD / DST marks and a dot-matrix date
   (drawn as shapes; day or month first, following the device's date order).
-- **G-Shock DW-5000C** (`CasioDW5000CWidget`): the first G-Shock (1983): black face with a red
+- **G-Shock DW-5000C** (`CasioDW5000C`): the first G-Shock (1983): black face with a red
   octagon line and bricks, gold and teal print, beige LCD in a silver frame, month-first date in
   a box; its bulb lights the display warm yellow.
 
@@ -44,7 +45,8 @@ the weekday; DSEG14's W is single width.
 
 1. Add this folder as a local package (Xcode: File > Add Package Dependencies… > Add Local…).
 2. Link the `CasioClockWidget` library to your **widget extension** target.
-3. List the models you want in the extension's `WidgetBundle`:
+3. List the catalogue in the extension's `WidgetBundle` (every model; new models appear without
+   touching the app):
 
    ```swift
    import CasioClockWidget
@@ -52,10 +54,7 @@ the weekday; DSEG14's W is single width.
    @main
    struct MyWidgets: WidgetBundle {
        var body: some Widget {
-           CasioF91WWidget()
-           CasioA158WWidget()
-           CasioGMWB5000Widget()
-           CasioDW5000CWidget()
+           CasioWidgets.homeScreen
        }
    }
    ```
@@ -74,33 +73,36 @@ watchOS widget extension inside a watch app:
 @main
 struct CasioComplications: WidgetBundle {
     var body: some Widget {
-        CasioF91WComplication()
+        CasioWidgets.complications
     }
 }
 ```
 
-`CasioF91WComplicationPreview()` is the same view for the watch app's own screen. In SmartTube:
+`CasioComplicationGallery()` shows every complication live, with its name, for the watch app's
+own screen. In SmartTube:
 `SmartTubeApp/Watch` (watch app) and `SmartTubeApp/WatchComplications` (extension).
 
 ## Remove
 
-Delete the `Casio…Widget()` lines and the package dependency.
+Delete the `CasioWidgets…` lines and the package dependency.
 
 ## Layout
 
 ```
 Sources/CasioClockWidget/
-  CasioModel.swift   CasioModel protocol, CasioFaceContext, CasioModels.all
+  CasioCatalogue.swift  the catalogue: CasioModels (registry), CasioWidgets (public widgets),
+                     CasioComplicationGallery; registering a model happens only here
+  CasioModel.swift   CasioModel / CasioComplicationModel protocols, CasioFaceContext
   Widget/            generic widget + watch complication widget, timeline provider, light intent
   LCD/               DSEG fonts, LCDStyle, LCDText, LiveSeconds, LCDWindow, DisplayParts,
                      Module593Display (the shared display of module 593: F-91W, A158W, A168W…),
                      DotMatrixText (5×7 dot-matrix characters, drawn as shapes)
   Kit/               FaceCanvas + place(...) modifiers, CaseFont, BundledFonts, shapes (incl. the
                      G-Shock BrickPattern), text effects, InkText (a label filling a measured ink box)
-  Models/F91W/       the F-91W: model (palette, LCD style), face, complication, public widgets
-  Models/A158W/      the A158W: model, face, public widget
-  Models/GMWB5000/   the G-Shock GMW-B5000: model, face, public widget
-  Models/DW5000C/    the G-Shock DW-5000C: model, face, public widget
+  Models/F91W/       the F-91W: model (palette, LCD style, Xcode previews), face, complication
+  Models/A158W/      the A158W: model, face
+  Models/GMWB5000/   the G-Shock GMW-B5000: model, face
+  Models/DW5000C/    the G-Shock DW-5000C: model, face
   Resources/         fonts and their licences (all models)
 ```
 
@@ -114,21 +116,14 @@ Sources/CasioClockWidget/
    and the LCD parts (`LCDWindow`, `LCDText`, `LiveHoursMinutes`, `LiveSeconds`,
    `context.displayParts(blankDigit:)`, its own `LCDStyle`). A new font goes into `Resources/`
    with its licence, and its PostScript name into `CaseFont` (the only place names are spelled).
-2. Add a public wrapper next to it, like `Models/F91W/CasioF91WWidget.swift`:
-
-   ```swift
-   public struct Casio<Name>Widget: Widget {
-       public init() {}
-       public var body: some WidgetConfiguration { CasioWatchWidget<Casio<Name>>().body }
-   }
-   ```
-3. Add the model to `CasioModels.all` (tests check unique kinds and that it renders), and copy the
-   `#Preview` from `CasioF91WWidget.swift` to tune the face live in Xcode's canvas.
-4. List `Casio<Name>Widget()` in the app's `WidgetBundle`.
-5. Optional Apple Watch complication: conform to `CasioComplicationModel` (complication kind,
-   name, summary, `rectangularComplication(_:)`, see `Models/F91W/F91WComplication.swift`), add a
-   public wrapper like `CasioF91WComplication`, add it to `CasioModels.complications`, and list it
-   in the watch extension's `WidgetBundle`.
+2. Register it in `CasioCatalogue.swift`: the model in `CasioModels.all` (tests check unique
+   kinds and that it renders) and `CasioWatchWidget<Casio<Name>>()` in `CasioWidgets.homeScreen`.
+   The app picks it up with no change. Copy the `#Preview` at the end of `CasioF91W.swift` to tune
+   the face live in Xcode's canvas.
+3. Optional Apple Watch complication: conform to `CasioComplicationModel` (complication kind,
+   name, summary, `rectangularComplication(_:)`, see `Models/F91W/F91WComplication.swift`), and
+   register it in `CasioModels.complications` and `CasioWidgets.complications`; the watch app's
+   gallery and the watch extension pick it up.
 
 Watches that share a Casio module share its display: draw it once (like `Module593Display`) and
 place it in each model's glass, rather than measuring it again from each photo.

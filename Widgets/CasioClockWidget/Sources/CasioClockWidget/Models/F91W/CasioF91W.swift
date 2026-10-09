@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 
 // Laid out on a fixed canvas whose coordinates were measured from a front-on photo of
 // an F-91W (Wikimedia Commons, Casio_F-91W_5051.jpg), then scaled to the widget.
@@ -47,3 +48,21 @@ enum CasioF91W: CasioComplicationModel {
     /// Width of the big digits relative to DSEG's (measured from the photo).
     static let digitSqueeze = Module593Display.digitSqueeze
 }
+
+#if !os(watchOS)
+// Xcode canvas: tune the widget live (normal and lit).
+#Preview("F-91W", as: .systemSmall) {
+    CasioWatchWidget<CasioF91W>()
+} timeline: {
+    CasioClockEntry(date: .now)
+    CasioClockEntry(date: .now, backlit: true)
+}
+#endif
+
+#if os(watchOS)
+#Preview("F-91W", as: .accessoryRectangular) {
+    CasioComplicationWidget<CasioF91W>()
+} timeline: {
+    CasioClockEntry(date: .now)
+}
+#endif

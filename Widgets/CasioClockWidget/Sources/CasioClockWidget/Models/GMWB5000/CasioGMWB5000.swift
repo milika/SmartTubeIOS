@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 
 // The Casio G-Shock GMW-B5000D: a brushed-steel octagon bezel (PROTECTION / G-SHOCK engraved)
 // around a black face with a brick pattern and a blue-grey LCD with a dot-matrix date. Laid out
@@ -44,3 +45,13 @@ enum CasioGMWB5000: CasioModel {
         backlight: Color(red: 0.86, green: 0.95, blue: 1.0), backlightFalloff: [0.85, 0.85, 0.85])
     static let surround = Color(white: 0.22)
 }
+
+#if !os(watchOS)
+// Xcode canvas: tune the widget live (normal and lit).
+#Preview("GMW-B5000", as: .systemSmall) {
+    CasioWatchWidget<CasioGMWB5000>()
+} timeline: {
+    CasioClockEntry(date: .now)
+    CasioClockEntry(date: .now, backlit: true)
+}
+#endif

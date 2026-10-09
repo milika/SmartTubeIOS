@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 
 // The Casio G-Shock DW-5000C (1983), the first G-Shock: a black resin case, a black face with a
 // red octagon line and a brick pattern, gold and teal print and a beige LCD in a silver frame.
@@ -38,3 +39,13 @@ enum CasioDW5000C: CasioModel {
         glass: Color(red: 0.77, green: 0.73, blue: 0.57), ink: Color(red: 0.09, green: 0.13, blue: 0.13),
         backlight: Color(red: 1.0, green: 0.86, blue: 0.45), backlightFalloff: [0.95, 0.75, 0.5])
 }
+
+#if !os(watchOS)
+// Xcode canvas: tune the widget live (normal and lit).
+#Preview("DW-5000C", as: .systemSmall) {
+    CasioWatchWidget<CasioDW5000C>()
+} timeline: {
+    CasioClockEntry(date: .now)
+    CasioClockEntry(date: .now, backlit: true)
+}
+#endif

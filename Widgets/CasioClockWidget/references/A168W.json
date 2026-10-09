@@ -1,0 +1,32 @@
+{
+  "model": "CasioA168W",
+  "image": "A168W - owner, Casio A168WA-1W product image (bomar.rs).jpg",
+  "canvas": {"origin": [230, 250], "scale": 1, "size": [540, 500]},
+  "time": "2024-06-30T22:58:50",
+  "twelveHour": true,
+  "masks": {"white": {"lum": [170, null], "sat": [null, 50]}, "gold": {"r": [150, null], "g": [130, null], "b": [null, 110]}, "blue": {"b": [120, null], "b-r": [50, null]}, "red": {"r": [150, null], "r-g": [70, null]}, "ink": {"lum": [null, 80]}, "rule": {"lum": [140, null], "sat": [null, 50]}},
+  "elements": [
+    {"name": "CASIO", "mask": "white", "box": [140, 88, 255, 118]},
+    {"name": "ALARM CHRONO", "mask": "gold", "box": [262, 95, 420, 116]},
+    {"name": "banner", "mask": "blue", "box": [120, 124, 425, 158]},
+    {"name": "ELECTRO..", "mask": "white", "box": [150, 128, 400, 152]},
+    {"name": "LIGHT", "mask": "white", "box": [100, 165, 125, 232]},
+    {"name": "MODE", "mask": "white", "box": [100, 250, 125, 322]},
+    {"name": "START/STOP", "mask": "white", "box": [430, 180, 455, 320]},
+    {"name": "dotL", "mask": "red", "box": [105, 148, 122, 163]},
+    {"name": "dotM", "mask": "red", "box": [105, 320, 122, 335]},
+    {"name": "dotS", "mask": "red", "box": [432, 320, 450, 335]},
+    {"name": "ILLUMINATOR", "mask": "red", "box": [150, 320, 395, 346]},
+    {"name": "rule", "mask": "rule", "box": [115, 350, 440, 362]},
+    {"name": "WATER", "mask": "gold", "box": [145, 366, 232, 390]},
+    {"name": "WRbox", "mask": "gold", "box": [234, 358, 322, 397]},
+    {"name": "RESIST", "mask": "gold", "box": [322, 366, 410, 390]},
+    {"name": "signal", "mask": "ink", "box": [150, 182, 178, 200]},
+    {"name": "bell", "mask": "ink", "box": [195, 180, 214, 200]},
+    {"name": "PM", "mask": "ink", "box": [150, 200, 190, 220]},
+    {"name": "weekday", "mask": "ink", "box": [255, 178, 320, 222]},
+    {"name": "date", "mask": "ink", "box": [335, 178, 395, 222]},
+    {"name": "HHMM", "mask": "ink", "box": [160, 228, 338, 300]},
+    {"name": "sec", "mask": "ink", "box": [336, 245, 410, 300]}
+  ]
+}

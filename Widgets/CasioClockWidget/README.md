@@ -82,6 +82,8 @@ Delete the `CasioWidgets…` lines and the package dependency.
   step, with `tools/casio_measure.py` and the reference render.
 - [docs/REFERENCES.md](docs/REFERENCES.md) — every reference image (source, licence, canvas
   mapping, archive location), the typefaces and their stand-ins, the Casio LCD modules.
+- `references/<Model>.json` — each model's reference manifest; `python3 tools/casio_measure.py
+  check references/<Model>.json` compares the face with its archived reference image.
 
 ## Fonts
 

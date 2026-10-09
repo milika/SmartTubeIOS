@@ -1,0 +1,27 @@
+{
+  "model": "CasioW59",
+  "image": "W-59 - Commons Casio_W-59_digital_watch.jpg",
+  "canvas": {"origin": [120, 120], "scale": 2, "size": [540, 520]},
+  "time": "2024-03-06T14:03:29",
+  "twelveHour": false,
+  "masks": {"white": {"lum": [150, null], "|r-b|": [null, 50]}, "gold": {"r": [120, null], "r-b": [50, null], "g": [90, null], "r-g": [null, 70]}, "blue": {"b": [140, null], "b-r": [60, null]}, "red": {"r": [140, null], "r-g": [70, null], "r-b": [60, null]}, "ink": {"lum": [null, 80]}},
+  "elements": [
+    {"name": "CASIO", "mask": "white", "box": [105, 48, 240, 85]},
+    {"name": "ALARM CHRONO", "mask": "gold", "box": [260, 50, 440, 78]},
+    {"name": "Lithium", "mask": "gold", "box": [330, 105, 420, 135]},
+    {"name": "LIGHT", "mask": "white", "box": [128, 105, 180, 125]},
+    {"name": "MODE", "mask": "white", "box": [128, 125, 180, 142]},
+    {"name": "24HR", "mask": "white", "box": [205, 125, 250, 142]},
+    {"name": "mk1", "mask": "gold", "box": [105, 110, 128, 124]},
+    {"name": "mk2", "mask": "gold", "box": [105, 127, 128, 140]},
+    {"name": "mk3", "mask": "gold", "box": [250, 127, 280, 140]},
+    {"name": "WATER RESIST", "mask": "gold", "box": [110, 372, 330, 395]},
+    {"name": "redline", "mask": "red", "box": [100, 396, 335, 410]},
+    {"name": "50M", "mask": "red", "box": [335, 372, 440, 408]},
+    {"name": "24H", "mask": "ink", "box": [160, 200, 210, 222]},
+    {"name": "weekday", "mask": "ink", "box": [250, 175, 315, 220]},
+    {"name": "day", "mask": "ink", "box": [375, 175, 415, 220]},
+    {"name": "HHMM", "mask": "ink", "box": [140, 230, 345, 312]},
+    {"name": "sec", "mask": "ink", "box": [350, 250, 430, 312]}
+  ]
+}

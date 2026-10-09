@@ -1,0 +1,21 @@
+{
+  "model": "CasioW800H",
+  "image": "W-800H - owner, W-800H-2AV product image (measured).webp",
+  "canvas": {"origin": [180, 160], "scale": 1, "size": [580, 560]},
+  "time": "2024-06-30T22:58:50",
+  "twelveHour": true,
+  "elements": [
+    {"name": "CASIO", "mask": "white", "box": [170, 170, 272, 194]},
+    {"name": "10 YEAR BATTERY", "mask": "white", "box": [282, 176, 412, 194]},
+    {"name": "ADJUST", "mask": "white", "box": [122, 216, 142, 306]},
+    {"name": "MODE", "mask": "white", "box": [125, 371, 140, 442]},
+    {"name": "LIGHT", "mask": "white", "box": [436, 215, 455, 290]},
+    {"name": "12/24H", "mask": "white", "box": [434, 364, 455, 445]},
+    {"name": "WATER", "mask": "white", "box": [169, 473, 247, 492]},
+    {"name": "100M", "mask": "white", "box": [256, 472, 315, 492]},
+    {"name": "RESIST", "mask": "white", "box": [324, 476, 404, 495]},
+    {"name": "weekday", "mask": "dark", "box": [186, 233, 283, 277]},
+    {"name": "HHMM", "mask": "dark", "box": [170, 295, 345, 388]},
+    {"name": "sec", "mask": "dark", "box": [350, 318, 425, 388]}
+  ]
+}

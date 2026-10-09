@@ -17,24 +17,39 @@ per point, like the renders from ReferenceRenderTests.
       display's glyph squeeze and tracking.
   side CANVAS RENDER [--out side.png]
       Photo canvas and render side by side, half size.
+  check MANIFEST [--images DIR] [--out DIR] [--lit]
+      Compare a model with its reference in one go, from its manifest (references/<Model>.json):
+      maps the archived image onto the canvas, renders the face at the reference's time without
+      the case extension (ReferenceRenderTests), compares every element's ink box and writes
+      side.png. Exits 1 if an element is missing or off by more than 1.5 pt.
 
 Masks: white (light, unsaturated print), dark (LCD ink), light (anything bright), gold, red, blue.
+A manifest can define its own as thresholds, for example {"white": {"lum": [150, null],
+"|r-b|": [null, 50]}}: each key (r, g, b, lum, sat, differences such as "r-b", absolute ones such
+as "|r-b|") must lie between its [min, max] (null: open).
 """
 
 import argparse
 import json
+import os
+import subprocess
 import sys
+import tempfile
 
 import numpy as np
 from PIL import Image, ImageDraw
 from scipy import ndimage
 
 
-def masks(path, size):
+PACKAGE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ARCHIVE = "/Volumes/main/tempMac/smarttube/casio-references"
+
+
+def masks(path, size, spec=None):
     a = np.asarray(Image.open(path).convert("RGB").resize(size)).astype(int)
     r, g, b = a[..., 0], a[..., 1], a[..., 2]
     lum, sat = a.mean(2), a.max(2) - a.min(2)
-    return {
+    defaults = {
         "white": (lum > 165) & (sat < 50),
         "dark": lum < 80,
         "light": lum > 120,
@@ -42,6 +57,29 @@ def masks(path, size):
         "red": (r > 100) & (r - g > 45) & (r - b > 30),
         "blue": (b > 110) & (b - r > 40),
     }
+    if not spec:
+        return defaults
+    channels = {"r": r, "g": g, "b": b, "lum": lum, "sat": sat}
+
+    def value(key):
+        if key.startswith("|"):
+            return np.abs(value(key.strip("|")))
+        if "-" in key:
+            x, y = key.split("-")
+            return channels[x] - channels[y]
+        return channels[key]
+
+    custom = {}
+    for name, limits in spec.items():
+        m = np.ones(lum.shape, dtype=bool)
+        for key, (lo, hi) in limits.items():
+            v = value(key)
+            if lo is not None:
+                m &= v > lo
+            if hi is not None:
+                m &= v < hi
+        custom[name] = m
+    return {**defaults, **custom}
 
 
 def ink_box(mask, box, min_fraction=0.05):
@@ -52,17 +90,21 @@ def ink_box(mask, box, min_fraction=0.05):
     labels, n = ndimage.label(sub)
     sizes = ndimage.sum(sub, labels, range(1, n + 1))
     keep = np.isin(labels, [i + 1 for i, s in enumerate(sizes) if s >= max(6, min_fraction * max(sizes))])
+    if not keep.any():
+        return None
     ys, xs = np.nonzero(keep)
     return (x0 + xs.min() / 2, y0 + ys.min() / 2, x0 + (xs.max() + 1) / 2, y0 + (ys.max() + 1) / 2)
 
 
+def photo_canvas(image, ox, oy, w, h, scale=1, rotate=0):
+    photo = Image.open(image).convert("RGB")
+    if rotate:
+        photo = photo.rotate(rotate, resample=Image.BICUBIC, fillcolor=(255, 255, 255))
+    return photo.transform((2 * w, 2 * h), Image.EXTENT, (ox, oy, ox + w * scale, oy + h * scale), Image.BICUBIC)
+
+
 def cmd_canvas(args):
-    photo = Image.open(args.image).convert("RGB")
-    if args.rotate:
-        photo = photo.rotate(args.rotate, resample=Image.BICUBIC, fillcolor=(255, 255, 255))
-    s, ox, oy = args.scale, args.ox, args.oy
-    canvas = photo.transform(
-        (2 * args.w, 2 * args.h), Image.EXTENT, (ox, oy, ox + args.w * s, oy + args.h * s), Image.BICUBIC)
+    canvas = photo_canvas(args.image, args.ox, args.oy, args.w, args.h, args.scale, args.rotate)
     canvas.save(f"{args.out}/photo-canvas.png")
     grid = canvas.copy()
     draw = ImageDraw.Draw(grid)
@@ -78,23 +120,33 @@ def cmd_canvas(args):
     print(f"wrote {args.out}/photo-canvas.png and grid.png ({args.w} x {args.h} pt)")
 
 
-def cmd_boxes(args):
-    size = Image.open(args.canvas).size
-    photo = masks(args.canvas, size)
-    render = masks(args.render, size) if args.render else None
-    for item in json.load(open(args.spec)):
+def compare(canvas, elements, render=None, mask_spec=None):
+    """Prints each element's ink box (or, with a render, its difference); returns the number of
+    elements missing or off by more than 1.5 pt."""
+    size = Image.open(canvas).size
+    photo = masks(canvas, size, mask_spec)
+    rendered = masks(render, size, mask_spec) if render else None
+    bad = 0
+    for item in elements:
         a = ink_box(photo[item["mask"]], item["box"])
-        if render is None:
+        if rendered is None:
             print(f"{item['name']:16} " + (f"{a[0]:6.1f} {a[1]:6.1f} {a[2]:6.1f} {a[3]:6.1f}  "
                                             f"w {a[2] - a[0]:5.1f} h {a[3] - a[1]:5.1f}" if a else "none"))
             continue
-        b = ink_box(render[item["mask"]], item["box"])
+        b = ink_box(rendered[item["mask"]], item["box"])
         if a is None or b is None:
             print(f"{item['name']:16} missing (photo {a}, render {b})")
+            bad += 1
             continue
         d = [b[i] - a[i] for i in range(4)]
-        flag = "  <<" if max(abs(v) for v in d) > 1.5 else ""
-        print(f"{item['name']:16} Δ {d[0]:+5.1f} {d[1]:+5.1f} {d[2]:+5.1f} {d[3]:+5.1f}{flag}")
+        off = max(abs(v) for v in d) > 1.5
+        bad += off
+        print(f"{item['name']:16} Δ {d[0]:+5.1f} {d[1]:+5.1f} {d[2]:+5.1f} {d[3]:+5.1f}{'  <<' if off else ''}")
+    return bad
+
+
+def cmd_boxes(args):
+    compare(args.canvas, json.load(open(args.spec)), args.render)
 
 
 def cmd_runs(args):
@@ -123,6 +175,39 @@ def cmd_side(args):
     sheet.paste(render, (photo.width + 10, 0))
     sheet.resize((sheet.width // 2, sheet.height // 2)).save(args.out)
     print(f"wrote {args.out}")
+
+
+def cmd_check(args):
+    manifest = json.load(open(args.manifest))
+    model, c = manifest["model"], manifest["canvas"]
+    w, h = c["size"]
+    out = args.out or tempfile.mkdtemp(prefix=f"casio-{model}-")
+    os.makedirs(out, exist_ok=True)
+    canvas = os.path.join(out, "photo-canvas.png")
+    photo_canvas(os.path.join(args.images, manifest["image"]), *c["origin"], w, h, c.get("scale", 1),
+                 c.get("rotate", 0)).save(canvas)
+    full = os.path.join(out, "render-full.png")
+    env = dict(os.environ, CASIO_RENDER=model, CASIO_OUT=full, CASIO_TIME=manifest["time"],
+               CASIO_12H="1" if manifest.get("twelveHour") else "0", CASIO_LIT="1" if args.lit else "0",
+               CASIO_REFERENCE_LAYOUT="1")
+    command = ["swift", "test", "--filter", "referenceRender"]
+    if os.environ.get("CASIO_SCRATCH"):
+        command += ["--scratch-path", os.environ["CASIO_SCRATCH"]]
+    result = subprocess.run(command, cwd=PACKAGE, env=env, capture_output=True, text=True)
+    if result.returncode != 0 or not os.path.exists(full):
+        sys.exit(f"reference render failed:\n{result.stdout[-2000:]}{result.stderr[-2000:]}")
+    # The render covers the model's canvas; cut the reference's canvas out of it.
+    dx, dy = manifest.get("renderOffset", [0, 0])
+    render = Image.new("RGB", (2 * w, 2 * h), (128, 128, 128))
+    render.paste(Image.open(full).convert("RGB"), (-2 * dx, -2 * dy))
+    render_path = os.path.join(out, "render.png")
+    render.save(render_path)
+    print(f"{model} at {manifest['time']} ({out})")
+    bad = compare(canvas, manifest["elements"], render_path, manifest.get("masks"))
+    args.canvas, args.render, args.out = canvas, render_path, os.path.join(out, "side.png")
+    cmd_side(args)
+    print(f"{len(manifest['elements'])} elements, {bad} missing or off by more than 1.5 pt")
+    return 1 if bad else 0
 
 
 def main():
@@ -154,8 +239,14 @@ def main():
     p.add_argument("render")
     p.add_argument("--out", default="side.png")
     p.set_defaults(run=cmd_side)
+    p = sub.add_parser("check")
+    p.add_argument("manifest")
+    p.add_argument("--images", default=ARCHIVE)
+    p.add_argument("--out")
+    p.add_argument("--lit", action="store_true")
+    p.set_defaults(run=cmd_check)
     args = parser.parse_args()
-    args.run(args)
+    return args.run(args)
 
 
 if __name__ == "__main__":

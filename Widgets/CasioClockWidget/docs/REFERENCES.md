@@ -11,8 +11,10 @@ downloaded again from the links below; the product images were supplied by the o
 
 ## Reference images
 
-The **canvas** column says how canvas points map onto the image, so a face can be compared with
-its reference again (`tools/casio_measure.py canvas …`, see [ADDING-A-MODEL.md](ADDING-A-MODEL.md)).
+The **canvas** column says how canvas points map onto the image. Each model's manifest,
+`references/<Model>.json`, records the same mapping with the image's archive file name, the time
+it shows and the measured elements, so `tools/casio_measure.py check references/<Model>.json`
+compares the face with its reference again in one step (see [ADDING-A-MODEL.md](ADDING-A-MODEL.md)).
 
 | Model | Image | Source and licence | Canvas |
 |---|---|---|---|

@@ -21,7 +21,9 @@ Sources/CasioClockWidget/
   Resources/            the fonts and their licences
 Tests/CasioClockWidgetTests/   unit, contract, catalogue, font and render tests; the opt-in
                                reference render (docs/ADDING-A-MODEL.md)
-tools/casio_measure.py          measuring faces against their reference images
+references/<Model>.json         each model's reference manifest: archived image, canvas mapping,
+                                the time it shows, measured elements (no images)
+tools/casio_measure.py          measuring faces against their reference images (`check <manifest>`)
 ```
 
 Vocabulary (also in the repository's `CONTEXT.md`): a **watch model** is one Casio watch the
@@ -102,6 +104,7 @@ F-91W's is `"CasioClockWidget"`, from when it was the only model).
 - rendering: every model draws its face and its light changes it; every module display renders
   alone and differs between 12- and 24-hour time; every display's runs sit inside its glass.
 
-Faces themselves are checked against their reference images while they are made
-([ADDING-A-MODEL.md](ADDING-A-MODEL.md)); the repository's `.improve/` holds a golden-render
+Faces themselves are checked against their reference images with
+`tools/casio_measure.py check references/<Model>.json` (needs the archived images; see
+[ADDING-A-MODEL.md](ADDING-A-MODEL.md)); the repository's `.improve/` holds a golden-render
 harness used when refactoring shared code (the existing faces must render pixel-identical).

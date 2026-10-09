@@ -1,0 +1,31 @@
+{
+  "model": "CasioDW5000C",
+  "image": "DW-5000C - Commons DW-5000.jpg",
+  "canvas": {"origin": [322.8229166666667, 455.75], "scale": 1.8989583333333333, "size": [620, 500]},
+  "time": "2026-11-04T19:46:24",
+  "twelveHour": false,
+  "masks": {"white": {"lum": [140, null], "|r-b|": [null, 45]}, "gold": {"r": [110, null], "r-b": [55, null], "g": [80, null]}, "teal": {"g": [110, null], "b": [100, null], "g-r": [25, null]}, "red": {"r": [110, null], "r-g": [60, null]}, "ink": {"lum": [null, 70]}},
+  "elements": [
+    {"name": "CASIO", "mask": "white", "box": [170, 55, 295, 90]},
+    {"name": "Lithium", "mask": "gold", "box": [295, 55, 380, 90]},
+    {"name": "battery", "mask": "gold", "box": [385, 55, 460, 90]},
+    {"name": "badge", "mask": "gold", "box": [190, 105, 265, 155]},
+    {"name": "ALM", "mask": "white", "box": [325, 110, 450, 128]},
+    {"name": "LAP", "mask": "white", "box": [280, 129, 450, 146]},
+    {"name": "ADJUST", "mask": "white", "box": [78, 180, 96, 250]},
+    {"name": "MODE", "mask": "white", "box": [78, 280, 96, 335]},
+    {"name": "LIGHT", "mask": "white", "box": [526, 182, 545, 235]},
+    {"name": "24HR", "mask": "white", "box": [526, 285, 545, 335]},
+    {"name": "WATER RESIST", "mask": "teal", "box": [140, 365, 335, 388]},
+    {"name": "200M", "mask": "teal", "box": [175, 388, 300, 413]},
+    {"name": "START", "mask": "white", "box": [330, 370, 450, 388]},
+    {"name": "SIG", "mask": "white", "box": [330, 388, 450, 404]},
+    {"name": "JAPAN", "mask": "white", "box": [360, 404, 420, 415]},
+    {"name": "ALARM CHRONO", "mask": "gold", "box": [190, 428, 430, 458]},
+    {"name": "weekday", "mask": "ink", "box": [165, 172, 255, 222]},
+    {"name": "datebox", "mask": "ink", "box": [290, 168, 465, 245]},
+    {"name": "24H", "mask": "ink", "box": [220, 232, 280, 253]},
+    {"name": "HHMM", "mask": "ink", "box": [180, 255, 395, 340]},
+    {"name": "sec", "mask": "ink", "box": [390, 275, 465, 340]}
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "model": "CasioW738H",
+  "image": "W-738H - owner, product image front (measured).avif",
+  "canvas": {"origin": [280, 180], "scale": 1, "size": [640, 660]},
+  "time": "2024-06-30T22:58:50",
+  "twelveHour": true,
+  "masks": {"print": {"lum": [120, null], "sat": [null, 40]}},
+  "elements": [
+    {"name": "VIBRATION ALARM", "mask": "print", "box": [170, 40, 470, 68]},
+    {"name": "CASIO", "mask": "print", "box": [260, 152, 380, 182]},
+    {"name": "10 YEAR BATTERY", "mask": "print", "box": [205, 184, 435, 204]},
+    {"name": "ADJUST", "mask": "print", "box": [118, 230, 138, 322]},
+    {"name": "MODE", "mask": "print", "box": [118, 355, 138, 428]},
+    {"name": "SPLIT", "mask": "print", "box": [500, 232, 520, 296]},
+    {"name": "START", "mask": "print", "box": [500, 352, 520, 428]},
+    {"name": "TR", "mask": "print", "box": [185, 458, 220, 478]},
+    {"name": "ST", "mask": "print", "box": [260, 458, 300, 478]},
+    {"name": "AL", "mask": "print", "box": [335, 458, 375, 478]},
+    {"name": "DT", "mask": "print", "box": [408, 458, 445, 478]},
+    {"name": "WR100M", "mask": "print", "box": [175, 484, 278, 503]},
+    {"name": "ILLUMINATOR", "mask": "print", "box": [360, 484, 480, 503]},
+    {"name": "LIGHT", "mask": "print", "box": [255, 595, 390, 622]},
+    {"name": "VIB", "mask": "print", "box": [170, 215, 212, 240]},
+    {"name": "P", "mask": "print", "box": [160, 305, 182, 325]},
+    {"name": "weekday", "mask": "print", "box": [250, 228, 330, 292]},
+    {"name": "date", "mask": "print", "box": [360, 228, 475, 292]},
+    {"name": "HHMM", "mask": "print", "box": [185, 315, 392, 418]},
+    {"name": "sec", "mask": "print", "box": [398, 345, 475, 418]},
+    {"name": "signal", "mask": "print", "box": [405, 318, 445, 340]},
+    {"name": "bell", "mask": "print", "box": [448, 312, 478, 345]}
+  ]
+}

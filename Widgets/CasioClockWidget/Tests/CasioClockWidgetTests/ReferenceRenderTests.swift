@@ -12,7 +12,8 @@ import Testing
 ///         CASIO_12H=1 swift test --filter referenceRender
 ///
 /// CASIO_LIT=1 lights the LCD; CASIO_LIVE=1 renders the live timer views instead of fixed seconds;
-/// CASIO_SCALE sets pixels per point (default 2).
+/// CASIO_SCALE sets pixels per point (default 2); CASIO_REFERENCE_LAYOUT=1 leaves the case extension
+/// out, as on the reference image (tools/casio_measure.py check does this).
 @Suite("Reference render (opt-in)")
 struct ReferenceRenderTests {
     private static let env = ProcessInfo.processInfo.environment
@@ -34,7 +35,10 @@ struct ReferenceRenderTests {
             date: date, calendar: calendar, uses12HourClock: env["CASIO_12H"] == "1", backlit: env["CASIO_LIT"] == "1",
             previewSeconds: env["CASIO_LIVE"] == "1" ? nil : calendar.component(.second, from: date))
         let out = URL(fileURLWithPath: env["CASIO_OUT"] ?? NSTemporaryDirectory() + "\(kind).png")
-        try Self.render(model, context: context, scale: CGFloat(Double(env["CASIO_SCALE"] ?? "2") ?? 2), to: out)
+        let scale = CGFloat(Double(env["CASIO_SCALE"] ?? "2") ?? 2)
+        try CaseExtension.$referenceLayout.withValue(env["CASIO_REFERENCE_LAYOUT"] == "1") {
+            try Self.render(model, context: context, scale: scale, to: out)
+        }
     }
 
     @MainActor

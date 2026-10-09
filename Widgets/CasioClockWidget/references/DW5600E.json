@@ -1,0 +1,25 @@
+{
+  "model": "CasioDW5600E",
+  "image": "DW-5600E - owner, DW-5600E-1V product image TACEQ (measured).jpg",
+  "canvas": {"origin": [540, 580], "scale": 1, "size": [860, 700]},
+  "time": "2024-06-30T22:58:50",
+  "twelveHour": true,
+  "elements": [
+    {"name": "CASIO", "mask": "white", "box": [370, 144, 503, 173]},
+    {"name": "ILLUMINATOR", "mask": "blue", "box": [315, 176, 557, 200]},
+    {"name": "WATER 200M RESIST", "mask": "white", "box": [300, 204, 578, 224]},
+    {"name": "ADJUST", "mask": "white", "box": [175, 266, 192, 340]},
+    {"name": "START·STOP", "mask": "white", "box": [652, 262, 671, 379]},
+    {"name": "LIGHT ON/OFF", "mask": "white", "box": [681, 261, 700, 390]},
+    {"name": "MODE", "mask": "white", "box": [173, 418, 191, 472]},
+    {"name": "LIGHT", "mask": "white", "box": [680, 414, 698, 470]},
+    {"name": "ELECTRO LUMINESCENT", "mask": "white", "box": [256, 510, 592, 530]},
+    {"name": "ALARM", "mask": "gold", "box": [256, 552, 350, 576]},
+    {"name": "CHRONO", "mask": "gold", "box": [512, 552, 627, 576]},
+    {"name": "SHOCK", "mask": "gold", "box": [384, 544, 483, 560]},
+    {"name": "RESIST", "mask": "gold", "box": [384, 559, 483, 575]},
+    {"name": "weekday", "mask": "dark", "box": [300, 281, 418, 340]},
+    {"name": "HHMM", "mask": "dark", "box": [260, 375, 528, 483]},
+    {"name": "sec", "mask": "dark", "box": [540, 400, 628, 478]}
+  ]
+}

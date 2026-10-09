@@ -25,7 +25,7 @@ python3 tools/casio_measure.py canvas ref.png 540 580 860 700 --out ref-dir
 ```
 
 `grid.png` shows a 10 pt grid over the image; read rough positions from it. Record the mapping in
-the model's header comment and in REFERENCES.md.
+the model's header comment, in REFERENCES.md and in the model's manifest (step 3).
 
 ## 3. Measure
 
@@ -40,6 +40,26 @@ a box that contains just that element):
 ```bash
 python3 tools/casio_measure.py boxes ref-dir/photo-canvas.png spec.json
 ```
+
+Keep the elements in the model's **reference manifest**, `references/<Name>.json`, from the start:
+the archived image's file name, the canvas mapping, the time the image shows, its own masks if
+the defaults don't fit (thresholds, see the tool's help) and the elements:
+
+```json
+{
+  "model": "Casio<Name>",
+  "image": "<Name> - Commons <file>.jpg",
+  "canvas": {"origin": [540, 580], "scale": 1, "rotate": 0, "size": [860, 700]},
+  "time": "2024-06-30T22:58:50",
+  "twelveHour": true,
+  "elements": [
+    {"name": "CASIO", "mask": "white", "box": [360, 140, 505, 175]}
+  ]
+}
+```
+
+`renderOffset` (points) is for a model whose canvas is larger than the reference's (the CA-53W's
+side padding).
 
 Also sample colours (median of a patch; take colours from a real photo if the reference is a
 product render), and trace lines and corners with brightness profiles across the face.
@@ -59,7 +79,8 @@ In `Sources/CasioClockWidget/Models/<Name>/`:
 If the face is wider than tall, a `caseExtension` makes the case taller so the widget is filled:
 draw everything in the reference's coordinates and put each group in its `CaseExtension` band
 (`.band(.display, of: stretch)`, `stretch.windowGrowth`, …); the rule itself lives in
-`Kit/CaseExtension.swift`. Set `caseExtension` to 0 while comparing with the reference.
+`Kit/CaseExtension.swift`. Comparisons with the reference leave it out (`CASIO_REFERENCE_LAYOUT=1`,
+which `check` sets).
 
 ## 5. The display
 
@@ -96,7 +117,16 @@ extension lists the catalogue. (A `CatalogueTests` failure means one of the two 
 
 ## 7. Compare with the reference
 
-Render the face on its whole canvas and compare:
+With the manifest, one command maps the archived image, renders the face at the reference's time
+without the case extension, compares every element and writes `side.png`:
+
+```bash
+python3 tools/casio_measure.py check references/<Name>.json --out ref-dir
+```
+
+It exits 1 if an element is missing or off by more than 1.5 pt; `--images DIR` reads the images
+from elsewhere than the NAS archive, `--lit` renders the light, `CASIO_SCRATCH` sets the Swift
+build folder. By hand, render the face on its whole canvas and compare:
 
 ```bash
 CASIO_RENDER=Casio<Name> CASIO_OUT=ref-dir/render.png CASIO_TIME=2024-06-30T22:58:50 CASIO_12H=1 \
@@ -105,13 +135,14 @@ python3 tools/casio_measure.py boxes ref-dir/photo-canvas.png spec.json ref-dir/
 python3 tools/casio_measure.py side ref-dir/photo-canvas.png ref-dir/render.png --out side.png
 ```
 
-Set the time to the one shown in the reference image. Fix anything flagged `<<` (over 1.5 pt) and
+Set the time to the one shown in the reference image (and the case extension to 0, or
+`CASIO_REFERENCE_LAYOUT=1`). Fix anything flagged `<<` (over 1.5 pt) and
 look at `side.png`. `CASIO_LIT=1` renders the light.
 
 ## 8. Check and ship
 
 - `swift test` in this folder; `just format-check` and `just lint` cover the package.
 - Build the app, add the widget on the simulator, tap it for the light.
-- Add the model to the README's list; its reference to REFERENCES.md; a new font goes into
+- Add the model to the README's list; its reference to REFERENCES.md; its manifest to `references/`; a new font goes into
   `Resources/` with its licence and its name into `CaseFont` (the font test checks the bundled files
   are exactly the fonts in use).

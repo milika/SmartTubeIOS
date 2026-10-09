@@ -16,6 +16,14 @@ import SwiftUI
 struct CaseExtension {
     let amount: CGFloat
 
+    /// Set while rendering a face to compare it with its reference image (ReferenceRenderTests):
+    /// the case is not extended, so every element sits where it was measured.
+    @TaskLocal static var referenceLayout = false
+
+    init(amount: CGFloat) {
+        self.amount = Self.referenceLayout ? 0 : amount
+    }
+
     enum Band {
         case top, upperSides, display, middleSides, lowerSides, bottom
     }

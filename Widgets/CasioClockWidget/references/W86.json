@@ -1,0 +1,28 @@
+{
+  "model": "CasioW86",
+  "image": "W-86 - Commons Casio_W-86_digital_watch_(front_closeup_minor_retouch).jpg",
+  "canvas": {"origin": [435, 390], "scale": 1.5, "size": [720, 640]},
+  "time": "2024-05-19T15:22:23",
+  "twelveHour": false,
+  "elements": [
+    {"name": "CASIO", "mask": "white", "box": [155, 58, 340, 95]},
+    {"name": "ALARM CHRONO", "mask": "white", "box": [345, 60, 590, 92]},
+    {"name": "ELECTRO..", "mask": "dark", "box": [145, 118, 570, 148]},
+    {"name": "LIGHT", "mask": "white", "box": [35, 195, 65, 272]},
+    {"name": "MODE", "mask": "white", "box": [30, 355, 60, 432]},
+    {"name": "START·STOP", "mask": "white", "box": [655, 265, 690, 430]},
+    {"name": "dotL", "mask": "red", "box": [40, 170, 68, 195]},
+    {"name": "dotM", "mask": "red", "box": [30, 433, 58, 458]},
+    {"name": "dotS", "mask": "red", "box": [660, 432, 688, 456]},
+    {"name": "ILLUMINATOR", "mask": "dark", "box": [155, 482, 555, 518]},
+    {"name": "WATER 50M", "mask": "white", "box": [120, 540, 590, 575]},
+    {"name": "u", "mask": "white", "box": [340, 578, 365, 592]},
+    {"name": "signal", "mask": "dark", "box": [125, 218, 188, 242]},
+    {"name": "bell", "mask": "dark", "box": [200, 210, 235, 246]},
+    {"name": "24H", "mask": "dark", "box": [180, 258, 250, 284]},
+    {"name": "weekday", "mask": "dark", "box": [330, 218, 435, 282]},
+    {"name": "date", "mask": "dark", "box": [505, 218, 585, 282]},
+    {"name": "HHMM", "mask": "dark", "box": [145, 300, 475, 422]},
+    {"name": "sec", "mask": "dark", "box": [485, 330, 610, 422]}
+  ]
+}

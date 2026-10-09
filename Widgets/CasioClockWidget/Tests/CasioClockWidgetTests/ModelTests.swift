@@ -65,6 +65,14 @@ struct ModelTests {
         #expect(stretch.offset(.lowerSides) == stretch.offset(.display) + stretch.windowGrowth)
     }
 
+    @Test("reference layout leaves the case extension out")
+    func referenceLayout() {
+        #expect(CaseExtension(amount: 60).amount == 60)
+        CaseExtension.$referenceLayout.withValue(true) {
+            #expect(CaseExtension(amount: 60).amount == 0)
+        }
+    }
+
     @Test("complication kinds are unique and differ from the iPhone kinds")
     func complicationKinds() {
         let kinds = CasioModels.all.map { $0.kind } + CasioModels.complications.map { $0.complicationKind }

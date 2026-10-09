@@ -1,0 +1,29 @@
+{
+  "model": "CasioGWB5600",
+  "image": "GW-B5600 - owner, GW-B5600MG-1 product image (measured).png",
+  "canvas": {"origin": [270, 420], "scale": 1, "size": [660, 600]},
+  "time": "2024-06-30T22:58:50",
+  "twelveHour": true,
+  "elements": [
+    {"name": "CASIO", "mask": "white", "box": [240, 35, 380, 70]},
+    {"name": "ADJUST", "mask": "white", "box": [25, 180, 55, 270]},
+    {"name": "dotTL", "mask": "white", "box": [30, 155, 50, 175]},
+    {"name": "MODE", "mask": "white", "box": [25, 315, 55, 385]},
+    {"name": "dotBL", "mask": "white", "box": [30, 388, 50, 408]},
+    {"name": "LIGHT", "mask": "white", "box": [570, 170, 600, 240]},
+    {"name": "dotTR", "mask": "white", "box": [570, 150, 595, 170]},
+    {"name": "RECEIVING", "mask": "white", "box": [570, 270, 600, 385]},
+    {"name": "dotBR", "mask": "white", "box": [575, 388, 595, 405]},
+    {"name": "badge", "mask": "light", "box": [255, 462, 370, 520]},
+    {"name": "PS LT RCVD", "mask": "dark", "box": [135, 160, 300, 185]},
+    {"name": "weekday", "mask": "dark", "box": [205, 185, 300, 250]},
+    {"name": "datebox", "mask": "dark", "box": [318, 168, 510, 258]},
+    {"name": "date", "mask": "dark", "box": [360, 180, 490, 245]},
+    {"name": "battery", "mask": "dark", "box": [415, 258, 500, 282]},
+    {"name": "SNZ", "mask": "dark", "box": [420, 288, 470, 310]},
+    {"name": "bt icon", "mask": "dark", "box": [475, 285, 502, 315]},
+    {"name": "P", "mask": "dark", "box": [128, 275, 152, 300]},
+    {"name": "HHMM", "mask": "dark", "box": [150, 288, 395, 392]},
+    {"name": "sec", "mask": "dark", "box": [405, 315, 505, 392]}
+  ]
+}

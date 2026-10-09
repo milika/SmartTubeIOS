@@ -13,6 +13,13 @@ struct ModelTests {
         #expect(CasioF91W.kind == "CasioClockWidget")
     }
 
+    @Test("complication kinds are unique and differ from the iPhone kinds")
+    func complicationKinds() {
+        let kinds = CasioModels.all.map { $0.kind } + CasioModels.complications.map { $0.complicationKind }
+        #expect(Set(kinds).count == kinds.count)
+        #expect(CasioF91W.complicationKind == "CasioF91WComplication")
+    }
+
     @Test("every model's fonts are bundled and register")
     func fonts() {
         BundledFonts.register()

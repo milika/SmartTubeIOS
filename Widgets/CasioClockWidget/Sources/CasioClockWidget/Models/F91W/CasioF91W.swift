@@ -8,7 +8,7 @@ import SwiftUI
 // Michroma for Microgramma / Eurostile Extended, Archivo Expanded Black (an instance of
 // Archivo's variable font) for Neue Helvetica Extended Black, Saira Medium for Eurostile Medium,
 // Saira Expanded SemiBold (an instance of Saira's variable font) for the WR mark.
-enum CasioF91W: CasioModel {
+enum CasioF91W: CasioComplicationModel {
     /// The original widget's kind, kept so widgets already on Home Screens survive updates.
     static let kind = "CasioClockWidget"
     static let displayName = "Casio F-91W"
@@ -23,6 +23,14 @@ enum CasioF91W: CasioModel {
         colors: [Color(white: 0.13), Color(white: 0.05)], startPoint: .top, endPoint: .bottom)
 
     static func face(_ context: CasioFaceContext) -> some View { F91WFace(context: context) }
+
+    static let complicationKind = "CasioF91WComplication"
+    static let complicationName = "Casio F-91W"
+    static let complicationSummary = "The F-91W's display: time with live seconds, day and date."
+
+    static func rectangularComplication(_ context: CasioFaceContext) -> some View {
+        F91WComplication(context: context)
+    }
 
     // Colours sampled from the photo, white-balanced so the white print is neutral.
     static let blue = Color(red: 0.04, green: 0.45, blue: 0.95)

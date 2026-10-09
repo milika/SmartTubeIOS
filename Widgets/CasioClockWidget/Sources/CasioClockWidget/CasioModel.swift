@@ -20,6 +20,17 @@ protocol CasioModel {
     @ViewBuilder static func face(_ context: CasioFaceContext) -> Face
 }
 
+/// A model that also has a rectangular Apple Watch complication.
+protocol CasioComplicationModel: CasioModel {
+    associatedtype RectangularComplication: View
+    /// Stable WidgetKit kind of the complication (different from `kind`).
+    static var complicationKind: String { get }
+    /// Name and description in the complication picker.
+    static var complicationName: String { get }
+    static var complicationSummary: String { get }
+    @ViewBuilder static func rectangularComplication(_ context: CasioFaceContext) -> RectangularComplication
+}
+
 /// What a face shows: the time, the clock style and whether the light is on.
 struct CasioFaceContext {
     var date: Date
@@ -30,7 +41,9 @@ struct CasioFaceContext {
     var previewSeconds: Int? = nil
 }
 
-/// Every model, for tests (unique kinds, bundled fonts). Add new models here.
+/// Every model (and every model with a complication), for tests: unique kinds, bundled fonts.
+/// Add new models here.
 enum CasioModels {
     static let all: [any CasioModel.Type] = [CasioF91W.self]
+    static let complications: [any CasioComplicationModel.Type] = [CasioF91W.self]
 }

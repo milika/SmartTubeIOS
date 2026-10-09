@@ -28,7 +28,7 @@ struct CutCornerRect: Shape {
     }
 }
 
-/// The small red triangles beside LIGHT, MODE and 24HR.
+/// A small triangle pointing left or right, like the ones beside the button labels.
 struct Pointer: Shape {
     let left: Bool
 

@@ -6,10 +6,10 @@ import WidgetKit
 #if !os(watchOS)
 
 // How a Casio widget stays live:
-// - Hours and minutes come from a timeline with one entry per minute (an hour of entries,
-//   then WidgetKit asks for the next hour), so the display changes exactly on the minute.
-// - Widgets can't redraw every second, so the seconds are WidgetKit's own timer text
-//   counting up from the start of the minute, clipped to its last two digits (LiveSeconds).
+// - The hours, date and weekday come from a timeline with one entry per hour (12 at a time,
+//   then WidgetKit asks for more; CasioClockProvider).
+// - Widgets can't redraw every minute or second, so minutes and seconds are WidgetKit's own
+//   timer text ("10:MM:SS"), clipped to the digits each needs (LiveClock, LiveSeconds).
 // - Tapping the widget runs CasioBacklightIntent for that model: the LCD lights for 3 s.
 
 /// The small Home Screen widget for one model. Internal: each model exposes a public wrapper

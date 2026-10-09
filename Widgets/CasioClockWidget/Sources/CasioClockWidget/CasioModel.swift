@@ -50,6 +50,6 @@ struct CasioFaceContext {
 /// Every model (and every model with a complication), for tests: unique kinds, bundled fonts.
 /// Add new models here.
 enum CasioModels {
-    static let all: [any CasioModel.Type] = [CasioF91W.self]
+    static let all: [any CasioModel.Type] = [CasioF91W.self, CasioA158W.self]
     static let complications: [any CasioComplicationModel.Type] = [CasioF91W.self]
 }

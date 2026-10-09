@@ -13,6 +13,12 @@ struct ModelTests {
         #expect(CasioF91W.kind == "CasioClockWidget")
     }
 
+    @Test("the A158W is a model with its own kind")
+    func a158w() {
+        #expect(CasioModels.all.contains { $0.kind == CasioA158W.kind })
+        #expect(CasioA158W.kind == "CasioA158W")
+    }
+
     @Test("complication kinds are unique and differ from the iPhone kinds")
     func complicationKinds() {
         let kinds = CasioModels.all.map { $0.kind } + CasioModels.complications.map { $0.complicationKind }

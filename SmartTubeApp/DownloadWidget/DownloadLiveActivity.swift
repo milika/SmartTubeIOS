@@ -139,9 +139,10 @@ struct SmartTubeDownloadWidgetBundle: WidgetBundle {
         // A widget extension needs at least one StaticConfiguration widget, or SpringBoard
         // fails with "Failed to get descriptors for extensionBundleID". The Home widget is it.
         HomeFeedWidget()
-        // Experimental: self-contained package Widgets/CasioClockWidget — remove this line
+        // Experimental: self-contained package Widgets/CasioClockWidget — remove these lines
         // and the package dependency to drop it.
         CasioF91WWidget()
+        CasioA158WWidget()
         #if ENABLE_DOWNLOADS
         DownloadLiveActivityWidget()
         #endif

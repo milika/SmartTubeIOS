@@ -43,9 +43,9 @@ struct F91WComplication: View {
                 LCDText(
                     text: parts.day, font: style.digits, glyph: 19, edge: .trailing(194), baseline: 23, width: 60,
                     tracking: 2, style: style)
-                LCDText(
-                    text: parts.hoursMinutes, font: style.digits, glyph: 44, edge: .trailing(148), baseline: 75,
-                    width: 160, xScale: CasioF91W.digitSqueeze, style: style)
+                LiveHoursMinutes(
+                    context: context, font: style.digits, glyph: 44, trailing: 148, baseline: 75,
+                    xScale: CasioF91W.digitSqueeze, style: style)
                 LiveSeconds(
                     date: context.date, calendar: context.calendar, previewSeconds: context.previewSeconds,
                     glyph: 32, trailing: 196, baseline: 75, xScale: CasioF91W.digitSqueeze, style: style)

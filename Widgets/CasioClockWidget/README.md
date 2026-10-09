@@ -124,11 +124,14 @@ F-91W's is `"CasioClockWidget"`, from when it was the only model.)
 
 ## How it stays live
 
-- Hours and minutes: a timeline with one entry per minute (an hour at a time).
-- Seconds: `Text(date, style: .timer)` counting up from the start of the minute, clipped to
-  its last two digits — widgets can't redraw every second, but timer text animates itself.
-- The light: a lit entry for 3 s, then three minutes of entries and a reload (a short lit
-  timeline renders fast, so the light shows right after the tap).
+- Hours, date, weekday, PM / 24H: a timeline with one entry per hour (12 at a time).
+- Minutes and seconds: one `Text(date, style: .timer)` started 10 hours before the hour, so it
+  reads "10:MM:SS"; `LiveHoursMinutes` shows its minutes and `LiveSeconds` its last two digits
+  (see `LCD/LiveClock.swift`). Widgets can't redraw every second, but timer text animates itself.
+  A timeline of minute entries stores a full drawing per minute; for a detailed face (the
+  GMW-B5000) that grew to 36 MB and WidgetKit rejected it. Hourly entries keep it to a few MB.
+- The light: a lit entry for 3 s, then two hourly entries and a reload (a short lit timeline
+  renders fast, so the light shows right after the tap).
 - 12- or 24-hour follows the device setting; 12-hour shows the hour without a leading zero
   and a PM marker, 24-hour shows "24H", like the watch.
 

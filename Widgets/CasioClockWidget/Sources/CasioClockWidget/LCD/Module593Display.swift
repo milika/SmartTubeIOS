@@ -37,9 +37,9 @@ struct Module593Display: View {
             LCDText(
                 text: parts.day, font: style.digits, glyph: 47.5, edge: .trailing(380.7), baseline: 60, width: 120,
                 tracking: 4.5, style: style)
-            LCDText(
-                text: parts.hoursMinutes, font: style.digits, glyph: 88.5, edge: .trailing(279), baseline: 166,
-                width: 320, xScale: Self.digitSqueeze, style: style)
+            LiveHoursMinutes(
+                context: context, font: style.digits, glyph: 88.5, trailing: 279, baseline: 166,
+                xScale: Self.digitSqueeze, style: style)
             LiveSeconds(
                 date: context.date, calendar: context.calendar, previewSeconds: context.previewSeconds, glyph: 67,
                 trailing: 382, baseline: 166, xScale: Self.digitSqueeze, style: style)

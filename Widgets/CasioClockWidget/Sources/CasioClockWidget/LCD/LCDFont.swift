@@ -11,6 +11,8 @@ struct LCDFont: Equatable {
     let baselineFromTop: CGFloat
     /// Advance of one digit, in ems.
     let digitAdvance: CGFloat
+    /// Advance of the colon, in ems.
+    var colonAdvance: CGFloat = 0.2
     /// A character with every segment lit ("8" / "~"), for the faint unlit segments; nil if none.
     let allSegments: Character?
     /// A digit-wide blank ("!" in DSEG), for an empty leading hour digit.

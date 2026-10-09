@@ -198,9 +198,9 @@ struct GMWB5000Face: View {
                 )
                 .frame(width: 130, height: 40, alignment: .topLeading)
                 .offset(x: 323.75, y: 211)
-                LCDText(
-                    text: parts.hoursMinutes, font: style.digits, glyph: 76, edge: .trailing(372), baseline: 362.5,
-                    width: 330, xScale: 0.85, style: style)
+                LiveHoursMinutes(
+                    context: context, font: style.digits, glyph: 76, trailing: 372, baseline: 362.5, xScale: 0.85,
+                    style: style)
                 LiveSeconds(
                     date: context.date, calendar: context.calendar, previewSeconds: context.previewSeconds,
                     glyph: 50, trailing: 450, baseline: 360.5, xScale: 0.93, style: style)

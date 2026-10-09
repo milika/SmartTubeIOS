@@ -77,7 +77,8 @@ Delete the `Casio…Widget()` lines and the package dependency.
 Sources/CasioClockWidget/
   CasioModel.swift   CasioModel protocol, CasioFaceContext, CasioModels.all
   Widget/            generic widget + watch complication widget, timeline provider, light intent
-  LCD/               DSEG fonts, LCDStyle, LCDText, LiveSeconds, LCDWindow, DisplayParts
+  LCD/               DSEG fonts, LCDStyle, LCDText, LiveSeconds, LCDWindow, DisplayParts,
+                     Module593Display (the shared display of module 593: F-91W, A158W, A168W…)
   Kit/               FaceCanvas + place(...) modifiers, CaseFont, BundledFonts, shapes, text effects
   Models/F91W/       the F-91W: model (palette, fonts, LCD style), face, complication, public widgets
   Models/A158W/      the A158W: model, face, public widget
@@ -107,6 +108,9 @@ Sources/CasioClockWidget/
    name, summary, `rectangularComplication(_:)`, see `Models/F91W/F91WComplication.swift`), add a
    public wrapper like `CasioF91WComplication`, add it to `CasioModels.complications`, and list it
    in the watch extension's `WidgetBundle`.
+
+Watches that share a Casio module share its display: draw it once (like `Module593Display`) and
+place it in each model's glass, rather than measuring it again from each photo.
 
 A model's `kind` must never change once shipped: it identifies the widgets people placed. (The
 F-91W's is `"CasioClockWidget"`, from when it was the only model.)

@@ -17,12 +17,18 @@ struct Module593Display: View {
             for: context.date, calendar: context.calendar, twelveHour: context.uses12HourClock,
             blankDigit: style.digits.blankDigit)
         ZStack(alignment: .topLeading) {
-            // PM in the afternoon on a 12-hour clock; 24H on a 24-hour clock.
-            if let marker = parts.marker {
-                Text(marker)
+            // PM in the afternoon on a 12-hour clock (measured on the F-91W photo); 24H on a 24-hour
+            // clock, a smaller mark further right (measured on the A158W photo).
+            if parts.marker == "PM" {
+                Text("PM")
                     .font(.system(size: 29.3, weight: .bold))
                     .foregroundStyle(style.ink)
                     .place(centerX: 37, centerY: 52)
+            } else if parts.marker == "24H" {
+                Text("24H")
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundStyle(style.ink)
+                    .place(centerX: 87.3, centerY: 53.1)
             }
             // Day of week and date share the top row.
             LCDText(
@@ -43,10 +49,13 @@ struct Module593Display: View {
 
     /// The display in a model's glass (canvas coordinates): scaled to the glass's width and centred
     /// vertically, so a taller glass (a case extended to fill the widget) gets even margins.
-    static func placed(in glass: CGRect, context: CasioFaceContext, style: LCDStyle) -> some View {
+    /// `shift` moves it down: each case's window frames the same LCD at a slightly different spot.
+    static func placed(in glass: CGRect, shift: CGFloat = 0, context: CasioFaceContext, style: LCDStyle)
+        -> some View
+    {
         let s = glass.width / Self.glass.width
         return Module593Display(context: context, style: style)
             .scaleEffect(s, anchor: .topLeading)
-            .offset(x: glass.minX, y: glass.minY + (glass.height - Self.glass.height * s) / 2)
+            .offset(x: glass.minX, y: glass.minY + (glass.height - Self.glass.height * s) / 2 + shift)
     }
 }

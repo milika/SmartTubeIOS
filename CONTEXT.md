@@ -68,6 +68,10 @@ Naming a new module after a concept not listed here requires adding the term in 
   case around it. *Rejected*: "screen" (the whole widget), "face" for the display.
 - **Run** — one measured line of LCD characters in a module display (weekday, date, time,
   seconds): glyph height, anchored edge, baseline, squeeze and tracking, as an `LCDRun` value.
+- **Reference manifest** — a watch model's measuring record (`references/<Model>.json`): its
+  archived reference image, the canvas mapping, the time the image shows and every measured
+  element; `casio_measure.py check` compares the face with it. *Rejected*: "spec" (the old
+  per-session measuring lists).
 - **Live clock** — how a widget shows the time to the second although WidgetKit redraws only at
   timeline entries: hourly entries for the hours, one self-animating timer ("10:MM:SS") for
   minutes and seconds (`LiveClock/`). *Rejected*: "minute timeline" (the old one-entry-per-minute

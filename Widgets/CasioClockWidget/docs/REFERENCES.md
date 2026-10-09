@@ -32,9 +32,10 @@ compares the face with its reference again in one step (see [ADDING-A-MODEL.md](
 | G-Shock GW-B5600 | GW-B5600MG-1 (Midnight Green) product image (1200 px) | supplied by the owner; measured only | canvas = image − (270, 420), before the case extension |
 | G-Shock DW-5600E | DW-5600E-1V product image (2000 px, TACEQ) | supplied by the owner; measured only (an angled Amazon image archived for colours) | canvas = image − (540, 580), before the case extension |
 
-How well each face matches its image (from the commits that added it): printed labels within
-about 0.5–1 pt, display characters within about 1–2 pt. Known differences are listed under each
-model in the [README](../README.md).
+How well each face matches its image: every element in its manifest (`references/<Model>.json`)
+and the LCD window are within 1.5 pt (`tools/casio_measure.py check`, 2026-10-10). Where a font
+limitation makes one character differ, the manifest leaves that character out and says why in
+its `notes`. Product-image bezels the widgets leave out (G-Shocks) are not in the manifests.
 
 ### Queued (references collected, not built yet)
 
@@ -74,7 +75,8 @@ at hand, the display is named after the watch.
 
 | Display | Module | Watches here | Other watches with it |
 |---|---|---|---|
-| `Module593Display` | 593 | F-91W, A158W | A168W uses 3298 (below), not 593 |
+| `Module593Display` | 593 | F-91W | A168W uses 3298 (below), not 593 |
+| `A158WDisplay` | 593 | A158W | the same module measured on the A158W photo (narrower digits) |
 | `Module3459Display` | 3459 | GMW-B5000 | GW-B5600 family shows the same layout |
 | `Module240Display` | 240 | DW-5000C | — |
 | `Module590Display` | 590 | W-59 | — |

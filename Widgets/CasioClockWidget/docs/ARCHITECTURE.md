@@ -19,11 +19,12 @@ Sources/CasioClockWidget/
                         shapes (CutCornerRect, Pointer, BrickPattern), text effects
   Models/<Name>/        one folder per watch: the model (palette, LCD style, preview) and its face
   Resources/            the fonts and their licences
-Tests/CasioClockWidgetTests/   unit, contract, catalogue, font and render tests; the opt-in
-                               reference render (docs/ADDING-A-MODEL.md)
+Tests/CasioClockWidgetTests/   unit, contract, catalogue, font, render and manifest tests; the
+                               opt-in reference render (docs/ADDING-A-MODEL.md)
 references/<Model>.json         each model's reference manifest: archived image, canvas mapping,
-                                the time it shows, measured elements (no images)
+                                the time it shows, masks, measured elements (no images)
 tools/casio_measure.py          measuring faces against their reference images (`check <manifest>`)
+docs/                           this file, ADDING-A-MODEL.md (the method), REFERENCES.md
 ```
 
 Vocabulary (also in the repository's `CONTEXT.md`): a **watch model** is one Casio watch the
@@ -45,14 +46,23 @@ fill the ink box measured on the reference, so font metrics don't move them.
 
 ## Displays (LCD modules)
 
-A face draws only the case and an `LCDPanel` (the window, its glass and light, and the display);
-the characters come from its module's display,
-an `LCDModuleDisplay` measured once in a glass of `glass` size and `placed(in:)` any watch's glass
-(scaled to its width, centred vertically). Each display declares its measured lines of characters as `LCDRun`
-values (`static let runs`: glyph height, anchored edge, baseline, squeeze, tracking), so the
-numbers live in one table and a test checks that every run sits inside its glass. The F-91W and A158W share `Module593Display`; the F-91W
-complication uses `Module593Complication`, a compact layout of the same module for the
-200 × 80 complication slot.
+A face draws only the case and an `LCDPanel` (the window, its glass and light, and the display).
+The characters come from its module's display, an `LCDModuleDisplay` measured once: its `glass` is
+the measured window and `canvasOrigin` where that window sat on the reference canvas, and
+`placed(in:)` puts it in any watch's glass (scaled to its width, centred vertically). Each display
+declares its measured lines of characters as `LCDRun` values (`static let runs`: glyph height,
+anchored edge, baseline, squeeze, tracking, colon gap), so the numbers live in one table and a test
+checks that every run sits inside its glass.
+
+The same module can look different through two watches' windows: the F-91W and A158W both have
+module 593, but the A158W's digits read narrower, so `Module593Layout` (where module 593's
+characters sit) has two measured instances, `Module593Display` (F-91W) and `A158WDisplay`. The
+F-91W complication uses `Module593Complication`, a compact layout for the 200 × 80 complication
+slot.
+
+Fixed marks shared by displays are in `LCDMarks.swift` (the hourly signal "D" with arcs, the
+alarm bell); `DotMatrixText` draws G-Shock dot-matrix dates in two glyph sets (rounded 5×7 for the
+GMW-B5000, bold and slanted for the GW-B5600).
 
 `LCDStyle` holds a display's look: DSEG segment fonts, glass and ink colours, the light
 (colour and left-to-right falloff), an optional faint unlit-segment layer (off on every model), the
@@ -95,16 +105,20 @@ F-91W's is `"CasioClockWidget"`, from when it was the only model).
 
 `swift test` in the package folder:
 
-- display strings (`DisplayPartsTests`), dot-matrix glyphs, weekday letters;
+- display strings (`DisplayPartsTests`), dot-matrix glyphs in both sets, weekday letters;
 - the live-clock contract (`TimelineTests`): at every minute of a plain and a lit timeline, across
   a DST change and a half-hour UTC offset, the right hour and "10:MM:SS"; timer frames fit
   "10:59:59"; timer-digit window offsets;
 - models: unique kinds, the light per model; fonts: the bundled files are exactly the fonts in use
   and all register; catalogue: every registered model is published;
 - rendering: every model draws its face and its light changes it; every module display renders
-  alone and differs between 12- and 24-hour time; every display's runs sit inside its glass.
+  alone and differs between 12- and 24-hour time; every display's runs sit inside its glass;
+- manifests (`ManifestTests`): every registered model has a reference manifest naming it, with
+  its elements on its canvas;
+- the case extension: bands move top to bottom, and the reference layout leaves it out.
 
 Faces themselves are checked against their reference images with
-`tools/casio_measure.py check references/<Model>.json` (needs the archived images; see
-[ADDING-A-MODEL.md](ADDING-A-MODEL.md)); the repository's `.improve/` holds a golden-render
-harness used when refactoring shared code (the existing faces must render pixel-identical).
+`tools/casio_measure.py check references/<Model>.json`: every element and the LCD window within
+1.5 pt (needs the archived images; see [ADDING-A-MODEL.md](ADDING-A-MODEL.md)). The repository's
+`.improve/` holds a golden-render harness for refactoring shared code (the faces must render
+pixel-identical).

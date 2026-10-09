@@ -1,148 +1,228 @@
 # Adding a model
 
-How each watch in this package was made, step by step. The goal is a face as close as possible to
-the real watch: every printed label within about 1 pt of the reference image and every display
-character within about 1.5 pt, colours sampled from a photo, no element invented.
+The method every watch in this package follows. The goal is a face as close as possible to the
+real watch, and the proof is a check, not an impression:
 
-Tools: `tools/casio_measure.py` (Python 3 with Pillow, NumPy and SciPy) and the opt-in render test
-`ReferenceRenderTests`. Keep reference images, canvases and renders outside the repository (for
-example `~/DevTemp/smarttube/scratch/ref-<model>/`).
+- every printed label, mark and display character within **1.5 pt** of the reference image, and
+  the LCD window's edges too;
+- colours sampled from a photo of a real watch;
+- no element invented, none left out (except the G-Shock bezels, by decision).
+
+A model is done when `python3 tools/casio_measure.py check references/<Name>.json` reports
+**0 elements off** and the review in step 9 finds nothing more.
+
+Tools: `tools/casio_measure.py` (Python 3 with Pillow, NumPy and SciPy), the opt-in render test
+`ReferenceRenderTests` and the manifest test `ManifestTests`. Reference images, canvases and
+renders stay outside the repository (for example `~/DevTemp/smarttube/scratch/ref-<model>/`);
+images are measured only, never shipped or committed.
+
+## Overview
+
+| Step | Result |
+|---|---|
+| 1. Reference | an archived, front-on image and its row in REFERENCES.md |
+| 2. Canvas | the mapping from image pixels to canvas points |
+| 3. Manifest | `references/<Name>.json`: image, mapping, time shown, masks, every element |
+| 4. Measure | ink boxes, window edges, digit runs and colours, in canvas points |
+| 5. Model and face | `Models/<Name>/`: case, print as measured `InkText`, an `LCDPanel` |
+| 6. Display | the LCD: an existing module display or a new one, its runs and marks |
+| 7. Register | the catalogue, so the widget appears |
+| 8. Check | `casio_measure.py check` until it reports 0 elements off |
+| 9. Review and ship | side-by-side review, tests, simulator, docs |
 
 ## 1. Find a reference image
 
-A straight, front-on, sharp image of the real watch, the larger the better; see
+A straight, front-on, sharp image of the real watch, the larger the better: see
 [REFERENCES.md](REFERENCES.md#finding-new-references) for where to look and the licence rules.
-Archive it in the NAS folder and add its row to REFERENCES.md.
+Product renders are fine for geometry; take colours from a photo of a real watch when you can (the
+A168W's come from one). Archive the image in the NAS folder (file name: model, then source) and
+add its row to REFERENCES.md.
 
 ## 2. Map it onto a canvas
 
-Pick the canvas: an origin in image pixels and a size in points, so the watch's face (and any
-print on the case you want to keep) fits. One image pixel per point is fine; use `--scale` for
-very large or small images, `--rotate` to level a tilted photo.
+Pick an origin in image pixels and a canvas size in points that holds the watch's face (and any
+case print you keep). One image pixel per point is fine; `--scale` handles very large or small
+images, `--rotate` levels a tilted photo.
 
 ```bash
 python3 tools/casio_measure.py canvas ref.png 540 580 860 700 --out ref-dir
 ```
 
-`grid.png` shows a 10 pt grid over the image; read rough positions from it. Record the mapping in
-the model's header comment, in REFERENCES.md and in the model's manifest (step 3).
+`grid.png` shows a 10 pt grid over the image. Write the mapping in the model's header comment, in
+REFERENCES.md and in the manifest.
 
-## 3. Measure
+## 3. Write the manifest first
 
-Measure ink boxes on `photo-canvas.png` with a small spec file of the elements (name, colour mask,
-a box that contains just that element):
-
-```json
-[{"name": "CASIO", "mask": "white", "box": [360, 140, 505, 175]},
- {"name": "HHMM",  "mask": "dark",  "box": [275, 380, 530, 478]}]
-```
-
-```bash
-python3 tools/casio_measure.py boxes ref-dir/photo-canvas.png spec.json
-```
-
-Keep the elements in the model's **reference manifest**, `references/<Name>.json`, from the start:
-the archived image's file name, the canvas mapping, the time the image shows, its own masks if
-the defaults don't fit (thresholds, see the tool's help) and the elements:
+The manifest, `references/<Name>.json`, is the model's measuring record: whatever you measure goes
+in it, so the face can be checked again at any time (`ManifestTests` makes sure every registered
+model has one and that its boxes lie on its canvas).
 
 ```json
 {
   "model": "Casio<Name>",
-  "image": "<Name> - Commons <file>.jpg",
+  "image": "<Name> - owner, <description> (measured).jpg",
   "canvas": {"origin": [540, 580], "scale": 1, "rotate": 0, "size": [860, 700]},
   "time": "2024-06-30T22:58:50",
   "twelveHour": true,
+  "masks": {"print": {"lum": [80, null], "sat": [null, 40]}},
+  "notes": ["Why an element is measured the way it is."],
   "elements": [
-    {"name": "CASIO", "mask": "white", "box": [360, 140, 505, 175]}
+    {"name": "CASIO", "mask": "white", "box": [360, 140, 505, 175]},
+    {"name": "TOUGH SOLAR", "mask": "print", "renderMask": "white", "box": [272, 98, 440, 115]},
+    {"name": "LCD glass", "mask": "glass", "box": [235, 238, 638, 497], "kind": "edges"}
   ]
 }
 ```
 
-`renderOffset` (points) is for a model whose canvas is larger than the reference's (the CA-53W's
-side padding).
+- **time**: exactly what the image's LCD shows (weekday, date, time, seconds), and `twelveHour`
+  if it shows P / PM. `timeZone` (for example `"Europe/Berlin"`) makes daylight-saving indicators
+  such as DST show, as on the GMW-B5000's photo.
+- **elements**: everything printed or shown. List every label, logo, mark, dot and pointer; each
+  LCD line (weekday, date, time, seconds) and icon; and the LCD glass as an `edges` element.
+- **boxes**: each box holds its element with a margin of 1–3 pt and nothing else. Watch for
+  neighbours (arrows next to labels, case lines beside vertical print, frame lines inside the LCD)
+  and for the shadow photos often have along the top of the LCD.
+- **masks**: the default masks are `white`, `dark`, `light`, `gold`, `red` and `blue`. A manifest
+  can define its own as thresholds (`lum`, `sat`, `r`, `g`, `b`, differences such as `"r-b"`,
+  absolute ones such as `"|r-b|"`). Use `renderMask` when the face's colour differs from the
+  image's on purpose: colours taken from a real photo, or print brightened because the photo is
+  dark.
+- **notes**: why an element is measured the way it is, above all the font limitations below.
+- `renderOffset` is for a canvas larger than the reference's (the CA-53W's side padding).
 
-Also sample colours (median of a patch; take colours from a real photo if the reference is a
-product render), and trace lines and corners with brightness profiles across the face.
+## 4. Measure
 
-## 4. Write the model
+On `photo-canvas.png` (from step 2, or `check --out`):
+
+- **Ink boxes**: `casio_measure.py boxes photo-canvas.png spec.json` with a list of elements in
+  the manifest's format.
+- **LCD digits**: `casio_measure.py runs photo-canvas.png X0 Y0 X1 Y1` prints one ink run per
+  character, so you get each glyph's width and the pitch between characters.
+- **The LCD window**: brightness profiles across the four edges, where the glass meets the frame.
+  A photo often shades the glass near the frame, so the edge is where the glass leaves the dark
+  surround, not where it reaches full brightness.
+- **Colours**: the median of a patch, from a photo of a real watch when possible.
+- **Small or blurry things** (icons, thin print): zoom in (`NEAREST`, 4–8×) with a tick every
+  2–5 pt, and read the shape before drawing it. The signal mark is a filled "D" with arcs, not
+  bars; the GW-B5600's mark next to SNZ is a mute speaker, not Bluetooth.
+
+## 5. Write the model and its face
 
 In `Sources/CasioClockWidget/Models/<Name>/`:
 
-- `Casio<Name>.swift`: an `enum` conforming to `CasioModel` — `kind` (permanent: it identifies
-  placed widgets), `displayName`, `summary`, `canvas`, `widgetArea` (the square the widget
-  shows), `caseBackground`, the palette, `lcd` (its `LCDStyle`), `face(_:)`, and a `#Preview`
-  (copy one from an existing model). The header comment names the reference and the mapping.
-- `<Name>Face.swift`: the face — case shapes (`CutCornerRect`, `BrickPattern`, own `Shape`s),
-  printed labels as `InkText(...).placed(in: measuredBox, color:)` (vertical ones with
-  `placed(vertical:angle:)`), then an `LCDPanel`: the window's frame and glass and which module display it shows.
+- **`Casio<Name>.swift`**: an `enum` conforming to `CasioModel`, with:
+  - `kind`, which is permanent because it identifies placed widgets;
+  - `displayName`, `summary`, `canvas` and `widgetArea` (the square the widget shows);
+  - `caseBackground`, the palette, `lcd` (its `LCDStyle`) and `face(_:)`;
+  - a `#Preview`.
 
-If the face is wider than tall, a `caseExtension` makes the case taller so the widget is filled:
-draw everything in the reference's coordinates and put each group in its `CaseExtension` band
-(`.band(.display, of: stretch)`, `stretch.windowGrowth`, …); the rule itself lives in
-`Kit/CaseExtension.swift`. Comparisons with the reference leave it out (`CASIO_REFERENCE_LAYOUT=1`,
-which `check` sets).
+  The header comment names the reference and the mapping.
+- **`<Name>Face.swift`**: the face.
+  - Case shapes: `CutCornerRect`, `BrickPattern` or your own `Shape`s, traced with profiles.
+  - Every printed label as `InkText(text:font:).placed(in: measuredBox, color:)`; vertical labels
+    use `placed(vertical:angle:)`. Never size print with `Text` and a font size: font metrics
+    drift by points (the A158W's and GMW-B5000's labels did).
+  - When the stand-in font's glyph differs from the watch's, split the string and place the
+    pieces. Michroma's slash drops below the baseline, so the W-800H's 12/24H is three boxes.
+  - The window: an `LCDPanel` with `frame`, the measured `glass` and the module display. Draw the
+    window so it doesn't cover nearby print. On the W-800H a too-wide surround hid half of
+    12/24H.
 
-## 5. The display
+If the face is wider than tall, a `caseExtension` makes the case taller to fill the widget. Draw
+everything in the reference's coordinates and move each group into its `CaseExtension` band
+(`.band(.display, of: stretch)`, `stretch.windowGrowth`, …; the rule is in
+`Kit/CaseExtension.swift`). `check` renders without the extension (`CASIO_REFERENCE_LAYOUT=1`).
 
-If the watch uses a module that already has a display (REFERENCES.md, *Casio LCD modules*),
-show that display: `LCDPanel(display: Module593Display.self, frame:, glass:, …)`. Otherwise write
-`LCD/Module<number>Display.swift` (or `<Name>Display` without a number), an `LCDModuleDisplay`
-measured in the reference's canvas coordinates: give it its `glass` size and `canvasOrigin` (where
-the glass sits on that canvas), and write its `body` as `inGlass(style: style) { … }`:
+## 6. The display
 
-- strings from `context.displayParts(blankDigit:)`, `DisplayParts.weekday3`,
-  `DisplayParts.twoCells`; `LCDText` in a DSEG7 font draws S, U, O and N in Casio's 7-segment
-  shapes by itself;
-- each line of characters as a measured `LCDRun` (`static let weekday = LCDRun(glyph:, edge:,
-  baseline:, …)`), listed in `static let runs`;
-- fixed characters with `LCDText(text:font:run:style:)`, live ones with `LiveHoursMinutes` and
-  `LiveSeconds`, given their run;
-- marks from `LCD/LCDMarks.swift` or new shapes; printed LCD words with `InkText`.
+If the watch's module already has a display (REFERENCES.md, *Casio LCD modules*) and its photo
+shows it the same way, use that display: `LCDPanel(display: Module593Display.self, …)`.
 
-Calibrate the characters with digit runs on the reference and on a render (step 7):
+Otherwise write `LCD/Module<number>Display.swift` (or `<Name>Display`), an `LCDModuleDisplay`
+measured in the reference's canvas coordinates:
 
-```bash
-python3 tools/casio_measure.py runs ref-dir/photo-canvas.png 275 400 620 476
-```
+- **Glass**: `glass` is the measured window size and `canvasOrigin` where it sits. When you move
+  a window later, move both, and the characters stay where they were measured.
+- **Runs**: each line of characters is an `LCDRun`, listed in `static let runs` (a test keeps
+  every run inside the glass).
+  - `glyph` is the measured ink height and `baseline` its bottom.
+  - `xScale` sets the glyph width (measure single digits, not whole lines).
+  - `tracking` makes the pitch between characters match (`runs` gives both).
+  - `colonGap` places the hours relative to the minutes.
+  - Live digits get their own timer windows when `tracking` ≠ 0, so the live clock stays exact.
+- **Text**:
+  - Fixed text uses `LCDText(text:font:run:style:)`; the live time uses `LiveHoursMinutes` and
+    `LiveSeconds`.
+  - The strings come from `context.displayParts(blankDigit:)`.
+  - A DSEG7 font draws S, U, O and N in Casio's 7-segment shapes.
+  - Characters in fixed cells, or double-width letters, get a run each. Module 240 draws the W as
+    an L and a U in a double cell.
+- **Marks**: shared ones are in `LCD/LCDMarks.swift` (`SignalMark(arcs:)`, `BellMark`), the
+  rest are shapes in the display, placed in their measured ink boxes.
+- **Dot-matrix dates**: `DotMatrixText` with the right glyph set (`.round5x7` for the GMW-B5000,
+  `.bold5x7` for the GW-B5600), the measured pitch and dot size, and `slant` for italic.
+- **Printed LCD words** use `InkText`.
+- **Same module, different photo**: if the module looks different through another watch's window
+  (narrower digits, other spacing), give that watch its own measured layout.
+  `Module593Layout` is shared by `Module593Display` (F-91W) and `A158WDisplay`.
 
-DSEG's glyph height is exact; width comes from `xScale`; when the real digits sit closer or
-further apart than DSEG's cells, set `tracking` (and `colonGap`) in the run — each live digit then gets its own timer window, so the live clock stays exact.
 Check the live path too: render with `CASIO_LIVE=1` and compare it with the static render.
 
-## 6. Register
+## 7. Register
 
-In `CasioCatalogue.swift`: add the model to `CasioModels.all` and
-`CasioWatchWidget<Casio<Name>>()` to `CasioWidgets.homeScreen`. Nothing else: the app's widget
-extension lists the catalogue. (A `CatalogueTests` failure means one of the two is missing.)
+In `CasioCatalogue.swift`, add the model to `CasioModels.all` and
+`CasioWatchWidget<Casio<Name>>()` to `CasioWidgets.homeScreen`. Nothing else is needed (a
+`CatalogueTests` failure means one of the two is missing).
 
-## 7. Compare with the reference
-
-With the manifest, one command maps the archived image, renders the face at the reference's time
-without the case extension, compares every element and writes `side.png`:
+## 8. Check against the reference
 
 ```bash
 python3 tools/casio_measure.py check references/<Name>.json --out ref-dir
 ```
 
-It exits 1 if an element is missing or off by more than 1.5 pt; `--images DIR` reads the images
-from elsewhere than the NAS archive, `--lit` renders the light, `CASIO_SCRATCH` sets the Swift
-build folder. By hand, render the face on its whole canvas and compare:
+The command:
 
-```bash
-CASIO_RENDER=Casio<Name> CASIO_OUT=ref-dir/render.png CASIO_TIME=2024-06-30T22:58:50 CASIO_12H=1 \
-    swift test --filter referenceRender
-python3 tools/casio_measure.py boxes ref-dir/photo-canvas.png spec.json ref-dir/render.png
-python3 tools/casio_measure.py side ref-dir/photo-canvas.png ref-dir/render.png --out side.png
-```
+1. maps the archived image onto the canvas;
+2. renders the face at the manifest's time and time zone, without the case extension;
+3. compares every element;
+4. writes `side.png`, plus `flagged.png` (photo over render) for every element off by more than
+   1.5 pt.
 
-Set the time to the one shown in the reference image (and the case extension to 0, or
-`CASIO_REFERENCE_LAYOUT=1`). Fix anything flagged `<<` (over 1.5 pt) and
-look at `side.png`. `CASIO_LIT=1` renders the light.
+It exits 1 until nothing is off. Options:
 
-## 8. Check and ship
+- `--images DIR` reads the images from somewhere other than the NAS archive;
+- `--lit` renders the light;
+- `CASIO_SCRATCH` sets the Swift build folder.
 
-- `swift test` in this folder; `just format-check` and `just lint` cover the package.
-- Build the app, add the widget on the simulator, tap it for the light.
-- Add the model to the README's list; its reference to REFERENCES.md; its manifest to `references/`; a new font goes into
-  `Resources/` with its licence and its name into `CaseFont` (the font test checks the bundled files
-  are exactly the fonts in use).
+For every flag, look at `flagged.png` and decide which kind it is:
+
+| What you see | Cause | Fix |
+|---|---|---|
+| a box edge equals the element box's edge | the box catches a neighbour (arrow, case line, frame line, LCD shadow) | tighten the box |
+| the photo's print is dim, the render's bright | the photo is dark, or the face's colour comes from a real photo | a photo mask and `renderMask` |
+| a label is narrower, wider or shifted | the label was sized by font metrics | `InkText` in the measured box |
+| a whole LCD line is off | `xScale`, `tracking`, `colonGap` or the anchor | measure the digits one by one (`runs`) and fix the run |
+| one digit is off, the rest match | a DSEG glyph shape (see below) | leave the digit out of the box and add a note |
+| an icon is a different size or shape | drawn from a guess | zoom in, redraw it, place it in its ink box |
+| an indicator is missing | a state the render doesn't have (DST, PM) | `timeZone` / `twelveHour` in the manifest |
+| part of a label is missing | another layer covers it (a window surround) | fix the window or the drawing order |
+
+Never loosen the tolerance and never drop an element to make the check pass. Leave something out
+only for a documented limitation, and say why in `notes`.
+
+**Font limitations** (in the notes of the manifests they affect): DSEG's "1" sits at the right of
+its cell with thin segments, while some Casio modules draw it wider or further left (CA-53W,
+GMW-B5000, W-738H, GW-B5600, W-86). DSEG's "7" has a longer top bar than module 593's. Live digits
+come from WidgetKit's timer text, so one glyph can't be swapped without a modified font.
+
+## 9. Review and ship
+
+- Look at `side.png` as a whole: case outline, window, frame, colours, and anything the elements
+  don't cover. Add an element for anything you fix this way, so the check keeps it fixed.
+- Run `swift test` in this folder (`ManifestTests` and `RenderTests` included); `just format-check`
+  and `just lint` cover the package.
+- When you change shared code (`LCD/`, `Kit/`), the repository's `.improve/` golden renders show
+  which other faces moved.
+- Build the app, add the widget on the simulator and tap it for the light.
+- Add the model to the README's list and its reference to REFERENCES.md. A new font goes into
+  `Resources/` with its licence (OFL) and its name into `CaseFont`.

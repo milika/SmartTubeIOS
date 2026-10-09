@@ -7,14 +7,14 @@ import SwiftUI
 struct Module590Display: LCDModuleDisplay {
     static let glass = CGSize(width: 336.5, height: 163.5)
     /// The glass's top-left corner on the W-59 canvas the numbers below were measured on.
-    private static let canvasOrigin = CGPoint(x: 103, y: 160.5)
+    static let canvasOrigin = CGPoint(x: 103, y: 160.5)
 
     let context: CasioFaceContext
     let style: LCDStyle
 
     var body: some View {
         let parts = context.displayParts(blankDigit: style.digits.blankDigit)
-        ZStack(alignment: .topLeading) {
+        inGlass(style: style) {
             if let marker = parts.marker {
                 InkText(text: marker, font: CaseFont.saira)
                     .placed(
@@ -34,9 +34,6 @@ struct Module590Display: LCDModuleDisplay {
                 context: context, glyph: Self.secondsGlyph, trailing: Self.secondsTrailing,
                 baseline: Self.secondsBaseline, xScale: Self.secondsScale, style: style)
         }
-        .lcdSegmentShadow(style)
-        .offset(x: -Self.canvasOrigin.x, y: -Self.canvasOrigin.y)
-        .frame(width: Self.glass.width, height: Self.glass.height, alignment: .topLeading)
     }
 
     // Measured on the W-59 photo (canvas points).

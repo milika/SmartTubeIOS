@@ -7,10 +7,24 @@ import SwiftUI
 protocol LCDModuleDisplay: View {
     /// Size of the glass the layout was measured in.
     static var glass: CGSize { get }
+    /// Where that glass's top-left corner sits on the canvas the layout's numbers were measured on
+    /// (the reference face's canvas); .zero when measured in the glass itself.
+    static var canvasOrigin: CGPoint { get }
     init(context: CasioFaceContext, style: LCDStyle)
 }
 
 extension LCDModuleDisplay {
+    static var canvasOrigin: CGPoint { .zero }
+
+    /// The display's characters, laid out in the measured canvas coordinates, shown in its glass
+    /// with the segments' shadow. Each display's `body` is `inGlass(style:) { … }`.
+    func inGlass<Content: View>(style: LCDStyle, @ViewBuilder _ content: () -> Content) -> some View {
+        ZStack(alignment: .topLeading) { content() }
+            .lcdSegmentShadow(style)
+            .offset(x: -Self.canvasOrigin.x, y: -Self.canvasOrigin.y)
+            .frame(width: Self.glass.width, height: Self.glass.height, alignment: .topLeading)
+    }
+
     /// The display in a model's glass (canvas coordinates): scaled to the glass's width and centred
     /// vertically, so a taller glass (a case extended to fill the widget) gets even margins.
     /// `shift` moves it down: each case's window frames the same LCD at a slightly different spot.

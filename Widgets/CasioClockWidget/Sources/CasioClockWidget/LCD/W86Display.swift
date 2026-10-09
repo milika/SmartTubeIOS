@@ -8,14 +8,14 @@ import SwiftUI
 struct W86Display: LCDModuleDisplay {
     static let glass = CGSize(width: 536.5, height: 255)
     /// The glass's top-left corner on the W-86 canvas the numbers below were measured on.
-    private static let canvasOrigin = CGPoint(x: 88, y: 200)
+    static let canvasOrigin = CGPoint(x: 88, y: 200)
 
     let context: CasioFaceContext
     let style: LCDStyle
 
     var body: some View {
         let parts = context.displayParts(blankDigit: style.digits.blankDigit)
-        ZStack(alignment: .topLeading) {
+        inGlass(style: style) {
             SignalMark().fill(style.ink).frame(width: 56, height: 20).offset(x: 129, y: 219.5)
             BellMark().fill(style.ink).frame(width: 26, height: 29.5).offset(x: 204.5, y: 214.5)
             if let marker = parts.marker {
@@ -40,9 +40,6 @@ struct W86Display: LCDModuleDisplay {
                 baseline: Self.secondsBaseline, xScale: Self.secondsScale, tracking: Self.secondsTracking,
                 style: style)
         }
-        .lcdSegmentShadow(style)
-        .offset(x: -Self.canvasOrigin.x, y: -Self.canvasOrigin.y)
-        .frame(width: Self.glass.width, height: Self.glass.height, alignment: .topLeading)
     }
 
     // Measured on the W-86 photo (canvas points).

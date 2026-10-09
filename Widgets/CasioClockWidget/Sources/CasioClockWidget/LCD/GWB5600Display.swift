@@ -8,7 +8,7 @@ import SwiftUI
 struct GWB5600Display: LCDModuleDisplay {
     static let glass = CGSize(width: 396, height: 258)
     /// The glass's top-left corner on the GW-B5600 canvas the numbers below were measured on.
-    private static let canvasOrigin = CGPoint(x: 115, y: 154)
+    static let canvasOrigin = CGPoint(x: 115, y: 154)
 
     let context: CasioFaceContext
     let style: LCDStyle
@@ -16,7 +16,7 @@ struct GWB5600Display: LCDModuleDisplay {
     var body: some View {
         let parts = context.displayParts(blankDigit: style.digits.blankDigit)
         let date = context.calendar.dateComponents([.month, .day], from: context.date)
-        ZStack(alignment: .topLeading) {
+        inGlass(style: style) {
             InkText(text: "PS LT RCVD", font: CaseFont.michroma)
                 .placed(in: CGRect(x: 140.5, y: 165, width: 156, height: 17), color: style.ink, bold: 0.6)
             LCDText(
@@ -46,9 +46,6 @@ struct GWB5600Display: LCDModuleDisplay {
                 baseline: Self.secondsBaseline, xScale: Self.secondsScale, tracking: Self.secondsTracking,
                 style: style)
         }
-        .lcdSegmentShadow(style)
-        .offset(x: -Self.canvasOrigin.x, y: -Self.canvasOrigin.y)
-        .frame(width: Self.glass.width, height: Self.glass.height, alignment: .topLeading)
     }
 
     private func dateDigits(_ text: String, _ trailing: CGFloat) -> some View {

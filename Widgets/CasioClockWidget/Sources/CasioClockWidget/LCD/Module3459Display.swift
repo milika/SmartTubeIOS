@@ -7,14 +7,14 @@ import SwiftUI
 struct Module3459Display: LCDModuleDisplay {
     static let glass = CGSize(width: 313, height: 207)
     /// The glass's top-left corner on the GMW-B5000 canvas the numbers below were measured on.
-    private static let canvasOrigin = CGPoint(x: 151, y: 176)
+    static let canvasOrigin = CGPoint(x: 151, y: 176)
 
     let context: CasioFaceContext
     let style: LCDStyle
 
     var body: some View {
         let parts = context.displayParts(blankDigit: style.digits.blankDigit)
-        ZStack(alignment: .topLeading) {
+        inGlass(style: style) {
             indicator("PS", leading: 178, centerY: 197.75, tracking: 5.3)
             indicator("RCVD", leading: 250, centerY: 198.25)
             if context.calendar.timeZone.isDaylightSavingTime(for: context.date) {
@@ -44,9 +44,6 @@ struct Module3459Display: LCDModuleDisplay {
             LiveSeconds(
                 context: context, glyph: 50, trailing: 450, baseline: 360.5, xScale: 0.93, style: style)
         }
-        .lcdSegmentShadow(style)
-        .offset(x: -Self.canvasOrigin.x, y: -Self.canvasOrigin.y)
-        .frame(width: Self.glass.width, height: Self.glass.height, alignment: .topLeading)
     }
 
     private func indicator(_ text: String, leading: CGFloat, centerY: CGFloat, tracking: CGFloat = 1) -> some View {

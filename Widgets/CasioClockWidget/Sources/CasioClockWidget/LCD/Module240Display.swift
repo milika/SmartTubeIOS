@@ -7,14 +7,14 @@ import SwiftUI
 struct Module240Display: LCDModuleDisplay {
     static let glass = CGSize(width: 317.5, height: 190.5)
     /// The glass's top-left corner on the DW-5000C canvas the numbers below were measured on.
-    private static let canvasOrigin = CGPoint(x: 152, y: 163.5)
+    static let canvasOrigin = CGPoint(x: 152, y: 163.5)
 
     let context: CasioFaceContext
     let style: LCDStyle
 
     var body: some View {
         let parts = context.displayParts(blankDigit: style.digits.blankDigit)
-        ZStack(alignment: .topLeading) {
+        inGlass(style: style) {
             LCDText(
                 text: parts.weekday, font: style.letters, glyph: 36, edge: .leading(173), baseline: 218.5,
                 // The DW-5000C's W is double width; DSEG's is not. Wide enough for WE, not too wide for FR.
@@ -38,9 +38,6 @@ struct Module240Display: LCDModuleDisplay {
             LiveSeconds(
                 context: context, glyph: 53, trailing: 461, baseline: 335.5, xScale: 0.83, style: style)
         }
-        .lcdSegmentShadow(style)
-        .offset(x: -Self.canvasOrigin.x, y: -Self.canvasOrigin.y)
-        .frame(width: Self.glass.width, height: Self.glass.height, alignment: .topLeading)
     }
 
     /// Month first, as on the DW-5000C ("11- 4", " 6-28"), each number right-aligned in two digits.

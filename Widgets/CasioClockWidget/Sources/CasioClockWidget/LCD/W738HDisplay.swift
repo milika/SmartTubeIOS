@@ -9,14 +9,14 @@ import SwiftUI
 struct W738HDisplay: LCDModuleDisplay {
     static let glass = CGSize(width: 333.5, height: 248)
     /// The glass's top-left corner on the W-738H canvas the numbers below were measured on.
-    private static let canvasOrigin = CGPoint(x: 152.5, y: 204)
+    static let canvasOrigin = CGPoint(x: 152.5, y: 204)
 
     let context: CasioFaceContext
     let style: LCDStyle
 
     var body: some View {
         let parts = context.displayParts(blankDigit: style.digits.blankDigit)
-        ZStack(alignment: .topLeading) {
+        inGlass(style: style) {
             // Printed lines: under VIB, the row divider and the bottom line.
             line(x: 155, y: 241.5, width: 77)
             line(x: 155, y: 269.5, width: 77)
@@ -52,9 +52,6 @@ struct W738HDisplay: LCDModuleDisplay {
                 context: context, glyph: Self.secondsGlyph, trailing: Self.secondsTrailing,
                 baseline: Self.secondsBaseline, xScale: Self.secondsScale, style: style)
         }
-        .lcdSegmentShadow(style)
-        .offset(x: -Self.canvasOrigin.x, y: -Self.canvasOrigin.y)
-        .frame(width: Self.glass.width, height: Self.glass.height, alignment: .topLeading)
     }
 
     private func line(x: CGFloat, y: CGFloat, width: CGFloat) -> some View {

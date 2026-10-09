@@ -9,7 +9,7 @@ import SwiftUI
 struct W800HDisplay: LCDModuleDisplay {
     static let glass = CGSize(width: 287, height: 253)
     /// The glass's top-left corner on the W-800H canvas the numbers below were measured on.
-    private static let canvasOrigin = CGPoint(x: 147, y: 205)
+    static let canvasOrigin = CGPoint(x: 147, y: 205)
 
     let context: CasioFaceContext
     let style: LCDStyle
@@ -18,7 +18,7 @@ struct W800HDisplay: LCDModuleDisplay {
         let parts = context.displayParts(blankDigit: style.digits.blankDigit)
         let date = context.calendar.dateComponents([.year, .month, .day], from: context.date)
         let year = String(format: "%04d", date.year ?? 2000)
-        ZStack(alignment: .topLeading) {
+        inGlass(style: style) {
             RoundedRectangle(cornerRadius: 7).stroke(style.ink, lineWidth: 2.5)
                 .frame(width: 143, height: 62).offset(x: 165.25, y: 224.25)
             LCDText(
@@ -53,9 +53,6 @@ struct W800HDisplay: LCDModuleDisplay {
             bottomDigits(
                 DisplayParts.twoCells(date.day ?? 1, blank: style.digits.blankDigit), trailing: Self.dayTrailing)
         }
-        .lcdSegmentShadow(style)
-        .offset(x: -Self.canvasOrigin.x, y: -Self.canvasOrigin.y)
-        .frame(width: Self.glass.width, height: Self.glass.height, alignment: .topLeading)
     }
 
     private func label(_ text: String, _ box: CGRect) -> some View {

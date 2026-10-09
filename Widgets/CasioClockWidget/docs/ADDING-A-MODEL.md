@@ -65,7 +65,8 @@ below move down.
 If the watch uses a module that already has a display (REFERENCES.md, *Casio LCD modules*),
 place that display: `Module593Display.placed(in: glass, context:, style:)`. Otherwise write
 `LCD/Module<number>Display.swift` (or `<Name>Display` without a number), an `LCDModuleDisplay`
-measured in the reference's canvas coordinates with a `canvasOrigin` at its glass:
+measured in the reference's canvas coordinates: give it its `glass` size and `canvasOrigin` (where
+the glass sits on that canvas), and write its `body` as `inGlass(style: style) { … }`:
 
 - strings from `context.displayParts(blankDigit:)`, `DisplayParts.weekday3`,
   `DisplayParts.twoCells`; `LCDText` in a DSEG7 font draws S, U, O and N in Casio's 7-segment

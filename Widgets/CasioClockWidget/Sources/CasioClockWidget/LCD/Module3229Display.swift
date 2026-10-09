@@ -7,7 +7,7 @@ import SwiftUI
 struct Module3229Display: LCDModuleDisplay {
     static let glass = CGSize(width: 392.5, height: 248)
     /// The glass's top-left corner on the DW-5600E canvas the numbers below were measured on.
-    private static let canvasOrigin = CGPoint(x: 240, y: 243.5)
+    static let canvasOrigin = CGPoint(x: 240, y: 243.5)
 
     let context: CasioFaceContext
     let style: LCDStyle
@@ -15,7 +15,7 @@ struct Module3229Display: LCDModuleDisplay {
     var body: some View {
         let parts = context.displayParts(blankDigit: style.digits.blankDigit)
         let date = context.calendar.dateComponents([.month, .day], from: context.date)
-        ZStack(alignment: .topLeading) {
+        inGlass(style: style) {
             SignalMark().fill(style.ink).frame(width: 35.5, height: 13.5).offset(x: 255, y: 286.5)
             BellMark().fill(style.ink).frame(width: 22, height: 27).offset(x: 261.5, y: 308)
             LCDText(
@@ -44,9 +44,6 @@ struct Module3229Display: LCDModuleDisplay {
                 baseline: Self.secondsBaseline, xScale: Self.secondsScale, tracking: Self.secondsTracking,
                 style: style)
         }
-        .lcdSegmentShadow(style)
-        .offset(x: -Self.canvasOrigin.x, y: -Self.canvasOrigin.y)
-        .frame(width: Self.glass.width, height: Self.glass.height, alignment: .topLeading)
     }
 
     private func dateDigits(_ text: String, trailing: CGFloat) -> some View {

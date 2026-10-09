@@ -1,6 +1,7 @@
 import ActivityKit
 import SwiftUI
 import WidgetKit
+import CasioClockWidget
 import SmartTubeIOSCore
 
 // Downloading is compiled out (App Store guideline 5.2.3). Define ENABLE_DOWNLOADS to build it.
@@ -138,6 +139,9 @@ struct SmartTubeDownloadWidgetBundle: WidgetBundle {
         // A widget extension needs at least one StaticConfiguration widget, or SpringBoard
         // fails with "Failed to get descriptors for extensionBundleID". The Home widget is it.
         HomeFeedWidget()
+        // Experimental: self-contained package Widgets/CasioClockWidget — remove this line
+        // and the package dependency to drop it.
+        CasioClockWidget()
         #if ENABLE_DOWNLOADS
         DownloadLiveActivityWidget()
         #endif

@@ -92,6 +92,7 @@
 		E7F8A9B0C1D2E3F4A5B6C7D8 /* LibraryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A9B0C1D2E3F4A5B6C7D8E9 /* LibraryUITests.swift */; };
 		F1A2B3C4D5E6F7A8B9C0D1E2 /* HomeShortsRowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2F3A4B5C6D7E8F9A0B1C2D3 /* HomeShortsRowUITests.swift */; };
 		F1CDC40190BFE18C52E5AD1B /* SmartTubeIOSCore in Frameworks */ = {isa = PBXBuildFile; productRef = 4D96747315A9E066D09F1F4E /* SmartTubeIOSCore */; };
+		C0A51000000000000000C003 /* CasioClockWidget in Frameworks */ = {isa = PBXBuildFile; productRef = C0A51000000000000000C002 /* CasioClockWidget */; };
 		FB01000000000000000000A1 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = FA01000000000000000000A1 /* GoogleService-Info.plist */; };
 		MAC000000000000000001A2 /* MacVideoPlaybackBenchmarkUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = MAC000000000000000001A1 /* MacVideoPlaybackBenchmarkUITests.swift */; };
 		MAC000000000000000002A2 /* MacWKHLSReplayRegressionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = MAC000000000000000002A1 /* MacWKHLSReplayRegressionUITests.swift */; };
@@ -336,6 +337,7 @@
 			files = (
 				CD550C82FB83F1B06A867F3F /* Foundation.framework in Frameworks */,
 				F1CDC40190BFE18C52E5AD1B /* SmartTubeIOSCore in Frameworks */,
+				C0A51000000000000000C003 /* CasioClockWidget in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -648,6 +650,7 @@
 			name = SmartTubeDownloadWidget;
 			packageProductDependencies = (
 				4D96747315A9E066D09F1F4E /* SmartTubeIOSCore */,
+				C0A51000000000000000C002 /* CasioClockWidget */,
 			);
 			productName = SmartTubeDownloadWidget;
 			productReference = 79E77E6DD18B12CA7A5341D0 /* SmartTubeDownloadWidget.appex */;
@@ -726,6 +729,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				644EA6428F48EF6B886E4B58 /* XCLocalSwiftPackageReference "../SmartTubeIOS" */,
+				C0A51000000000000000C001 /* XCLocalSwiftPackageReference "../Widgets/CasioClockWidget" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5EF0B6AF2643BF476B25C7C0 /* Products */;
@@ -1689,6 +1693,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SmartTubeIOS;
 		};
+		C0A51000000000000000C001 /* XCLocalSwiftPackageReference "../Widgets/CasioClockWidget" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Widgets/CasioClockWidget;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1710,6 +1718,11 @@
 		B8401470D9A590E7F3685830 /* SmartTubeIOS */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SmartTubeIOS;
+		};
+		C0A51000000000000000C002 /* CasioClockWidget */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0A51000000000000000C001 /* XCLocalSwiftPackageReference "../Widgets/CasioClockWidget" */;
+			productName = CasioClockWidget;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

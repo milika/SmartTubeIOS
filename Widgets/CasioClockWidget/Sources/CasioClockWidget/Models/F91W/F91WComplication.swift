@@ -16,7 +16,6 @@ struct F91WComplication: View {
         var s = CasioF91W.lcd
         if !fullColor {
             s.ink = .white
-            s.unlitOpacity = 0.12
         }
         return s
     }

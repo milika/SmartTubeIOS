@@ -46,7 +46,7 @@ enum CasioF91W: CasioComplicationModel {
     static let printWhite = Color(white: 0.94)
     static let red = Color(red: 0.95, green: 0.13, blue: 0.13)
 
-    /// The LCD: DSEG Bold Italic with faint unlit segments on grey-green glass (LCDStyle's defaults).
+    /// The LCD: DSEG Bold Italic on grey-green glass, no unlit segments (LCDStyle's defaults).
     static let lcd = LCDStyle()
     /// Width of the big digits relative to DSEG's (measured from the photo).
     static let digitSqueeze: CGFloat = 0.9

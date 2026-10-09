@@ -11,7 +11,8 @@ import Testing
 ///     CASIO_RENDER=CasioW800H CASIO_OUT=/tmp/w800h.png CASIO_TIME=2024-06-30T22:58:50 \
 ///         CASIO_12H=1 swift test --filter referenceRender
 ///
-/// CASIO_LIT=1 lights the LCD; CASIO_LIVE=1 renders the live timer views instead of fixed seconds;
+/// CASIO_TZ names the time zone CASIO_TIME is in (default GMT; daylight saving time shows DST on
+/// displays that have it). CASIO_LIT=1 lights the LCD; CASIO_LIVE=1 renders the live timer views instead of fixed seconds;
 /// CASIO_SCALE sets pixels per point (default 2); CASIO_REFERENCE_LAYOUT=1 leaves the case extension
 /// out, as on the reference image (tools/casio_measure.py check does this).
 @Suite("Reference render (opt-in)")
@@ -26,10 +27,10 @@ struct ReferenceRenderTests {
         let model = try #require(
             CasioModels.all.first { $0.kind == kind || "\($0)" == kind }, "no model with kind or type \(kind)")
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = .gmt
+        calendar.timeZone = env["CASIO_TZ"].flatMap(TimeZone.init(identifier:)) ?? .gmt
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withFullDate, .withTime, .withColonSeparatorInTime, .withDashSeparatorInDate]
-        formatter.timeZone = .gmt
+        formatter.timeZone = calendar.timeZone
         let date = try #require(formatter.date(from: env["CASIO_TIME"] ?? "2024-06-30T22:58:50"))
         let context = CasioFaceContext(
             date: date, calendar: calendar, uses12HourClock: env["CASIO_12H"] == "1", backlit: env["CASIO_LIT"] == "1",

@@ -21,7 +21,10 @@ per point, like the renders from ReferenceRenderTests.
       Compare a model with its reference in one go, from its manifest (references/<Model>.json):
       maps the archived image onto the canvas, renders the face at the reference's time without
       the case extension (ReferenceRenderTests), compares every element's ink box and writes
-      side.png. Exits 1 if an element is missing or off by more than 1.5 pt.
+      side.png (and flagged.png: photo over render of every flagged element). Exits 1 if an element
+      is missing or off by more than 1.5 pt. An element's "renderMask" names a different mask for
+      the render, where the face's colour differs from the image on purpose; "kind": "edges"
+      measures a window's four edges (the LCD glass) instead of an ink box.
 
 Masks: white (light, unsaturated print), dark (LCD ink), light (anything bright), gold, red, blue.
 A manifest can define its own as thresholds, for example {"white": {"lum": [150, null],
@@ -103,6 +106,25 @@ def photo_canvas(image, ox, oy, w, h, scale=1, rotate=0):
     return photo.transform((2 * w, 2 * h), Image.EXTENT, (ox, oy, ox + w * scale, oy + h * scale), Image.BICUBIC)
 
 
+def window_edges(mask, box):
+    """Edges of a bright window (an LCD glass) in a box: the first column / row, scanning in from
+    each side through a band across the middle, where most of the band is inside the mask. Dark
+    characters inside the window don't matter."""
+    x0, y0, x1, y1 = box
+    sub = mask[2 * y0:2 * y1, 2 * x0:2 * x1]
+    h, w = sub.shape
+    rows = sub[int(h * 0.4):int(h * 0.6)].mean(0) > 0.6
+    cols = sub[:, int(w * 0.4):int(w * 0.6)].mean(1) > 0.6
+    if not rows.any() or not cols.any():
+        return None
+    xs, ys = np.nonzero(rows)[0], np.nonzero(cols)[0]
+    return (x0 + xs[0] / 2, y0 + ys[0] / 2, x0 + (xs[-1] + 1) / 2, y0 + (ys[-1] + 1) / 2)
+
+
+def measure(mask, item):
+    return window_edges(mask, item["box"]) if item.get("kind") == "edges" else ink_box(mask, item["box"])
+
+
 def cmd_canvas(args):
     canvas = photo_canvas(args.image, args.ox, args.oy, args.w, args.h, args.scale, args.rotate)
     canvas.save(f"{args.out}/photo-canvas.png")
@@ -126,23 +148,56 @@ def compare(canvas, elements, render=None, mask_spec=None):
     size = Image.open(canvas).size
     photo = masks(canvas, size, mask_spec)
     rendered = masks(render, size, mask_spec) if render else None
-    bad = 0
+    bad, flagged = 0, []
     for item in elements:
-        a = ink_box(photo[item["mask"]], item["box"])
+        a = measure(photo[item["mask"]], item)
         if rendered is None:
             print(f"{item['name']:16} " + (f"{a[0]:6.1f} {a[1]:6.1f} {a[2]:6.1f} {a[3]:6.1f}  "
                                             f"w {a[2] - a[0]:5.1f} h {a[3] - a[1]:5.1f}" if a else "none"))
             continue
-        b = ink_box(rendered[item["mask"]], item["box"])
+        b = measure(rendered[item.get("renderMask", item["mask"])], item)
         if a is None or b is None:
             print(f"{item['name']:16} missing (photo {a}, render {b})")
             bad += 1
+            flagged.append(item)
             continue
         d = [b[i] - a[i] for i in range(4)]
         off = max(abs(v) for v in d) > 1.5
         bad += off
+        if off:
+            flagged.append(item)
         print(f"{item['name']:16} Δ {d[0]:+5.1f} {d[1]:+5.1f} {d[2]:+5.1f} {d[3]:+5.1f}{'  <<' if off else ''}")
+    compare.flagged = flagged
     return bad
+
+
+def zoom_sheet(canvas, render, items, path, margin=12):
+    """Photo (top) and render (bottom) of each item's box with a margin, side by side."""
+    photo, rendered = Image.open(canvas).convert("RGB"), Image.open(render).convert("RGB").resize(
+        Image.open(canvas).size)
+    tiles = []
+    for item in items:
+        x0, y0, x1, y1 = item["box"]
+        crop = (2 * (x0 - margin), 2 * (y0 - margin), 2 * (x1 + margin), 2 * (y1 + margin))
+        a, b = photo.crop(crop), rendered.crop(crop)
+        tile = Image.new("RGB", (a.width, 2 * a.height + 18), (255, 255, 255))
+        ImageDraw.Draw(tile).text((2, 2), item["name"], fill=(255, 0, 0))
+        tile.paste(a, (0, 18))
+        tile.paste(b, (0, 18 + a.height))
+        draw = ImageDraw.Draw(tile)
+        for top in (18, 18 + a.height):
+            draw.rectangle((2 * margin, top + 2 * margin, a.width - 2 * margin, top + a.height - 2 * margin),
+                           outline=(255, 0, 255))
+        tiles.append(tile)
+    if not tiles:
+        return
+    width = sum(t.width for t in tiles) + 6 * len(tiles)
+    sheet = Image.new("RGB", (width, max(t.height for t in tiles)), (255, 255, 255))
+    x = 0
+    for t in tiles:
+        sheet.paste(t, (x, 0))
+        x += t.width + 6
+    sheet.save(path)
 
 
 def cmd_boxes(args):
@@ -189,7 +244,7 @@ def cmd_check(args):
     full = os.path.join(out, "render-full.png")
     env = dict(os.environ, CASIO_RENDER=model, CASIO_OUT=full, CASIO_TIME=manifest["time"],
                CASIO_12H="1" if manifest.get("twelveHour") else "0", CASIO_LIT="1" if args.lit else "0",
-               CASIO_REFERENCE_LAYOUT="1")
+               CASIO_REFERENCE_LAYOUT="1", CASIO_TZ=manifest.get("timeZone", "GMT"))
     command = ["swift", "test", "--filter", "referenceRender"]
     if os.environ.get("CASIO_SCRATCH"):
         command += ["--scratch-path", os.environ["CASIO_SCRATCH"]]
@@ -203,7 +258,11 @@ def cmd_check(args):
     render_path = os.path.join(out, "render.png")
     render.save(render_path)
     print(f"{model} at {manifest['time']} ({out})")
+    for note in manifest.get("notes", []):
+        print(f"note: {note}")
     bad = compare(canvas, manifest["elements"], render_path, manifest.get("masks"))
+    if compare.flagged:
+        zoom_sheet(canvas, render_path, compare.flagged, os.path.join(out, "flagged.png"))
     args.canvas, args.render, args.out = canvas, render_path, os.path.join(out, "side.png")
     cmd_side(args)
     print(f"{len(manifest['elements'])} elements, {bad} missing or off by more than 1.5 pt")

@@ -39,10 +39,9 @@ func goldenRenders() throws {
             }
         }
     }
-    try all(CasioF91W.self, "f91w")
-    try all(CasioA158W.self, "a158w")
-    try all(CasioGMWB5000.self, "b5000")
-    try all(CasioDW5000C.self, "dw5000c")
+    for model in CasioModels.all {
+        try all(model, model.kind)
+    }
     for (dn, c, comps, sec) in dates {
         let d = c.date(from: comps)!
         for twelve in [false, true] {

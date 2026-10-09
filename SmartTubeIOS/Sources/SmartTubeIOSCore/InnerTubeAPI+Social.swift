@@ -37,12 +37,20 @@ extension InnerTubeAPI {
     /// Uses the TVHTML5 client's `browse_edit_playlist` endpoint with ACTION_ADD_VIDEO,
     /// mirroring the Android SmartTube `PlaylistPresenter` → `ACTION_ADD_VIDEO` flow.
     /// Requires authentication.
-    public func addToWatchLater(videoId: String) async throws {
+    ///
+    /// Returns the new entry's `setVideoId` when the response carries one
+    /// (`playlistEditResults[].playlistEditVideoAddedResultData.setVideoId`), so a video shown
+    /// in the Watch Later list before YouTube's index catches up can still be removed (#157).
+    @discardableResult
+    public func addToWatchLater(videoId: String) async throws -> String? {
         var body = makeBody(client: tvClientContext)
         body["playlistId"] = "WL"
         body["actions"] = [["addedVideoId": videoId, "action": "ACTION_ADD_VIDEO"]]
-        _ = try await postTV(endpoint: "browse/edit_playlist", body: body)
-        tubeLog.notice("addToWatchLater videoId=\(videoId, privacy: .public)")
+        let response = try await postTV(endpoint: "browse/edit_playlist", body: body)
+        let setVideoId = Self.findPlaylistEntryToken(in: response)
+        tubeLog.notice(
+            "addToWatchLater videoId=\(videoId, privacy: .public) setVideoId=\(setVideoId ?? "nil", privacy: .public)")
+        return setVideoId
     }
 
     /// Removes a video from the authenticated user's Watch Later playlist (id \"WL\").

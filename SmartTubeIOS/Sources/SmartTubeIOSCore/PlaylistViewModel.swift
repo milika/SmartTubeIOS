@@ -133,6 +133,16 @@ public final class PlaylistViewModel {
             })
         hideObserverTasks.append(
             Task { [weak self] in
+                // #157: a video removed from Watch Later leaves the open Watch Later playlist.
+                for await note in NotificationCenter.default.notifications(named: .watchLaterDidChange) {
+                    guard let self, self.playlistId == "WL", note.userInfo?["added"] as? Bool == false,
+                        let videoId = note.userInfo?["videoId"] as? String
+                    else { continue }
+                    self.videos.removeAll { $0.id == videoId }
+                }
+            })
+        hideObserverTasks.append(
+            Task { [weak self] in
                 for await note in NotificationCenter.default.notifications(named: .hideChannelFromFeed) {
                     guard let self, let channelId = note.userInfo?["channelId"] as? String else { continue }
                     self.videos.removeAll { $0.channelId == channelId }

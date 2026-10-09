@@ -105,6 +105,13 @@ public final class BrowseViewModel {
             })
         hideObserverTasks.append(
             Task { [weak self] in
+                for await note in NotificationCenter.default.notifications(named: .watchLaterDidChange) {
+                    guard let self, let videoId = note.userInfo?["videoId"] as? String else { continue }
+                    self.applyWatchLaterChange(videoId: videoId, added: note.userInfo?["added"] as? Bool ?? false)
+                }
+            })
+        hideObserverTasks.append(
+            Task { [weak self] in
                 for await note in NotificationCenter.default.notifications(named: .hideChannelFromFeed) {
                     guard let self, let channelId = note.userInfo?["channelId"] as? String else { continue }
                     self.removeChannel(id: channelId)
@@ -115,6 +122,24 @@ public final class BrowseViewModel {
     public func removeVideo(id: String) {
         for i in videoGroups.indices {
             videoGroups[i].videos.removeAll { $0.id == id }
+        }
+    }
+
+    /// Keeps an open Watch Later section in step with adds/removes made in this app, instead
+    /// of waiting for a refresh (and YouTube's index) — #157.
+    func applyWatchLaterChange(videoId: String, added: Bool) {
+        guard currentSection.type == .watchLater else { return }
+        if !added {
+            removeVideo(id: videoId)
+            return
+        }
+        guard let video = watchLaterMembership.savedVideo(videoId),
+            !videoGroups.contains(where: { $0.videos.contains { $0.id == videoId } })
+        else { return }
+        if videoGroups.isEmpty {
+            videoGroups = [VideoGroup(title: BrowseSection.SectionType.watchLater.defaultTitle, videos: [video])]
+        } else {
+            videoGroups[0].videos.insert(video, at: 0)
         }
     }
 
@@ -548,6 +573,12 @@ public final class BrowseViewModel {
                         video.playlistId = "WL"
                         return video
                     }
+                    // Saves YouTube still hasn't indexed after the retry are shown on top from
+                    // what this app saved, so they don't seem lost until a later refresh.
+                    let present = Set(stamped.videos.map(\.id))
+                    let missing = watchLaterMembership.recentlySavedVideos(within: 15 * 60)
+                        .filter { !present.contains($0.id) }
+                    stamped.videos.insert(contentsOf: missing, at: 0)
                     videoGroups = stamped.videos.isEmpty ? [] : [stamped]
                 }
             }

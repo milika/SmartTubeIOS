@@ -100,7 +100,7 @@ struct PlaylistPickerSheet: View {
         Task {
             do {
                 try await api.addToPlaylist(playlistId: playlist.id, videoId: video.id)
-                if playlist.id == "WL" { WatchLaterMembershipStore.shared.markSaved(video.id) }
+                if playlist.id == "WL" { WatchLaterMembershipStore.shared.markSaved(video, setVideoId: nil) }
                 if mode == .move, let sourcePlaylistId, let setVideoId = video.setVideoId {
                     try await api.removeFromPlaylist(playlistId: sourcePlaylistId, setVideoId: setVideoId)
                     if sourcePlaylistId == "WL" { WatchLaterMembershipStore.shared.markRemoved(video.id) }

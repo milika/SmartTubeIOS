@@ -123,4 +123,21 @@ struct WatchLaterRemovalTests {
             "playlistVideoRenderer.setVideoId must be threaded onto the parsed Video so removal can use it later"
         )
     }
+
+    @Test("addToWatchLater returns the new entry's setVideoId from the response (#157)")
+    func addToWatchLaterReturnsSetVideoId() async throws {
+        let response = #"{"status":"STATUS_SUCCEEDED","playlistEditResults":[{"playlistEditVideoAddedResultData":{"videoId":"vid1","setVideoId":"NEW_ENTRY_TOKEN"}}]}"#
+        StubURLProtocol.responses = ["browse/edit_playlist": (200, Data(response.utf8))]
+        StubURLProtocol.capturedBodies = [:]
+        let token = try await makeAPI().addToWatchLater(videoId: "vid1")
+        #expect(token == "NEW_ENTRY_TOKEN")
+    }
+
+    @Test("addToWatchLater returns nil when the response has no token")
+    func addToWatchLaterWithoutToken() async throws {
+        StubURLProtocol.responses = ["browse/edit_playlist": (200, Data("{}".utf8))]
+        StubURLProtocol.capturedBodies = [:]
+        let token = try await makeAPI().addToWatchLater(videoId: "vid1")
+        #expect(token == nil)
+    }
 }

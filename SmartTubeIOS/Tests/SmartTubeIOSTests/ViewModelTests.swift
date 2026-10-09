@@ -173,9 +173,10 @@ final class MockInnerTubeAPI: InnerTubeAPIProtocol {
         return playlistVideosResult
     }
 
-    func addToWatchLater(videoId: String) async throws {
+    func addToWatchLater(videoId: String) async throws -> String? {
         calls.append(Call(method: "addToWatchLater", args: [videoId]))
         if let e = errorToThrow { throw e }
+        return nil
     }
 
     func removeFromWatchLater(setVideoId: String) async throws {
@@ -716,6 +717,40 @@ struct BrowseViewModelTests {
             vm.videoGroups.first?.videos.first?.playlistId == "WL",
             "videos must be stamped with playlistId=WL so VideoCardView's Remove/Move-to-Playlist actions work from this tab"
         )
+    }
+
+    @Test("Watch Later: adds and removes made in the app update the open list at once (#157)")
+    func watchLaterListFollowsAppChanges() async {
+        let mock = MockInnerTubeAPI()
+        mock.playlistVideosResult = VideoGroup(title: "Watch Later", videos: [makeVideo("wlvid_AAAA")])
+        let membership = WatchLaterMembershipStore(defaults: UserDefaults(suiteName: "wl-\(UUID().uuidString)")!)
+        let section = BrowseSection(id: "watchLater", title: "Watch Later", type: .watchLater)
+        let vm = BrowseViewModel(api: mock, initialSection: section, watchLaterMembership: membership)
+        await vm.updateAuthToken("fake-token")
+        await waitForTasks(until: { vm.videoGroups.first?.videos.first?.id == "wlvid_AAAA" })
+
+        membership.markSaved(makeVideo("newsave_BBBB"), setVideoId: "SETVID_B")
+        await waitForTasks(until: { vm.videoGroups.first?.videos.count == 2 })
+        #expect(vm.videoGroups.first?.videos.map(\.id) == ["newsave_BBBB", "wlvid_AAAA"])
+        #expect(vm.videoGroups.first?.videos.first?.setVideoId == "SETVID_B")
+
+        membership.markRemoved("wlvid_AAAA")
+        await waitForTasks(until: { vm.videoGroups.first?.videos.count == 1 })
+        #expect(vm.videoGroups.first?.videos.map(\.id) == ["newsave_BBBB"])
+    }
+
+    @Test("Watch Later: a recent save YouTube hasn't indexed yet is shown on top after loading (#157)")
+    func watchLaterLoadShowsUnindexedSave() async {
+        let mock = MockInnerTubeAPI()
+        mock.playlistVideosResult = VideoGroup(title: "Watch Later", videos: [makeVideo("wlvid_AAAA")])
+        let membership = WatchLaterMembershipStore(defaults: UserDefaults(suiteName: "wl-\(UUID().uuidString)")!)
+        membership.markSaved(makeVideo("justsaved_CCCC"), setVideoId: "SETVID_C")
+        let section = BrowseSection(id: "watchLater", title: "Watch Later", type: .watchLater)
+        let vm = BrowseViewModel(api: mock, initialSection: section, watchLaterMembership: membership)
+        await vm.updateAuthToken("fake-token")
+        await waitForTasks(timeout: 5, until: { vm.videoGroups.first?.videos.count == 2 })
+        #expect(vm.videoGroups.first?.videos.map(\.id) == ["justsaved_CCCC", "wlvid_AAAA"])
+        #expect(vm.videoGroups.first?.videos.first?.playlistId == "WL")
     }
 
     @Test("Watch Later: an old saved video missing from page 1 does not trigger a retry (#157)")

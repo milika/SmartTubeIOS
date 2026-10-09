@@ -46,7 +46,8 @@ public protocol InnerTubeAPIProtocol: AnyObject, Sendable {
     func fetchPlaylistVideos(playlistId: String, continuationToken: String?) async throws -> VideoGroup
 
     // MARK: Playlist editing
-    func addToWatchLater(videoId: String) async throws
+    @discardableResult
+    func addToWatchLater(videoId: String) async throws -> String?
     func removeFromWatchLater(setVideoId: String) async throws
     func addToPlaylist(playlistId: String, videoId: String) async throws
     func removeFromPlaylist(playlistId: String, setVideoId: String) async throws

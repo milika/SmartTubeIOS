@@ -14,4 +14,8 @@ public extension Notification.Name {
     /// Posted when all videos from a channel should be removed from the current feed.
     /// userInfo key: "channelId" (String)
     static let hideChannelFromFeed = Notification.Name("com.smarttube.hideChannelFromFeed")
+    /// Posted by WatchLaterMembershipStore when this app adds or removes a Watch Later video,
+    /// so an open Watch Later list updates without a refresh (#157).
+    /// userInfo keys: "videoId" (String), "added" (Bool)
+    static let watchLaterDidChange = Notification.Name("com.smarttube.watchLaterDidChange")
 }

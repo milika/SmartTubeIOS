@@ -176,7 +176,12 @@ public struct VideoCardView: View {
                         // video ID — see InnerTubeAPI+Social.swift's removeFromWatchLater (#122).
                         // It's only populated when this card came from browsing the WL playlist
                         // itself, which is the only place this button is shown.
-                        guard let setVideoId = video.setVideoId else {
+                        // A video saved this session may be listed before YouTube indexed it,
+                        // without its own token; use the one returned when it was saved.
+                        guard
+                            let setVideoId = video.setVideoId
+                                ?? WatchLaterMembershipStore.shared.setVideoId(for: video.id)
+                        else {
                             watchLaterAlert = DownloadAlertItem(
                                 title: String(localized: "Could Not Remove", bundle: .module),
                                 message: String(
@@ -209,8 +214,8 @@ public struct VideoCardView: View {
                     Button {
                         Task {
                             do {
-                                try await api.addToWatchLater(videoId: video.id)
-                                WatchLaterMembershipStore.shared.markSaved(video.id)
+                                let setVideoId = try await api.addToWatchLater(videoId: video.id)
+                                WatchLaterMembershipStore.shared.markSaved(video, setVideoId: setVideoId)
                                 watchLaterAlert = DownloadAlertItem(
                                     title: String(localized: "Saved to Watch Later", bundle: .module),
                                     message: String(

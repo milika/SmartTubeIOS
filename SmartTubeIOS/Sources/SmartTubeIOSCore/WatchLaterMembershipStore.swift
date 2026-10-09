@@ -28,6 +28,10 @@ public final class WatchLaterMembershipStore {
     /// and never pruned, so it can't tell a just-saved video from one saved months ago (and
     /// since removed elsewhere); only recent saves justify waiting on YouTube's index (#157).
     private var savedAt: [String: Date] = [:]
+    /// The videos saved this session (stamped with playlistId "WL" and, when YouTube returned
+    /// it, their setVideoId), so the Watch Later list can show them before YouTube's index
+    /// does — and remove them again (#157).
+    private var savedVideos: [String: Video] = [:]
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -46,10 +50,41 @@ public final class WatchLaterMembershipStore {
         persist()
     }
 
+    /// Records a save made from a video card, keeping the video so lists can show it.
+    public func markSaved(_ video: Video, setVideoId: String?, at date: Date = Date()) {
+        var saved = video
+        saved.playlistId = "WL"
+        if let setVideoId { saved.setVideoId = setVideoId }
+        savedVideos[video.id] = saved
+        markSaved(video.id, at: date)
+        NotificationCenter.default.post(
+            name: .watchLaterDidChange, object: nil, userInfo: ["videoId": video.id, "added": true])
+    }
+
     public func markRemoved(_ videoId: String) {
         savedAt[videoId] = nil
+        savedVideos[videoId] = nil
+        NotificationCenter.default.post(
+            name: .watchLaterDidChange, object: nil, userInfo: ["videoId": videoId, "added": false])
         guard videoIds.remove(videoId) != nil else { return }
         persist()
+    }
+
+    /// A video saved this session, as it should appear in the Watch Later list.
+    public func savedVideo(_ videoId: String) -> Video? {
+        savedVideos[videoId]
+    }
+
+    /// The playlist-entry token YouTube returned when this video was saved this session.
+    public func setVideoId(for videoId: String) -> String? {
+        savedVideos[videoId]?.setVideoId
+    }
+
+    /// Videos saved this session within `interval` seconds of `now`, newest first.
+    public func recentlySavedVideos(within interval: TimeInterval, now: Date = Date()) -> [Video] {
+        savedAt.filter { now.timeIntervalSince($0.value) <= interval }
+            .sorted { $0.value > $1.value }
+            .compactMap { savedVideos[$0.key] }
     }
 
     /// Videos saved via this app within the last `interval` seconds of `now`.

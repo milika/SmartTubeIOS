@@ -50,7 +50,7 @@ struct A168WFace: View {
                 .placed(
                     in: CGRect(x: 149.5, y: 96.5, width: 97.5, height: 17.5), color: CasioA168W.printWhite, bold: 0.7)
             ink("ALARM CHRONO", CaseFont.michroma)
-                .placed(in: CGRect(x: 270, y: 99.5, width: 142.5, height: 11), color: CasioA168W.gold, bold: 0.35)
+                .placed(in: CGRect(x: 270, y: 99.5, width: 142.5, height: 11), color: CasioA168W.gold, bold: 0.75)
             Banner().fill(CasioA168W.banner).frame(width: 288, height: 28).offset(x: 128.5, y: 126.5)
             // ELECTRO LUMINESCENCE: tall E and L, small caps, italic.
             ink("E", CaseFont.archivoBlack, slant: 0.2)
@@ -104,7 +104,7 @@ struct A168WFace: View {
             Arrow(left: false).fill(CasioA168W.red).frame(width: 18.5, height: 13).offset(x: 367.5, y: 327.5)
             Rectangle().fill(CasioA168W.line).frame(width: 303.5, height: 3).offset(x: 124.5, y: 354.5)
             ink("WATER", CaseFont.michroma)
-                .placed(in: CGRect(x: 153.5, y: 371, width: 73, height: 11.5), color: CasioA168W.gold, bold: 0.35)
+                .placed(in: CGRect(x: 153.5, y: 371, width: 73, height: 11.5), color: CasioA168W.gold, bold: 0.75)
             CutCornerRect(cut: CGSize(width: 7, height: 7), radius: 3)
                 .stroke(CasioA168W.gold, lineWidth: 2)
                 .frame(width: 71, height: 24)
@@ -112,7 +112,7 @@ struct A168WFace: View {
             ink("WR", CaseFont.sairaExpanded, slant: 0.2)
                 .placed(in: CGRect(x: 253, y: 371, width: 49, height: 14), color: CasioA168W.gold)
             ink("RESIST", CaseFont.michroma)
-                .placed(in: CGRect(x: 327.5, y: 371.5, width: 74, height: 10.5), color: CasioA168W.gold, bold: 0.35)
+                .placed(in: CGRect(x: 327.5, y: 371.5, width: 74, height: 10.5), color: CasioA168W.gold, bold: 0.75)
         }
     }
 

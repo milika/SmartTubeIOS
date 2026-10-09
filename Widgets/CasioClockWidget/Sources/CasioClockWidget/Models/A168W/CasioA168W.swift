@@ -4,7 +4,8 @@ import WidgetKit
 // The Casio A168W: a chrome case around a black face with a blue and a white octagon line, the blue
 // ElectroLuminescence banner, ILLUMINATOR and WATER [WR] RESIST print, and the module-3298 display
 // (Module3298Display) with its EL backlight. Laid out on a canvas measured from Casio's A168WA-1W
-// product image (supplied by the owner, measured only): canvas = image (1000 px) − (230, 250).
+// product image (supplied by the owner, measured only): canvas = image (1000 px) − (230, 250);
+// colours from the owner's photo of a real A168W.
 // Printed labels fill the ink boxes measured on the image (InkText).
 enum CasioA168W: CasioModel {
     static let kind = "CasioA168W"
@@ -25,20 +26,19 @@ enum CasioA168W: CasioModel {
 
     static func face(_ context: CasioFaceContext) -> some View { A168WFace(context: context) }
 
-    // Colours sampled from the image.
-    static let plate = Color(red: 0.11, green: 0.115, blue: 0.13)
-    static let blue = Color(red: 0.10, green: 0.33, blue: 0.62)
-    static let banner = Color(red: 0.12, green: 0.30, blue: 0.62)
-    static let printWhite = Color(white: 0.93)
-    static let line = Color(white: 0.75)
-    static let gold = Color(red: 0.80, green: 0.74, blue: 0.36)
-    static let red = Color(red: 0.84, green: 0.33, blue: 0.24)
+    // Colours sampled from the owner's photo of a real A168W (the product render's are off).
+    static let plate = Color(white: 0.05)
+    static let blue = Color(red: 0.04, green: 0.35, blue: 0.54)
+    static let banner = Color(red: 0.05, green: 0.31, blue: 0.48)
+    static let printWhite = Color(white: 0.88)
+    static let line = Color(white: 0.66)
+    static let gold = Color(red: 0.71, green: 0.62, blue: 0.48)
+    static let red = Color(red: 0.78, green: 0.34, blue: 0.37)
 
     /// Module 3298: italic 7-segment digits and letters on grey-green glass; its EL backlight glows
     /// blue-green.
     static let lcd = LCDStyle(
-        letters: .dseg7("BoldItalic"), glass: Color(red: 0.70, green: 0.72, blue: 0.66),
-        ink: Color(red: 0.16, green: 0.17, blue: 0.18),
+        letters: .dseg7("BoldItalic"), glass: Color(red: 0.66, green: 0.68, blue: 0.63), ink: Color(white: 0.07),
         backlight: Color(red: 0.55, green: 0.95, blue: 0.92), backlightFalloff: [1, 1, 0.95])
 }
 

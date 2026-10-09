@@ -34,6 +34,19 @@ How well each face matches its image (from the commits that added it): printed l
 about 0.5–1 pt, display characters within about 1–2 pt. Known differences are listed under each
 model in the [README](../README.md).
 
+### Queued (references collected, not built yet)
+
+All supplied by the owner (2026-10-09), product images, for measuring only; archived in the NAS
+folder with "(queued)" in the name.
+
+| Watch | Image | Notes |
+|---|---|---|
+| LA680W | LA680WA-1, 1200 px | small octagon chrome case, black face, START / MODE / LIGHT, WATER [WR] RESIST, ILLUMINATOR |
+| A178W | A178WA-1A, 1000 px | chrome; SUN 6-30, P, SNZ / ALM / SIG row; blue WR, DUAL TIME / 10 YEAR BATTERY |
+| A700W | A700WE-1A, 1000 px | slim chrome; coloured ALARM / SIG / SPL / CHRONO labels above the LCD |
+| A700W (negative) | A700W with negative display, cyan print, mesh band, 1100 px | inverted LCD (`litInk`, as the W-738H) |
+| F-105W | F-105W-1A, 1000 px | black resin, blue face, ILLUMINATOR band, EL BACKLIGHT/RESET |
+
 ## Typefaces
 
 The watches' printing uses commercial typefaces; free look-alikes stand in (all SIL Open Font

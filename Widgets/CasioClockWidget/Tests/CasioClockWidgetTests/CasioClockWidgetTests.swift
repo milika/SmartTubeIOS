@@ -74,6 +74,8 @@ struct CasioClockWidgetTests {
         #expect(!entries[1].backlit && entries[1].date == now.addingTimeInterval(3))
         #expect(entries[2].date == date(2026, 5, 2, 16, 21))
         #expect(entries.dropFirst().allSatisfy { !$0.backlit })
+        // Only a few minutes, so WidgetKit renders the lit timeline quickly; it reloads at the end.
+        #expect(entries.count == 2 + CasioClockProvider.litTimelineMinutes)
     }
 
     @Test("backlight: a late reload still lights the LCD for the full duration")

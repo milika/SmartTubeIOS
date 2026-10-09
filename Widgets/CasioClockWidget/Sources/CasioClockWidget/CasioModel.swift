@@ -24,6 +24,12 @@ protocol CasioModel {
 
 extension CasioModel {
     static var widgetArea: CGRect { CGRect(origin: .zero, size: canvas) }
+
+    // Case print fonts (CaseFont), as `Model.michroma(size)` in faces.
+    static func michroma(_ size: CGFloat) -> Font { CaseFont.custom(CaseFont.michroma, size) }
+    static func saira(_ size: CGFloat) -> Font { CaseFont.custom(CaseFont.saira, size) }
+    static func sairaExpanded(_ size: CGFloat) -> Font { CaseFont.custom(CaseFont.sairaExpanded, size) }
+    static func archivoBlack(_ size: CGFloat) -> Font { CaseFont.custom(CaseFont.archivoBlack, size) }
 }
 
 /// A model that also has a rectangular Apple Watch complication.

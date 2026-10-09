@@ -55,9 +55,9 @@ struct DW5000CFace: View {
 
     private var topPrint: some View {
         ZStack(alignment: .topLeading) {
-            ink("CASIO", "Michroma-Regular", tracking: 0.02)
+            ink("CASIO", CaseFont.michroma, tracking: 0.02)
                 .placed(in: CGRect(x: 181.5, y: 63.5, width: 100, height: 18), color: CasioDW5000C.printWhite, bold: 0.7)
-            ink("Lithium", "Saira-Medium")
+            ink("Lithium", CaseFont.saira)
                 .placed(in: CGRect(x: 305, y: 66.5, width: 66.5, height: 14.5), color: CasioDW5000C.gold)
             BatteryMark()
                 .fill(CasioDW5000C.gold)
@@ -66,10 +66,10 @@ struct DW5000CFace: View {
             ShockResistBadge()
                 .frame(width: 59, height: 40.5)
                 .offset(x: 196.5, y: 109)
-            ink("ALM. ON·OFF", "Michroma-Regular")
+            ink("ALM. ON·OFF", CaseFont.michroma)
                 .placed(in: CGRect(x: 336.5, y: 114.5, width: 100.5, height: 10.5), color: CasioDW5000C.labelWhite, bold: 0.3)
             pointer(x: 444.5, y: 115.5, width: 17.5, height: 8.5)
-            ink("LAP·RESET/REPEAT", "Michroma-Regular")
+            ink("LAP·RESET/REPEAT", CaseFont.michroma)
                 .placed(in: CGRect(x: 288.5, y: 132.5, width: 148, height: 10), color: CasioDW5000C.labelWhite, bold: 0.3)
             pointer(x: 444.5, y: 133, width: 18, height: 9.5)
         }
@@ -101,7 +101,7 @@ struct DW5000CFace: View {
     }
 
     private func vertical(_ text: String, _ box: CGRect, angle: Double) -> some View {
-        ink(text, "Michroma-Regular").placed(vertical: box, angle: angle, color: CasioDW5000C.labelWhite, bold: 0.3)
+        ink(text, CaseFont.michroma).placed(vertical: box, angle: angle, color: CasioDW5000C.labelWhite, bold: 0.3)
     }
 
     private func dot(x: CGFloat, y: CGFloat) -> some View {
@@ -110,19 +110,19 @@ struct DW5000CFace: View {
 
     private var bottomPrint: some View {
         ZStack(alignment: .topLeading) {
-            ink("WATER RESIST", "ArchivoExpanded-Black")
+            ink("WATER RESIST", CaseFont.archivoBlack)
                 .placed(in: CGRect(x: 148, y: 371, width: 178.5, height: 12.5), color: CasioDW5000C.teal)
-            ink("200M", "ArchivoExpanded-Black")
+            ink("200M", CaseFont.archivoBlack)
                 .placed(in: CGRect(x: 186, y: 390.5, width: 103.5, height: 17.5), color: CasioDW5000C.teal)
-            ink("START·STOP", "Michroma-Regular")
+            ink("START·STOP", CaseFont.michroma)
                 .placed(in: CGRect(x: 342.5, y: 374, width: 93.5, height: 10), color: CasioDW5000C.labelWhite, bold: 0.3)
             pointer(x: 443.5, y: 375, width: 17, height: 9)
-            ink("SIG. ON·OFF", "Michroma-Regular")
+            ink("SIG. ON·OFF", CaseFont.michroma)
                 .placed(in: CGRect(x: 342.5, y: 392, width: 93, height: 9.5), color: CasioDW5000C.labelWhite, bold: 0.3)
             pointer(x: 443.5, y: 392.5, width: 17, height: 9)
-            ink("JAPAN S", "Michroma-Regular")
+            ink("JAPAN S", CaseFont.michroma)
                 .placed(in: CGRect(x: 375, y: 406.5, width: 35, height: 5), color: CasioDW5000C.labelWhite)
-            ink("ALARM CHRONOGRAPH", "Saira-Medium")
+            ink("ALARM CHRONOGRAPH", CaseFont.saira)
                 .placed(in: CGRect(x: 197.5, y: 436, width: 224, height: 14), color: CasioDW5000C.gold)
         }
     }
@@ -143,7 +143,7 @@ struct DW5000CFace: View {
                     // The DW-5000C's W is double width; DSEG's is not. Wide enough for WE, not too wide for FR.
                     tracking: 10, style: style)
                 if let marker = parts.marker {
-                    ink(marker, "Michroma-Regular")
+                    ink(marker, CaseFont.michroma)
                         .placed(
                             in: CGRect(x: 228.5, y: 235.5, width: marker == "24H" ? 41 : 28, height: 15.5),
                             color: style.ink, bold: 0.6)
@@ -196,9 +196,9 @@ private struct ShockResistBadge: View {
         ZStack(alignment: .topLeading) {
             Shield().stroke(CasioDW5000C.gold, style: StrokeStyle(lineWidth: 2.5, lineJoin: .round))
                 .padding(1.25)
-            InkText(text: "SHOCK", font: "Michroma-Regular")
+            InkText(text: "SHOCK", font: CaseFont.michroma)
                 .placed(in: CGRect(x: 5.5, y: 5.5, width: 47.5, height: 7), color: CasioDW5000C.gold, bold: 0.4)
-            InkText(text: "RESIST", font: "Michroma-Regular")
+            InkText(text: "RESIST", font: CaseFont.michroma)
                 .placed(in: CGRect(x: 5.5, y: 14, width: 48, height: 7), color: CasioDW5000C.gold, bold: 0.4)
             Triangle().fill(CasioDW5000C.gold)
                 .frame(width: 41.5, height: 11)

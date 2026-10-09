@@ -22,8 +22,8 @@ enum CasioF91W: CasioComplicationModel {
     /// The square around the bezel (its outer line plus ~3 pt).
     static let widgetArea = CGRect(x: 19, y: 28, width: 557, height: 557)
     static let fonts = [
-        "DSEG7Classic-BoldItalic", "DSEG14Classic-BoldItalic", "Michroma-Regular", "ArchivoExpanded-Black",
-        "Saira-Medium", "SairaExpanded-SemiBold",
+        lcd.digits.postScriptName, lcd.letters.postScriptName, CaseFont.michroma, CaseFont.archivoBlack,
+        CaseFont.saira, CaseFont.sairaExpanded,
     ]
 
     static let caseBackground = LinearGradient(
@@ -50,10 +50,4 @@ enum CasioF91W: CasioComplicationModel {
     static let lcd = LCDStyle()
     /// Width of the big digits relative to DSEG's (measured from the photo).
     static let digitSqueeze = Module593Display.digitSqueeze
-
-    // Case print fonts (Resources/).
-    static func michroma(_ size: CGFloat) -> Font { CaseFont.custom("Michroma-Regular", size) }
-    static func archivoBlack(_ size: CGFloat) -> Font { CaseFont.custom("ArchivoExpanded-Black", size) }
-    static func saira(_ size: CGFloat) -> Font { CaseFont.custom("Saira-Medium", size) }
-    static func sairaExpanded(_ size: CGFloat) -> Font { CaseFont.custom("SairaExpanded-SemiBold", size) }
 }

@@ -16,8 +16,8 @@ enum CasioA158W: CasioModel {
     /// The face plate plus a strip of the chrome case around it.
     static let widgetArea = CGRect(x: 19, y: 8.5, width: 572.5, height: 572.5)
     static let fonts = [
-        "DSEG7Classic-BoldItalic", "DSEG14Classic-BoldItalic", "Michroma-Regular", "Saira-Medium",
-        "SairaExpanded-SemiBold",
+        lcd.digits.postScriptName, lcd.letters.postScriptName, CaseFont.michroma, CaseFont.saira,
+        CaseFont.sairaExpanded,
     ]
 
     /// Polished steel.
@@ -41,8 +41,4 @@ enum CasioA158W: CasioModel {
 
     /// The same LCD module (593) as the F-91W: same glass, ink and layout (Module593Display).
     static let lcd = LCDStyle()
-
-    static func michroma(_ size: CGFloat) -> Font { CaseFont.custom("Michroma-Regular", size) }
-    static func saira(_ size: CGFloat) -> Font { CaseFont.custom("Saira-Medium", size) }
-    static func sairaExpanded(_ size: CGFloat) -> Font { CaseFont.custom("SairaExpanded-SemiBold", size) }
 }

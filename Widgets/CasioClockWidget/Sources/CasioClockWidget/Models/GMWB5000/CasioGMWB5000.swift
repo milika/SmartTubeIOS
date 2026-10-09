@@ -17,7 +17,7 @@ enum CasioGMWB5000: CasioModel {
     static let canvas = CGSize(width: 630, height: 560 + caseExtension)
     /// The black face plate (its rounded corners match the widget's).
     static let widgetArea = CGRect(x: 81, y: 87, width: 451, height: 451)
-    static let fonts = ["DSEG7Classic-BoldItalic", "DSEG14Classic-BoldItalic", "Michroma-Regular", "Saira-Medium"]
+    static let fonts = [lcd.digits.postScriptName, lcd.letters.postScriptName, CaseFont.michroma, CaseFont.saira]
 
     /// Behind the face: the plate's black.
     static let caseBackground = Color(white: 0.09)
@@ -44,7 +44,4 @@ enum CasioGMWB5000: CasioModel {
         glass: Color(red: 0.47, green: 0.71, blue: 0.89), ink: Color(red: 0.06, green: 0.17, blue: 0.57),
         backlight: Color(red: 0.86, green: 0.95, blue: 1.0), backlightFalloff: [0.85, 0.85, 0.85])
     static let surround = Color(white: 0.22)
-
-    static func michroma(_ size: CGFloat) -> Font { CaseFont.custom("Michroma-Regular", size) }
-    static func saira(_ size: CGFloat) -> Font { CaseFont.custom("Saira-Medium", size) }
 }

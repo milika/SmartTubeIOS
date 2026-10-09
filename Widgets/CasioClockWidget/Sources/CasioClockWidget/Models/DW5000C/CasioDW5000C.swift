@@ -17,8 +17,8 @@ enum CasioDW5000C: CasioModel {
     static let canvas = CGSize(width: 620, height: 500 + caseExtension)
     static let widgetArea = CGRect(x: 61, y: 35, width: 500, height: 500)
     static let fonts = [
-        "DSEG7Classic-BoldItalic", "DSEG14Classic-BoldItalic", "Michroma-Regular", "Saira-Medium",
-        "ArchivoExpanded-Black",
+        lcd.digits.postScriptName, lcd.letters.postScriptName, CaseFont.michroma, CaseFont.saira,
+        CaseFont.archivoBlack,
     ]
 
     /// Black resin.

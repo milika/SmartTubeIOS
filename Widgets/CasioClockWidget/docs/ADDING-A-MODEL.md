@@ -102,6 +102,8 @@ On `photo-canvas.png` (from step 2, or `check --out`):
   A photo often shades the glass near the frame, so the edge is where the glass leaves the dark
   surround, not where it reaches full brightness.
 - **Colours**: the median of a patch, from a photo of a real watch when possible.
+- **Product renders** often draw a light halo around small marks (dots, arrows). Measure them
+  with the colour mask at half intensity, not a loose brightness mask, or they come out too large.
 - **Small or blurry things** (icons, thin print): zoom in (`NEAREST`, 4–8×) with a tick every
   2–5 pt, and read the shape before drawing it. The signal mark is a filled "D" with arcs, not
   bars; the GW-B5600's mark next to SNZ is a mute speaker, not Bluetooth.
@@ -150,6 +152,16 @@ measured in the reference's canvas coordinates:
   - `tracking` makes the pitch between characters match (`runs` gives both).
   - `colonGap` places the hours relative to the minutes.
   - Live digits get their own timer windows when `tracking` ≠ 0, so the live clock stays exact.
+- **Computing a run** instead of iterating. Tracking is applied before the `xScale` squeeze, and
+  a DSEG digit advances 0.816 em with about 0.61 em of ink (em = `glyph`):
+  - `xScale` = measured ink width ÷ (0.61 × glyph);
+  - `tracking` = measured pitch ÷ xScale − 0.816 × glyph;
+  - for a trailing run, `edge` = last ink right edge + (right bearing ≈ 0.1 × glyph + tracking) × xScale;
+  - `colonGap`: the gap from the hours' last digit to the minutes' first, minus one digit cell and
+    the colon cell (0.2 em + tracking), all × xScale.
+  An `LCDText` run with wide tracking needs a larger `width`, or SwiftUI truncates it to "…".
+- **Segment weight**: compare the photo's stroke with the digit height. DSEG7 Classic Light is
+  about 0.06, Regular 0.095, Bold 0.126; `xScale` thins the vertical strokes. The A178W needs Light.
 - **Text**:
   - Fixed text uses `LCDText(text:font:run:style:)`; the live time uses `LiveHoursMinutes` and
     `LiveSeconds`.
@@ -162,6 +174,9 @@ measured in the reference's canvas coordinates:
 - **Dot-matrix dates**: `DotMatrixText` with the right glyph set (`.round5x7` for the GMW-B5000,
   `.bold5x7` for the GW-B5600), the measured pitch and dot size, and `slant` for italic.
 - **Printed LCD words** use `InkText`.
+- **Two versions of one watch** (the A700W and its negative): one face with a palette and a
+  geometry per version (`A700WPalette`, `A700WGeometry`), each measured on its own image mapped
+  onto the same canvas; their displays share one layout type (`A700WLayout`).
 - **Same module, different photo**: if the module looks different through another watch's window
   (narrower digits, other spacing), give that watch its own measured layout.
   `Module593Layout` is shared by `Module593Display` (F-91W) and `A158WDisplay`.

@@ -21,9 +21,7 @@ struct F91WComplication: View {
     }
 
     var body: some View {
-        let parts = DisplayParts.make(
-            for: context.date, calendar: context.calendar, twelveHour: context.uses12HourClock,
-            blankDigit: style.digits.blankDigit)
+        let parts = context.displayParts(blankDigit: style.digits.blankDigit)
         FaceCanvas(size: Self.canvas) {
             if fullColor {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)

@@ -31,9 +31,7 @@ struct LiveHoursMinutes: View {
     let style: LCDStyle
 
     var body: some View {
-        let parts = DisplayParts.make(
-            for: context.date, calendar: context.calendar, twelveHour: context.uses12HourClock,
-            blankDigit: font.blankDigit)
+        let parts = context.displayParts(blankDigit: font.blankDigit)
         let em = glyph / font.glyphToEm
         let minutesWidth = 2 * font.digitAdvance * em
         // ":SS" to the right of the minutes in the timer text.

@@ -130,9 +130,7 @@ struct DW5000CFace: View {
     // MARK: LCD
 
     private var lcd: some View {
-        let parts = DisplayParts.make(
-            for: context.date, calendar: context.calendar, twelveHour: context.uses12HourClock,
-            blankDigit: style.digits.blankDigit)
+        let parts = context.displayParts(blankDigit: style.digits.blankDigit)
         return ZStack(alignment: .topLeading) {
             LCDWindow(
                 frame: CGRect(x: 145.5, y: 157, width: 330.5, height: 203.5 + e / 2), frameRadius: 10,

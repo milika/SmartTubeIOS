@@ -37,3 +37,11 @@ struct DisplayParts: Equatable {
         )
     }
 }
+
+extension CasioFaceContext {
+    /// The display's strings for this context's time and clock style (`blankDigit`: the LCD
+    /// font's empty digit cell).
+    func displayParts(blankDigit: String) -> DisplayParts {
+        DisplayParts.make(for: date, calendar: calendar, twelveHour: uses12HourClock, blankDigit: blankDigit)
+    }
+}

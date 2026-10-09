@@ -13,9 +13,7 @@ struct Module593Display: View {
     let style: LCDStyle
 
     var body: some View {
-        let parts = DisplayParts.make(
-            for: context.date, calendar: context.calendar, twelveHour: context.uses12HourClock,
-            blankDigit: style.digits.blankDigit)
+        let parts = context.displayParts(blankDigit: style.digits.blankDigit)
         ZStack(alignment: .topLeading) {
             // PM in the afternoon on a 12-hour clock (measured on the F-91W photo); 24H on a 24-hour
             // clock, a smaller mark further right (measured on the A158W photo).

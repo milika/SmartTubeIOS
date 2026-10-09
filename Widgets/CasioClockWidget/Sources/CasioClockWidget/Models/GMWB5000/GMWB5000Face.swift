@@ -165,9 +165,7 @@ struct GMWB5000Face: View {
     // MARK: LCD
 
     private var lcd: some View {
-        let parts = DisplayParts.make(
-            for: context.date, calendar: context.calendar, twelveHour: context.uses12HourClock,
-            blankDigit: style.digits.blankDigit)
+        let parts = context.displayParts(blankDigit: style.digits.blankDigit)
         return ZStack(alignment: .topLeading) {
             LCDWindow(
                 frame: CGRect(x: 147, y: 172, width: 321, height: 215 + e / 2), frameRadius: 18,

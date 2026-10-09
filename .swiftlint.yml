@@ -4,8 +4,11 @@ included:
   - SmartTubeApp/Sources
   - SmartTubeApp/UITests
   - SmartTubeApp/Smart Tube
+  - Widgets/CasioClockWidget/Sources
+  - Widgets/CasioClockWidget/Tests
 excluded:
   - SmartTubeIOS/.build
+  - Widgets/CasioClockWidget/.build
   - "**/Resources"
 strict: true
 disabled_rules:            # owned by swift-format

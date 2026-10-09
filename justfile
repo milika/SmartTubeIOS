@@ -4,6 +4,7 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 root      := justfile_directory()
 workspace := root + "/SmartTube.xcworkspace"
 package   := root + "/SmartTubeIOS"
+casio     := root + "/Widgets/CasioClockWidget"
 derived   := env_var_or_default("SMARTTUBE_DERIVED_DATA", env_var("HOME") + "/DevTemp/smarttube/derived-data/xcode")
 # Single source of truth for the target simulator. Override: `just sim="iPhone 17" test-ui`.
 sim       := env_var_or_default("SMARTTUBE_SIM", "iPhone 17")
@@ -15,10 +16,10 @@ default:
 
 # --- quality gates ---------------------------------------------------------
 format:
-    xcrun swift-format format --in-place --recursive --configuration {{root}}/.swift-format {{package}}/Sources {{package}}/Tests {{root}}/SmartTubeApp/Sources {{root}}/SmartTubeApp/UITests "{{root}}/SmartTubeApp/Smart Tube"
+    xcrun swift-format format --in-place --recursive --configuration {{root}}/.swift-format {{package}}/Sources {{package}}/Tests {{root}}/SmartTubeApp/Sources {{root}}/SmartTubeApp/UITests "{{root}}/SmartTubeApp/Smart Tube" {{casio}}/Sources {{casio}}/Tests
 
 format-check:
-    xcrun swift-format lint --strict --recursive --configuration {{root}}/.swift-format {{package}}/Sources {{package}}/Tests {{root}}/SmartTubeApp/Sources {{root}}/SmartTubeApp/UITests "{{root}}/SmartTubeApp/Smart Tube"
+    xcrun swift-format lint --strict --recursive --configuration {{root}}/.swift-format {{package}}/Sources {{package}}/Tests {{root}}/SmartTubeApp/Sources {{root}}/SmartTubeApp/UITests "{{root}}/SmartTubeApp/Smart Tube" {{casio}}/Sources {{casio}}/Tests
 
 lint:
     cd {{root}} && swiftlint lint --strict --baseline .swiftlint.baseline --config .swiftlint.yml

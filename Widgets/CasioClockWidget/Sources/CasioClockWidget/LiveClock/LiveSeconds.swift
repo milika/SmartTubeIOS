@@ -27,6 +27,8 @@ struct LiveSeconds: View {
                     .place(trailing: trailing, baseline: baseline, glyphHeight: glyph, font: font, width: window)
             }
             live
+                // No rolling digits: the window shows a slice of the timer (LiveClock).
+                .contentTransition(.identity)
                 .font(font.font(height: glyph))
                 .foregroundStyle(style.ink)
                 .multilineTextAlignment(.trailing)

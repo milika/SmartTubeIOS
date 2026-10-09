@@ -28,6 +28,8 @@ struct LiveHoursMinutes: View {
             } else {
                 AnyView(
                     Text(LiveClock.timerStart(for: context.date, calendar: context.calendar), style: .timer)
+                        // No rolling digits: the window shows a slice of the timer (LiveClock).
+                        .contentTransition(.identity)
                         .font(font.font(height: glyph))
                         .multilineTextAlignment(.trailing)
                         .lineLimit(1)

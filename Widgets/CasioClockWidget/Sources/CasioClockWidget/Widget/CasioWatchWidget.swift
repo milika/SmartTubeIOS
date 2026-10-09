@@ -25,6 +25,8 @@ struct CasioWatchWidget<Model: CasioModel>: Widget, CasioModelWidget {
                 }
             }
             .buttonStyle(.plain)
+            // LCD digits switch, they don't roll (also at the hourly entry change; see LiveClock).
+            .contentTransition(.identity)
             .containerBackground(for: .widget) { Model.caseBackground }
         }
         .configurationDisplayName(Model.displayName)

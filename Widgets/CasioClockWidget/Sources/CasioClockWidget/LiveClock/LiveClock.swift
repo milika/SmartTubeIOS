@@ -13,6 +13,10 @@ import WidgetKit
 //   the instant's minutes and seconds; LiveHoursMinutes cuts out MM, LiveSeconds SS. The views lay
 //   the whole timer text out in a frame at least as wide as "10:59:59" (the widths below), then
 //   clip it, so nothing is truncated.
+// - Digits switch instantly, like LCD segments: the timer texts and the widget roots use
+//   `.contentTransition(.identity)`. WidgetKit otherwise animates timer text with rolling digits, and
+//   since each view shows only a slice of the timer through a narrow clipped window, the minute
+//   change (59 -> 00, three digits at once) made the digits visibly jump and scroll.
 //
 // Why not one entry per minute: WidgetKit stores every entry fully drawn; an hour of detailed faces
 // grew past its limit (36 MB, rejected), and a separate seconds timer drifted from the minutes.

@@ -10,6 +10,8 @@ struct CasioComplicationWidget<Model: CasioComplicationModel>: Widget {
         let provider = CasioClockProvider(model: Model.complicationKind)
         return StaticConfiguration(kind: Model.complicationKind, provider: provider) { entry in
             Model.rectangularComplication(CasioFaceContext(date: entry.date))
+                // LCD digits switch, they don't roll (also at the hourly entry change; see LiveClock).
+                .contentTransition(.identity)
                 .containerBackground(for: .widget) { Color.clear }
         }
         .configurationDisplayName(Model.complicationName)

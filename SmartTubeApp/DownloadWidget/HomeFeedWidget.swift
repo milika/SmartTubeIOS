@@ -12,7 +12,7 @@ import WidgetKit
 // (HomeWidgetSnapshot.swift / HomeWidgetPublisher.swift); it never calls YouTube.
 //
 // small:  1 video, the whole widget is the link
-// medium: 2 videos side by side
+// medium: 1 video, full width
 // large:  2×3 grid
 
 struct HomeFeedWidget: Widget {
@@ -81,12 +81,10 @@ struct HomeFeedWidgetView: View {
             emptyState
         } else {
             switch family {
-            case .systemSmall:
-                // Full-bleed: the thumbnail is the widget.
+            case .systemSmall, .systemMedium:
+                // Full-bleed: one video is the whole widget (the wide one too).
                 VideoTile(item: entry.items[0], size: .large)
                     .widgetURL(entry.items[0].video.watchURL)
-            case .systemMedium:
-                grid(columns: 2, rows: 1, size: .medium)
             default:
                 grid(columns: 2, rows: 3, size: .small)
             }
@@ -132,7 +130,7 @@ struct HomeFeedWidgetView: View {
 /// A thumbnail filling the whole tile, with the title and channel on a dark gradient at the
 /// bottom (photo-widget style).
 private struct VideoTile: View {
-    enum Size { case large, medium, small }
+    enum Size { case large, small }
 
     let item: HomeFeedEntry.Item
     let size: Size
@@ -172,7 +170,6 @@ private struct VideoTile: View {
     private var titleFont: Font {
         switch size {
         case .large: return .system(size: 17, weight: .bold)
-        case .medium: return .system(size: 14, weight: .bold)
         case .small: return .system(size: 12, weight: .bold)
         }
     }
@@ -180,7 +177,6 @@ private struct VideoTile: View {
     private var channelFont: Font {
         switch size {
         case .large: return .system(size: 15)
-        case .medium: return .system(size: 12)
         case .small: return .system(size: 10)
         }
     }

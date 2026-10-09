@@ -599,7 +599,6 @@ struct SectionsSettingsView: View {
         .navigationTitle("Visible Sections")
         #if os(iOS)
         .toolbar(.visible, for: .navigationBar)
-        .toolbar { EditButton() }
         #endif
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)

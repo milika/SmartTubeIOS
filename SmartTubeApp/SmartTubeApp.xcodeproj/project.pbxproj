@@ -8,11 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		03863DDC82B3DC452E915BF7 /* DownloadLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46FAE8C7AB41057B392DF731 /* DownloadLiveActivity.swift */; };
-		A1B2C3D4E5F6A7B8C9D0E1F2 /* HomeFeedWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F3 /* HomeFeedWidget.swift */; };
 		06412259452CCFBF300F2D4B /* SmartTubeIOS in Frameworks */ = {isa = PBXBuildFile; productRef = B8401470D9A590E7F3685830 /* SmartTubeIOS */; };
 		1A2B3C4D5E6F1A2B3C4D5E63 /* TVFocusChainUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F1A2B3C4D5E62 /* TVFocusChainUITests.swift */; };
+		304A067F78BC265BDB54C298 /* CasioClockWidget in Frameworks */ = {isa = PBXBuildFile; productRef = 09735D8A0F855361EABCAE3F /* CasioClockWidget */; };
+		475A62D9B2DD2677AADC53DA /* CasioClockWidget in Frameworks */ = {isa = PBXBuildFile; productRef = 6A2AE77122BB832DB08C7DAB /* CasioClockWidget */; };
 		494A17316084B602873D7C05 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AE55B486AFD7F51FEF1874FF /* Assets.xcassets */; };
 		53352CFF63CF0A5B34A1998B /* SpinnerDismissalUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD3DC338DC0106A0F179BC1 /* SpinnerDismissalUITests.swift */; };
+		6714D2CA4FFE95EFA50A0939 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B29586BF7247678F0CAEE41F /* Assets.xcassets */; };
 		673C1D012F7F20340021583B /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 673C1D002F7F20340021583B /* Launch Screen.storyboard */; platformFilter = ios; };
 		67A5E80B2FB3932400C53D61 /* SafariExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 67A5E7F32FB3932400C53D61 /* SafariExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		67AEAB0F2FAF96BC00820F4D /* VideoDownloadUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67AEAB0E2FAF96BC00820F4D /* VideoDownloadUITests.swift */; };
@@ -20,7 +22,12 @@
 		67E2B0742FAD1BBE005F70E6 /* MiniPlayerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67E2B0732FAD1BBE005F70E6 /* MiniPlayerUITests.swift */; };
 		67E2B0B22FADFE59005F70E6 /* PlayerDoubleTapUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67E2B0B12FADFE59005F70E6 /* PlayerDoubleTapUITests.swift */; };
 		67E6B6872F9535CD00CD372F /* SmartTubeIOS in Frameworks */ = {isa = PBXBuildFile; productRef = 67E6B6862F9535CD00CD372F /* SmartTubeIOS */; };
+		6F1693319245C38C58753D2D /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2B33592D015DBB1E03EFD2EF /* Foundation.framework */; };
+		72E9F8836D4FF0B4A8D9F856 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2B33592D015DBB1E03EFD2EF /* Foundation.framework */; };
 		7AECD855592A4E3EA60955D6 /* FallbackVideoPlaybackUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29446E9C8CE04B2FBCDD8A2E /* FallbackVideoPlaybackUITests.swift */; };
+		8FF03DB1D17FCAEC9E1E0536 /* CasioComplications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01C091DF9A0ABDF40E94ECAE /* CasioComplications.swift */; };
+		9955ABD8FC7F8C79BC4DB18F /* SmartTubeWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 4A40206F56F2A75ABA24CEF8 /* SmartTubeWatch.app */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* HomeFeedWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F3 /* HomeFeedWidget.swift */; };
 		AA01000000000000000000A4 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA01000000000000000000A1 /* ShareViewController.swift */; };
 		AA01000000000000000000A5 /* SmartTubeIOSCore in Frameworks */ = {isa = PBXBuildFile; productRef = AA01000000000000000000B1 /* SmartTubeIOSCore */; };
 		AA01000000000000000000A6 /* SmartTubeShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AA01000000000000000000A3 /* SmartTubeShareExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -75,10 +82,13 @@
 		AP000000000000000000001B /* AirPlayUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AP000000000000000000001A /* AirPlayUITests.swift */; };
 		B0C1D2E3F4A5B6C7D8E9F0A1 /* ShortsNavigationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B0C1D2E3F4A5B6C7D8E9F0 /* ShortsNavigationUITests.swift */; };
 		B4C8D3E4F5A6B7C8D9E0F1A2 /* PlayerAndMiniPlayerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7C2D4E5F6A7B8C9D0E1F2 /* PlayerAndMiniPlayerUITests.swift */; };
+		B7ECBA0BA82B77431A91D1F4 /* SmartTubeWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B2DB9CFCE0E4C3D9809964E /* SmartTubeWatchApp.swift */; };
 		B8C9D0E1F2A3B4C5D6E7F8A9 /* HomeShortsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B8C9D0E1F2A3B4C5D6E7F8 /* HomeShortsUITests.swift */; };
 		BE1E910C1C5E4CFBB7475AAE /* TVShortsDownNavigationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8937147FE98F4B8490EB7D0A /* TVShortsDownNavigationUITests.swift */; };
+		C0A51000000000000000C003 /* CasioClockWidget in Frameworks */ = {isa = PBXBuildFile; productRef = C0A51000000000000000C002 /* CasioClockWidget */; };
 		C1D2E3F4A5B6C7D8E9F0A1B2 /* PlayerNavigationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* PlayerNavigationUITests.swift */; };
 		C4D5E6F7A8B9C0D1E2F3A4B5 /* HomeShortsCountUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52716A7F61A547A0959DAF30 /* HomeShortsCountUITests.swift */; };
+		CBEDCDABCF4ADB7105FA05F8 /* SmartTubeWatchComplications.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2C1903C4FF3DC4DF24CF01E2 /* SmartTubeWatchComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CC4400000000000000004402 /* VideoCacheUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4400000000000000004401 /* VideoCacheUITests.swift */; };
 		CD550C82FB83F1B06A867F3F /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 161D597B9340722805A04592 /* Foundation.framework */; };
 		CF3A820B5D1E4A9F8E2C71BD /* TVMoreMenuNavigationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D9C6E73B2F4180960E52FA /* TVMoreMenuNavigationUITests.swift */; };
@@ -92,7 +102,6 @@
 		E7F8A9B0C1D2E3F4A5B6C7D8 /* LibraryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A9B0C1D2E3F4A5B6C7D8E9 /* LibraryUITests.swift */; };
 		F1A2B3C4D5E6F7A8B9C0D1E2 /* HomeShortsRowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2F3A4B5C6D7E8F9A0B1C2D3 /* HomeShortsRowUITests.swift */; };
 		F1CDC40190BFE18C52E5AD1B /* SmartTubeIOSCore in Frameworks */ = {isa = PBXBuildFile; productRef = 4D96747315A9E066D09F1F4E /* SmartTubeIOSCore */; };
-		C0A51000000000000000C003 /* CasioClockWidget in Frameworks */ = {isa = PBXBuildFile; productRef = C0A51000000000000000C002 /* CasioClockWidget */; };
 		FB01000000000000000000A1 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = FA01000000000000000000A1 /* GoogleService-Info.plist */; };
 		MAC000000000000000001A2 /* MacVideoPlaybackBenchmarkUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = MAC000000000000000001A1 /* MacVideoPlaybackBenchmarkUITests.swift */; };
 		MAC000000000000000002A2 /* MacWKHLSReplayRegressionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = MAC000000000000000002A1 /* MacWKHLSReplayRegressionUITests.swift */; };
@@ -139,12 +148,26 @@
 			remoteGlobalIDString = 67A5E7F22FB3932400C53D61;
 			remoteInfo = SafariExtension;
 		};
+		913DB2EF37CB93F64F4CBCBA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CF958B49C3E80CFAE3F092E3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2A5C125EA362F99C3B68C6B6;
+			remoteInfo = SmartTubeWatchComplications;
+		};
 		AA01000000000000000000AF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = CF958B49C3E80CFAE3F092E3 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = AA01000000000000000000A7;
 			remoteInfo = SmartTubeShareExtension;
+		};
+		C00440D6D867036EF4525D5F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CF958B49C3E80CFAE3F092E3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1CFA0BF3346108B35FB343AD;
+			remoteInfo = SmartTubeWatch;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -162,18 +185,43 @@
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0C991663268F90EAD50E1A7B /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				CBEDCDABCF4ADB7105FA05F8 /* SmartTubeWatchComplications.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		811393131C9BC6E66577AC21 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				9955ABD8FC7F8C79BC4DB18F /* SmartTubeWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		01C091DF9A0ABDF40E94ECAE /* CasioComplications.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CasioComplications.swift; sourceTree = "<group>"; };
 		161D597B9340722805A04592 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		1A2B3C4D5E6F1A2B3C4D5E61 /* SmartTubeTVUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SmartTubeTVUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1A2B3C4D5E6F1A2B3C4D5E62 /* TVFocusChainUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVFocusChainUITests.swift; sourceTree = "<group>"; };
 		29356C9641042E3DA5F16175 /* AppEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEntry.swift; sourceTree = "<group>"; };
 		29446E9C8CE04B2FBCDD8A2E /* FallbackVideoPlaybackUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FallbackVideoPlaybackUITests.swift; sourceTree = "<group>"; };
+		2B33592D015DBB1E03EFD2EF /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS11.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		2C1903C4FF3DC4DF24CF01E2 /* SmartTubeWatchComplications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SmartTubeWatchComplications.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		3B2DB9CFCE0E4C3D9809964E /* SmartTubeWatchApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SmartTubeWatchApp.swift; sourceTree = "<group>"; };
 		43AC502830145DD05002B5A2 /* PlaylistsNavigationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistsNavigationUITests.swift; sourceTree = "<group>"; };
 		46FAE8C7AB41057B392DF731 /* DownloadLiveActivity.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DownloadLiveActivity.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F6A7B8C9D0E1F3 /* HomeFeedWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeFeedWidget.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F6A7B8C9D0E1F4 /* SmartTubeDownloadWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SmartTubeDownloadWidget.entitlements; sourceTree = "<group>"; };
+		4A40206F56F2A75ABA24CEF8 /* SmartTubeWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SmartTubeWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CD3DC338DC0106A0F179BC1 /* SpinnerDismissalUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpinnerDismissalUITests.swift; sourceTree = "<group>"; };
 		52716A7F61A547A0959DAF30 /* HomeShortsCountUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeShortsCountUITests.swift; sourceTree = "<group>"; };
 		673C1D002F7F20340021583B /* Launch Screen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
@@ -186,6 +234,9 @@
 		6ACA5CEA633CF065619F786C /* SmartTube.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SmartTube.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		79E77E6DD18B12CA7A5341D0 /* SmartTubeDownloadWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SmartTubeDownloadWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		8937147FE98F4B8490EB7D0A /* TVShortsDownNavigationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVShortsDownNavigationUITests.swift; sourceTree = "<group>"; };
+		9756272DE90347889AA70219 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F3 /* HomeFeedWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeFeedWidget.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F4 /* SmartTubeDownloadWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SmartTubeDownloadWidget.entitlements; sourceTree = "<group>"; };
 		A3B7C2D4E5F6A7B8C9D0E1F2 /* PlayerAndMiniPlayerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerAndMiniPlayerUITests.swift; sourceTree = "<group>"; };
 		A4D9C6E73B2F4180960E52FA /* TVMoreMenuNavigationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVMoreMenuNavigationUITests.swift; sourceTree = "<group>"; };
 		A7B8C9D0E1F2A3B4C5D6E7F8 /* HomeShortsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeShortsUITests.swift; sourceTree = "<group>"; };
@@ -244,6 +295,7 @@
 		AB01CD23EF456789AB01CD24 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		AE55B486AFD7F51FEF1874FF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AP000000000000000000001A /* AirPlayUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPlayUITests.swift; sourceTree = "<group>"; };
+		B29586BF7247678F0CAEE41F /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* PlayerNavigationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerNavigationUITests.swift; sourceTree = "<group>"; };
 		B7482B081D440A26079AA9BC /* SmartTubeIOS */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SmartTubeIOS; path = ../SmartTubeIOS; sourceTree = SOURCE_ROOT; };
 		C3E4F5A6B7C8D9E0F1A2B3C4 /* SubscriptionsPlaybackUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionsPlaybackUITests.swift; sourceTree = "<group>"; };
@@ -294,6 +346,8 @@
 		};
 		67E6B67C2F9535CD00CD372F /* Smart Tube */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = "Smart Tube";
 			sourceTree = "<group>";
 		};
@@ -305,6 +359,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				06412259452CCFBF300F2D4B /* SmartTubeIOS in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4877A1BA755471BA077F2783 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6F1693319245C38C58753D2D /* Foundation.framework in Frameworks */,
+				304A067F78BC265BDB54C298 /* CasioClockWidget in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -320,6 +383,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				67E6B6872F9535CD00CD372F /* SmartTubeIOS in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7AE2889B4D27ACA5E7D27740 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				72E9F8836D4FF0B4A8D9F856 /* Foundation.framework in Frameworks */,
+				475A62D9B2DD2677AADC53DA /* CasioClockWidget in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -357,6 +429,8 @@
 				A6606018E9CE8927C08D84DF /* Frameworks */,
 				3A6CBA986681DD6D6BBFD4EA /* DownloadWidget */,
 				AA01000000000000000000AE /* ShareExtension */,
+				89CB969137D9CCF8EC135179 /* Watch */,
+				4D72069BAF0377DEEF12ECE9 /* WatchComplications */,
 			);
 			sourceTree = "<group>";
 		};
@@ -472,6 +546,24 @@
 			path = DownloadWidget;
 			sourceTree = "<group>";
 		};
+		4D72069BAF0377DEEF12ECE9 /* WatchComplications */ = {
+			isa = PBXGroup;
+			children = (
+				9756272DE90347889AA70219 /* Info.plist */,
+				01C091DF9A0ABDF40E94ECAE /* CasioComplications.swift */,
+			);
+			name = WatchComplications;
+			path = WatchComplications;
+			sourceTree = "<group>";
+		};
+		59D8F4314B5F177A5481AC10 /* watchOS */ = {
+			isa = PBXGroup;
+			children = (
+				2B33592D015DBB1E03EFD2EF /* Foundation.framework */,
+			);
+			name = watchOS;
+			sourceTree = "<group>";
+		};
 		5EF0B6AF2643BF476B25C7C0 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -482,6 +574,8 @@
 				67E6B67B2F9535CD00CD372F /* Smart Tube.app */,
 				1A2B3C4D5E6F1A2B3C4D5E61 /* SmartTubeTVUITests.xctest */,
 				67A5E7F32FB3932400C53D61 /* SafariExtension.appex */,
+				4A40206F56F2A75ABA24CEF8 /* SmartTubeWatch.app */,
+				2C1903C4FF3DC4DF24CF01E2 /* SmartTubeWatchComplications.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -492,6 +586,16 @@
 				161D597B9340722805A04592 /* Foundation.framework */,
 			);
 			name = iOS;
+			sourceTree = "<group>";
+		};
+		89CB969137D9CCF8EC135179 /* Watch */ = {
+			isa = PBXGroup;
+			children = (
+				3B2DB9CFCE0E4C3D9809964E /* SmartTubeWatchApp.swift */,
+				B29586BF7247678F0CAEE41F /* Assets.xcassets */,
+			);
+			name = Watch;
+			path = Watch;
 			sourceTree = "<group>";
 		};
 		9084B7F6DD70E282DD4342A7 /* Sources */ = {
@@ -508,6 +612,7 @@
 			isa = PBXGroup;
 			children = (
 				78DAA0F76567709E5E23C9CF /* iOS */,
+				59D8F4314B5F177A5481AC10 /* watchOS */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -549,6 +654,48 @@
 			productReference = 1A2B3C4D5E6F1A2B3C4D5E61 /* SmartTubeTVUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		1CFA0BF3346108B35FB343AD /* SmartTubeWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0816BEB3B5D1ADC26E9E771B /* Build configuration list for PBXNativeTarget "SmartTubeWatch" */;
+			buildPhases = (
+				F597F0BCB9791B1DF11D9BD8 /* Sources */,
+				4877A1BA755471BA077F2783 /* Frameworks */,
+				C88DCE45798178C2A15FAA36 /* Resources */,
+				0C991663268F90EAD50E1A7B /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6B136ADB77A0DD688EDCA6F2 /* PBXTargetDependency */,
+			);
+			name = SmartTubeWatch;
+			packageProductDependencies = (
+				09735D8A0F855361EABCAE3F /* CasioClockWidget */,
+			);
+			productName = SmartTubeWatch;
+			productReference = 4A40206F56F2A75ABA24CEF8 /* SmartTubeWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+		2A5C125EA362F99C3B68C6B6 /* SmartTubeWatchComplications */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 87225B4DC1F49D15CC119600 /* Build configuration list for PBXNativeTarget "SmartTubeWatchComplications" */;
+			buildPhases = (
+				C9C301F9C8C4B3BB10DF8FAD /* Sources */,
+				7AE2889B4D27ACA5E7D27740 /* Frameworks */,
+				C7D90C10926D7A74BAB1045A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SmartTubeWatchComplications;
+			packageProductDependencies = (
+				6A2AE77122BB832DB08C7DAB /* CasioClockWidget */,
+			);
+			productName = SmartTubeWatchComplications;
+			productReference = 2C1903C4FF3DC4DF24CF01E2 /* SmartTubeWatchComplications.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		38EEA5DF9BAA36788D776AB0 /* SmartTubeUITests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = AEAB87BD362E4200A8AED20B /* Build configuration list for PBXNativeTarget "SmartTubeUITests" */;
@@ -575,6 +722,7 @@
 				058A178EA117F7F7EA83573C /* Embed Foundation Extensions */,
 				FFDDBB9900112233445566AA /* Copy Firebase Binary dSYMs */,
 				67F34A972FA0A6A200EA6054 /* ShellScript */,
+				811393131C9BC6E66577AC21 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
@@ -582,6 +730,7 @@
 				0FBA651F0825F996F27B7476 /* PBXTargetDependency */,
 				AA01000000000000000000B0 /* PBXTargetDependency */,
 				67A5E80A2FB3932400C53D61 /* PBXTargetDependency */,
+				FCDF5AA3D0F4AFA0EFDD2A56 /* PBXTargetDependency */,
 			);
 			name = SmartTube;
 			packageProductDependencies = (
@@ -728,8 +877,8 @@
 			mainGroup = 10B1F40F599FC1A0781AF6D9;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				644EA6428F48EF6B886E4B58 /* XCLocalSwiftPackageReference "../SmartTubeIOS" */,
-				C0A51000000000000000C001 /* XCLocalSwiftPackageReference "../Widgets/CasioClockWidget" */,
+				644EA6428F48EF6B886E4B58 /* XCLocalSwiftPackageReference "SmartTubeIOS" */,
+				C0A51000000000000000C001 /* XCLocalSwiftPackageReference "CasioClockWidget" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5EF0B6AF2643BF476B25C7C0 /* Products */;
@@ -743,6 +892,8 @@
 				67E6B67A2F9535CD00CD372F /* Smart Tube */,
 				1A2B3C4D5E6F1A2B3C4D5E64 /* SmartTubeTVUITests */,
 				67A5E7F22FB3932400C53D61 /* SafariExtension */,
+				1CFA0BF3346108B35FB343AD /* SmartTubeWatch */,
+				2A5C125EA362F99C3B68C6B6 /* SmartTubeWatchComplications */,
 			);
 		};
 /* End PBXProject section */
@@ -784,6 +935,21 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C7D90C10926D7A74BAB1045A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C88DCE45798178C2A15FAA36 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6714D2CA4FFE95EFA50A0939 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -978,6 +1144,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C9C301F9C8C4B3BB10DF8FAD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8FF03DB1D17FCAEC9E1E0536 /* CasioComplications.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F597F0BCB9791B1DF11D9BD8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B7ECBA0BA82B77431A91D1F4 /* SmartTubeWatchApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F7FB9220CD15997A4898F205 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1006,6 +1188,12 @@
 			target = 67A5E7F22FB3932400C53D61 /* SafariExtension */;
 			targetProxy = 67A5E8092FB3932400C53D61 /* PBXContainerItemProxy */;
 		};
+		6B136ADB77A0DD688EDCA6F2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = SmartTubeWatchComplications;
+			target = 2A5C125EA362F99C3B68C6B6 /* SmartTubeWatchComplications */;
+			targetProxy = 913DB2EF37CB93F64F4CBCBA /* PBXContainerItemProxy */;
+		};
 		AA01000000000000000000B0 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = SmartTubeShareExtension;
@@ -1016,6 +1204,13 @@
 			isa = PBXTargetDependency;
 			target = 5A4C56D3A7C36BE68C3C3CE0 /* SmartTube */;
 			targetProxy = 5B9FD798A2B61FB0B894387A /* PBXContainerItemProxy */;
+		};
+		FCDF5AA3D0F4AFA0EFDD2A56 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = SmartTubeWatch;
+			platformFilter = ios;
+			target = 1CFA0BF3346108B35FB343AD /* SmartTubeWatch */;
+			targetProxy = C00440D6D867036EF4525D5F /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1061,6 +1256,32 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
+		};
+		0E74DB9360604CA0C18A0758 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 5A4JA438MW;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = WatchComplications/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.void.smarttube.app.watchkitapp.complications;
+				PRODUCT_NAME = SmartTubeWatchComplications;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
 		};
 		1A2B3C4D5E6F1A2B3C4D5E66 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -1429,6 +1650,34 @@
 			};
 			name = Release;
 		};
+		9D84647717960F2949C5C1BF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 5A4JA438MW;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SmartTube;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.void.smarttube.app;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.void.smarttube.app.watchkitapp;
+				PRODUCT_NAME = SmartTube;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
 		9EE8D597F302E6F05047F968 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1551,6 +1800,60 @@
 			};
 			name = Release;
 		};
+		BF10999F62A82E968FA57B12 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 5A4JA438MW;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SmartTube;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.void.smarttube.app;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.void.smarttube.app.watchkitapp;
+				PRODUCT_NAME = SmartTube;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		C1D294A16B7B61C1D4B8991E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 5A4JA438MW;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = WatchComplications/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.void.smarttube.app.watchkitapp.complications;
+				PRODUCT_NAME = SmartTubeWatchComplications;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
 		FF8768BF04D8F26434D2CCCD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1614,6 +1917,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		0816BEB3B5D1ADC26E9E771B /* Build configuration list for PBXNativeTarget "SmartTubeWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BF10999F62A82E968FA57B12 /* Release */,
+				9D84647717960F2949C5C1BF /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		0B664A7C4FCE77DC38FBE17B /* Build configuration list for PBXProject "SmartTubeApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1659,6 +1971,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		87225B4DC1F49D15CC119600 /* Build configuration list for PBXNativeTarget "SmartTubeWatchComplications" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0E74DB9360604CA0C18A0758 /* Release */,
+				C1D294A16B7B61C1D4B8991E /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		A25E75A9105B7E731FA11D5F /* Build configuration list for PBXNativeTarget "SmartTube" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1689,30 +2010,40 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		644EA6428F48EF6B886E4B58 /* XCLocalSwiftPackageReference "../SmartTubeIOS" */ = {
+		644EA6428F48EF6B886E4B58 /* XCLocalSwiftPackageReference "SmartTubeIOS" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SmartTubeIOS;
 		};
-		C0A51000000000000000C001 /* XCLocalSwiftPackageReference "../Widgets/CasioClockWidget" */ = {
+		C0A51000000000000000C001 /* XCLocalSwiftPackageReference "CasioClockWidget" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../Widgets/CasioClockWidget;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		09735D8A0F855361EABCAE3F /* CasioClockWidget */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0A51000000000000000C001 /* XCLocalSwiftPackageReference "CasioClockWidget" */;
+			productName = CasioClockWidget;
+		};
 		4D96747315A9E066D09F1F4E /* SmartTubeIOSCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 644EA6428F48EF6B886E4B58 /* XCLocalSwiftPackageReference "../SmartTubeIOS" */;
+			package = 644EA6428F48EF6B886E4B58 /* XCLocalSwiftPackageReference "SmartTubeIOS" */;
 			productName = SmartTubeIOSCore;
 		};
 		67E6B6862F9535CD00CD372F /* SmartTubeIOS */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 644EA6428F48EF6B886E4B58 /* XCLocalSwiftPackageReference "../SmartTubeIOS" */;
+			package = 644EA6428F48EF6B886E4B58 /* XCLocalSwiftPackageReference "SmartTubeIOS" */;
 			productName = SmartTubeIOS;
+		};
+		6A2AE77122BB832DB08C7DAB /* CasioClockWidget */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0A51000000000000000C001 /* XCLocalSwiftPackageReference "CasioClockWidget" */;
+			productName = CasioClockWidget;
 		};
 		AA01000000000000000000B1 /* SmartTubeIOSCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 644EA6428F48EF6B886E4B58 /* XCLocalSwiftPackageReference "../SmartTubeIOS" */;
+			package = 644EA6428F48EF6B886E4B58 /* XCLocalSwiftPackageReference "SmartTubeIOS" */;
 			productName = SmartTubeIOSCore;
 		};
 		B8401470D9A590E7F3685830 /* SmartTubeIOS */ = {
@@ -1721,7 +2052,7 @@
 		};
 		C0A51000000000000000C002 /* CasioClockWidget */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = C0A51000000000000000C001 /* XCLocalSwiftPackageReference "../Widgets/CasioClockWidget" */;
+			package = C0A51000000000000000C001 /* XCLocalSwiftPackageReference "CasioClockWidget" */;
 			productName = CasioClockWidget;
 		};
 /* End XCSwiftPackageProductDependency section */

@@ -30,27 +30,18 @@ struct W738HDisplay: LCDModuleDisplay {
             }
             SignalMark().fill(style.ink).frame(width: 27.5, height: 14).offset(x: 411.5, y: 322)
             BellMark().fill(style.ink).frame(width: 20, height: 25.5).offset(x: 452, y: 316)
-            LCDText(
-                text: parts.weekday, font: style.letters, glyph: Self.topGlyph,
-                edge: .leading(Self.weekdayLeading), baseline: Self.topBaseline, tracking: Self.weekdayTracking,
-                xScale: Self.weekdayScale, style: style)
+            LCDText(text: parts.weekday, font: style.letters, run: Self.weekday, style: style)
             // Month, a narrow printed dash, day (the dash isn't a full digit cell on this display).
             let date = context.calendar.dateComponents([.day, .month], from: context.date)
             LCDText(
                 text: DisplayParts.twoCells(date.month ?? 1, blank: style.digits.blankDigit), font: style.digits,
-                glyph: Self.topGlyph, edge: .trailing(Self.monthTrailing), baseline: Self.topBaseline,
-                xScale: Self.dateScale, style: style)
+                run: Self.date, style: style)
             Rectangle().fill(style.ink).frame(width: 9, height: 5).offset(x: 401, y: 257)
             LCDText(
                 text: DisplayParts.twoCells(date.day ?? 1, blank: style.digits.blankDigit), font: style.digits,
-                glyph: Self.topGlyph, edge: .trailing(Self.dateTrailing), baseline: Self.topBaseline,
-                xScale: Self.dateScale, style: style)
-            LiveHoursMinutes(
-                context: context, font: style.digits, glyph: Self.timeGlyph, trailing: Self.timeTrailing,
-                baseline: Self.timeBaseline, xScale: Self.timeScale, colonGap: Self.colonGap, style: style)
-            LiveSeconds(
-                context: context, glyph: Self.secondsGlyph, trailing: Self.secondsTrailing,
-                baseline: Self.secondsBaseline, xScale: Self.secondsScale, style: style)
+                run: Self.date.trailing(472.5), style: style)
+            LiveHoursMinutes(context: context, font: style.digits, run: Self.time, style: style)
+            LiveSeconds(context: context, run: Self.seconds, style: style)
         }
     }
 
@@ -59,21 +50,9 @@ struct W738HDisplay: LCDModuleDisplay {
     }
 
     // Measured on the W-738H image (canvas points).
-    static let topGlyph: CGFloat = 53
-    static let topBaseline: CGFloat = 286
-    static let weekdayLeading: CGFloat = 257
-    static let weekdayTracking: CGFloat = 9
-    static let weekdayScale: CGFloat = 0.71
-    static let dateTrailing: CGFloat = 472.5
-    static let monthTrailing: CGFloat = 399
-    static let dateScale: CGFloat = 0.66
-    static let timeGlyph: CGFloat = 92
-    static let timeTrailing: CGFloat = 392.5
-    static let timeBaseline: CGFloat = 414
-    static let timeScale: CGFloat = 0.70
-    static let colonGap: CGFloat = 16
-    static let secondsGlyph: CGFloat = 63.5
-    static let secondsTrailing: CGFloat = 473.5
-    static let secondsBaseline: CGFloat = 414
-    static let secondsScale: CGFloat = 0.70
+    static let weekday = LCDRun(glyph: 53, edge: .leading(257), baseline: 286, xScale: 0.71, tracking: 9)
+    static let date = LCDRun(glyph: 53, edge: .trailing(399), baseline: 286, xScale: 0.66)
+    static let time = LCDRun(glyph: 92, edge: .trailing(392.5), baseline: 414, xScale: 0.70, colonGap: 16)
+    static let seconds = LCDRun(glyph: 63.5, edge: .trailing(473.5), baseline: 414, xScale: 0.70)
+    static let runs = [weekday, date, time, seconds]
 }

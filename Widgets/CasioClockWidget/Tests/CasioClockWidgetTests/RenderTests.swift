@@ -89,6 +89,23 @@ struct RenderTests {
         #expect(inverted.lit(false).ink == Color(white: 0.7))
     }
 
+    @Test("every module display's measured runs sit inside its glass")
+    func runsInsideGlass() {
+        let displays: [any LCDModuleDisplay.Type] = [
+            Module593Display.self, Module3459Display.self, Module240Display.self, Module590Display.self,
+            Module3208Display.self, Module3298Display.self, Module3229Display.self, W738HDisplay.self,
+            W800HDisplay.self, GWB5600Display.self, W86Display.self,
+        ]
+        for display in displays {
+            let glass = CGRect(origin: display.canvasOrigin, size: display.glass)
+            for run in display.runs {
+                #expect(run.baseline - run.glyph >= glass.minY - 1, "\(display): \(run) above the glass")
+                #expect(run.baseline <= glass.maxY + 1, "\(display): \(run) below the glass")
+                #expect(run.x >= glass.minX && run.x <= glass.maxX, "\(display): \(run) anchored outside the glass")
+            }
+        }
+    }
+
     @Test("every model draws its face, and the light changes it")
     func facesRender() throws {
         for model in CasioModels.all {

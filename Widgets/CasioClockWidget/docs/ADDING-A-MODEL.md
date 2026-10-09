@@ -72,7 +72,10 @@ the glass sits on that canvas), and write its `body` as `inGlass(style: style) {
 - strings from `context.displayParts(blankDigit:)`, `DisplayParts.weekday3`,
   `DisplayParts.twoCells`; `LCDText` in a DSEG7 font draws S, U, O and N in Casio's 7-segment
   shapes by itself;
-- fixed characters with `LCDText`, live ones with `LiveHoursMinutes` and `LiveSeconds`;
+- each line of characters as a measured `LCDRun` (`static let weekday = LCDRun(glyph:, edge:,
+  baseline:, …)`), listed in `static let runs`;
+- fixed characters with `LCDText(text:font:run:style:)`, live ones with `LiveHoursMinutes` and
+  `LiveSeconds`, given their run;
 - marks from `LCD/LCDMarks.swift` or new shapes; printed LCD words with `InkText`.
 
 Calibrate the characters with digit runs on the reference and on a render (step 7):
@@ -82,8 +85,7 @@ python3 tools/casio_measure.py runs ref-dir/photo-canvas.png 275 400 620 476
 ```
 
 DSEG's glyph height is exact; width comes from `xScale`; when the real digits sit closer or
-further apart than DSEG's cells, set `tracking` (and `colonGap`) on `LiveHoursMinutes` /
-`LiveSeconds` — each live digit then gets its own timer window, so the live clock stays exact.
+further apart than DSEG's cells, set `tracking` (and `colonGap`) in the run — each live digit then gets its own timer window, so the live clock stays exact.
 Check the live path too: render with `CASIO_LIVE=1` and compare it with the static render.
 
 ## 6. Register

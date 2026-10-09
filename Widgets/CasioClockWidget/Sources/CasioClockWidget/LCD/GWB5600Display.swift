@@ -19,10 +19,7 @@ struct GWB5600Display: LCDModuleDisplay {
         inGlass(style: style) {
             InkText(text: "PS LT RCVD", font: CaseFont.michroma)
                 .placed(in: CGRect(x: 140.5, y: 165, width: 156, height: 17), color: style.ink, bold: 0.6)
-            LCDText(
-                text: parts.weekday, font: style.letters, glyph: Self.weekdayGlyph,
-                edge: .leading(Self.weekdayLeading), baseline: Self.weekdayBaseline, tracking: Self.weekdayTracking,
-                xScale: Self.weekdayScale, style: style)
+            LCDText(text: parts.weekday, font: style.letters, run: Self.weekday, style: style)
             RoundedRectangle(cornerRadius: 9).stroke(style.ink, lineWidth: 2.5)
                 .frame(width: 182, height: 81.5).offset(x: 324.25, y: 174.25)
             dateDigits(DisplayParts.twoCells(date.month ?? 1, blank: style.digits.blankDigit), Self.monthTrailing)
@@ -37,48 +34,27 @@ struct GWB5600Display: LCDModuleDisplay {
                 InkText(text: "P", font: CaseFont.michroma)
                     .placed(in: CGRect(x: 133.5, y: 278.5, width: 15, height: 19.5), color: style.ink, bold: 0.6)
             }
-            LiveHoursMinutes(
-                context: context, font: style.digits, glyph: Self.timeGlyph, trailing: Self.timeTrailing,
-                baseline: Self.timeBaseline, xScale: Self.timeScale, colonGap: Self.colonGap,
-                tracking: Self.timeTracking, style: style)
-            LiveSeconds(
-                context: context, glyph: Self.secondsGlyph, trailing: Self.secondsTrailing,
-                baseline: Self.secondsBaseline, xScale: Self.secondsScale, tracking: Self.secondsTracking,
-                style: style)
+            LiveHoursMinutes(context: context, font: style.digits, run: Self.time, style: style)
+            LiveSeconds(context: context, run: Self.seconds, style: style)
         }
     }
 
     private func dateDigits(_ text: String, _ trailing: CGFloat) -> some View {
-        LCDText(
-            text: text, font: style.digits, glyph: Self.dateGlyph, edge: .trailing(trailing),
-            baseline: Self.dateBaseline, width: 160, tracking: Self.dateTracking, xScale: Self.dateScale,
-            style: style)
+        LCDText(text: text, font: style.digits, run: Self.date.trailing(trailing), style: style)
     }
 
     // Measured on the GW-B5600 image (canvas points).
-    static let weekdayGlyph: CGFloat = 57.5
-    static let weekdayLeading: CGFloat = 205
-    static let weekdayBaseline: CGFloat = 247
-    static let weekdayTracking: CGFloat = 0
-    static let weekdayScale: CGFloat = 0.97
-    static let dateGlyph: CGFloat = 55.5
+    static let weekday = LCDRun(glyph: 57.5, edge: .leading(205), baseline: 247, xScale: 0.97, tracking: 0)
+    static let time = LCDRun(glyph: 104, edge: .trailing(397), baseline: 392, xScale: 0.77, tracking: 0, colonGap: 0)
+    static let seconds = LCDRun(glyph: 67.5, edge: .trailing(502), baseline: 386.5, xScale: 0.88, tracking: 0)
+    /// Anchored at its last group; the other groups use `.trailing(_:)`.
+    static let date = LCDRun(
+        glyph: 55.5, edge: .trailing(486.5), baseline: 242.5, xScale: 0.83, tracking: 0, width: 160)
+    static let runs = [weekday, time, seconds, date]
     static let dateBaseline: CGFloat = 242.5
-    static let dateTracking: CGFloat = 0
-    static let dateScale: CGFloat = 0.83
     static let monthTrailing: CGFloat = 398.5
     static let dotX: CGFloat = 402
     static let dateTrailing: CGFloat = 486.5
-    static let timeGlyph: CGFloat = 104
-    static let timeTrailing: CGFloat = 397
-    static let timeBaseline: CGFloat = 392
-    static let timeScale: CGFloat = 0.77
-    static let colonGap: CGFloat = 0
-    static let timeTracking: CGFloat = 0
-    static let secondsGlyph: CGFloat = 67.5
-    static let secondsTrailing: CGFloat = 502
-    static let secondsBaseline: CGFloat = 386.5
-    static let secondsScale: CGFloat = 0.88
-    static let secondsTracking: CGFloat = 0
 }
 
 /// The battery level: three bars, a battery with two cells, three bars.

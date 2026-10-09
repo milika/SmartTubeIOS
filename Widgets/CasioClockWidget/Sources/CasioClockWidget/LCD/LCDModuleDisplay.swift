@@ -10,6 +10,8 @@ protocol LCDModuleDisplay: View {
     /// Where that glass's top-left corner sits on the canvas the layout's numbers were measured on
     /// (the reference face's canvas); .zero when measured in the glass itself.
     static var canvasOrigin: CGPoint { get }
+    /// The display's measured lines of characters (weekday, date, time, seconds, …).
+    static var runs: [LCDRun] { get }
     init(context: CasioFaceContext, style: LCDStyle)
 }
 

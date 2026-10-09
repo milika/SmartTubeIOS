@@ -12,6 +12,12 @@ struct Module3459Display: LCDModuleDisplay {
     let context: CasioFaceContext
     let style: LCDStyle
 
+    // Measured character runs (canvas points).
+    static let weekday = LCDRun(glyph: 41.5, edge: .leading(227), baseline: 251.5, tracking: 2)
+    static let time = LCDRun(glyph: 76, edge: .trailing(372), baseline: 362.5, xScale: 0.85)
+    static let seconds = LCDRun(glyph: 50, edge: .trailing(450), baseline: 360.5, xScale: 0.93)
+    static let runs = [weekday, time, seconds]
+
     var body: some View {
         let parts = context.displayParts(blankDigit: style.digits.blankDigit)
         inGlass(style: style) {
@@ -24,9 +30,7 @@ struct Module3459Display: LCDModuleDisplay {
             if parts.isPM {
                 indicator("P", leading: 161, centerY: 304)
             }
-            LCDText(
-                text: parts.weekday, font: style.letters, glyph: 41.5, edge: .leading(227), baseline: 251.5,
-                tracking: 2, style: style)
+            LCDText(text: parts.weekday, font: style.letters, run: Self.weekday, style: style)
             RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .stroke(style.ink, lineWidth: 1.6)
                 .frame(width: 136, height: 61)
@@ -38,11 +42,8 @@ struct Module3459Display: LCDModuleDisplay {
             )
             .frame(width: 130, height: 40, alignment: .topLeading)
             .offset(x: 323.75, y: 211)
-            LiveHoursMinutes(
-                context: context, font: style.digits, glyph: 76, trailing: 372, baseline: 362.5, xScale: 0.85,
-                style: style)
-            LiveSeconds(
-                context: context, glyph: 50, trailing: 450, baseline: 360.5, xScale: 0.93, style: style)
+            LiveHoursMinutes(context: context, font: style.digits, run: Self.time, style: style)
+            LiveSeconds(context: context, run: Self.seconds, style: style)
         }
     }
 

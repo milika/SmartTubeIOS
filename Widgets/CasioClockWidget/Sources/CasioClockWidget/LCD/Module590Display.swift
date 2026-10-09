@@ -21,35 +21,17 @@ struct Module590Display: LCDModuleDisplay {
                         in: CGRect(x: 171.5, y: 206.5, width: marker == "24H" ? 29.5 : 21, height: 8),
                         color: style.ink, bold: 0.3)
             }
-            LCDText(
-                text: parts.weekday, font: style.letters, glyph: Self.weekdayGlyph, edge: .leading(Self.weekdayLeading),
-                baseline: Self.weekdayBaseline, tracking: Self.weekdayTracking, style: style)
-            LCDText(
-                text: parts.day, font: style.digits, glyph: Self.dayGlyph, edge: .trailing(Self.dayTrailing),
-                baseline: Self.dayBaseline, width: 120, style: style)
-            LiveHoursMinutes(
-                context: context, font: style.digits, glyph: Self.timeGlyph, trailing: Self.timeTrailing,
-                baseline: Self.timeBaseline, xScale: Self.timeScale, style: style)
-            LiveSeconds(
-                context: context, glyph: Self.secondsGlyph, trailing: Self.secondsTrailing,
-                baseline: Self.secondsBaseline, xScale: Self.secondsScale, style: style)
+            LCDText(text: parts.weekday, font: style.letters, run: Self.weekday, style: style)
+            LCDText(text: parts.day, font: style.digits, run: Self.day, style: style)
+            LiveHoursMinutes(context: context, font: style.digits, run: Self.time, style: style)
+            LiveSeconds(context: context, run: Self.seconds, style: style)
         }
     }
 
     // Measured on the W-59 photo (canvas points).
-    static let weekdayGlyph: CGFloat = 34.5
-    static let weekdayLeading: CGFloat = 254
-    static let weekdayBaseline: CGFloat = 215.5
-    static let weekdayTracking: CGFloat = 4.5
-    static let dayGlyph: CGFloat = 36
-    static let dayTrailing: CGFloat = 411.5
-    static let dayBaseline: CGFloat = 217
-    static let timeGlyph: CGFloat = 74
-    static let timeTrailing: CGFloat = 344.5
-    static let timeBaseline: CGFloat = 309
-    static let timeScale: CGFloat = 0.926
-    static let secondsGlyph: CGFloat = 53.5
-    static let secondsTrailing: CGFloat = 425.5
-    static let secondsScale: CGFloat = 0.85
-    static let secondsBaseline: CGFloat = 309.5
+    static let weekday = LCDRun(glyph: 34.5, edge: .leading(254), baseline: 215.5, tracking: 4.5)
+    static let day = LCDRun(glyph: 36, edge: .trailing(411.5), baseline: 217, width: 120)
+    static let time = LCDRun(glyph: 74, edge: .trailing(344.5), baseline: 309, xScale: 0.926)
+    static let seconds = LCDRun(glyph: 53.5, edge: .trailing(425.5), baseline: 309.5, xScale: 0.85)
+    static let runs = [weekday, day, time, seconds]
 }

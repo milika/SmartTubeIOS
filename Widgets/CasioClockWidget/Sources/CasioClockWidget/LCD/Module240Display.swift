@@ -12,13 +12,18 @@ struct Module240Display: LCDModuleDisplay {
     let context: CasioFaceContext
     let style: LCDStyle
 
+    // Measured character runs (canvas points).
+    // The DW-5000C's W is double width; DSEG's is not. Wide enough for WE, not too wide for FR.
+    static let weekday = LCDRun(glyph: 36, edge: .leading(173), baseline: 218.5, tracking: 10)
+    static let date = LCDRun(glyph: 44, edge: .trailing(456), baseline: 230.5, xScale: 0.877)
+    static let time = LCDRun(glyph: 74.5, edge: .trailing(378), baseline: 335.5, xScale: 0.83, colonGap: 9.5)
+    static let seconds = LCDRun(glyph: 53, edge: .trailing(461), baseline: 335.5, xScale: 0.83)
+    static let runs = [weekday, date, time, seconds]
+
     var body: some View {
         let parts = context.displayParts(blankDigit: style.digits.blankDigit)
         inGlass(style: style) {
-            LCDText(
-                text: parts.weekday, font: style.letters, glyph: 36, edge: .leading(173), baseline: 218.5,
-                // The DW-5000C's W is double width; DSEG's is not. Wide enough for WE, not too wide for FR.
-                tracking: 10, style: style)
+            LCDText(text: parts.weekday, font: style.letters, run: Self.weekday, style: style)
             if let marker = parts.marker {
                 InkText(text: marker, font: CaseFont.michroma)
                     .placed(
@@ -31,12 +36,9 @@ struct Module240Display: LCDModuleDisplay {
                 .offset(x: 299, y: 176)
             LCDText(
                 text: Self.dateText(context.date, calendar: context.calendar, blank: style.digits.blankDigit),
-                font: style.digits, glyph: 44, edge: .trailing(456), baseline: 230.5, xScale: 0.877, style: style)
-            LiveHoursMinutes(
-                context: context, font: style.digits, glyph: 74.5, trailing: 378, baseline: 335.5, xScale: 0.83,
-                colonGap: 9.5, style: style)
-            LiveSeconds(
-                context: context, glyph: 53, trailing: 461, baseline: 335.5, xScale: 0.83, style: style)
+                font: style.digits, run: Self.date, style: style)
+            LiveHoursMinutes(context: context, font: style.digits, run: Self.time, style: style)
+            LiveSeconds(context: context, run: Self.seconds, style: style)
         }
     }
 

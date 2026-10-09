@@ -46,7 +46,9 @@ fill the ink box measured on the reference, so font metrics don't move them.
 A face draws only the case and an `LCDPanel` (the window, its glass and light, and the display);
 the characters come from its module's display,
 an `LCDModuleDisplay` measured once in a glass of `glass` size and `placed(in:)` any watch's glass
-(scaled to its width, centred vertically). The F-91W and A158W share `Module593Display`; the F-91W
+(scaled to its width, centred vertically). Each display declares its measured lines of characters as `LCDRun`
+values (`static let runs`: glyph height, anchored edge, baseline, squeeze, tracking), so the
+numbers live in one table and a test checks that every run sits inside its glass. The F-91W and A158W share `Module593Display`; the F-91W
 complication uses `Module593Complication`, a compact layout of the same module for the
 200 × 80 complication slot.
 
@@ -98,7 +100,7 @@ F-91W's is `"CasioClockWidget"`, from when it was the only model).
 - models: unique kinds, the light per model; fonts: the bundled files are exactly the fonts in use
   and all register; catalogue: every registered model is published;
 - rendering: every model draws its face and its light changes it; every module display renders
-  alone and differs between 12- and 24-hour time.
+  alone and differs between 12- and 24-hour time; every display's runs sit inside its glass.
 
 Faces themselves are checked against their reference images while they are made
 ([ADDING-A-MODEL.md](ADDING-A-MODEL.md)); the repository's `.improve/` holds a golden-render

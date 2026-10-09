@@ -66,6 +66,8 @@ Naming a new module after a concept not listed here requires adding the term in 
   into several watches; its *module display* (`Module593Display`, …, an `LCDModuleDisplay`) is
   that LCD's layout, measured once and placed in each watch model's glass. A *face* draws the
   case around it. *Rejected*: "screen" (the whole widget), "face" for the display.
+- **Run** — one measured line of LCD characters in a module display (weekday, date, time,
+  seconds): glyph height, anchored edge, baseline, squeeze and tracking, as an `LCDRun` value.
 - **Live clock** — how a widget shows the time to the second although WidgetKit redraws only at
   timeline entries: hourly entries for the hours, one self-animating timer ("10:MM:SS") for
   minutes and seconds (`LiveClock/`). *Rejected*: "minute timeline" (the old one-entry-per-minute

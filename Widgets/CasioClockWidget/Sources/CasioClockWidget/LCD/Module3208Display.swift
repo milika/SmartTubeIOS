@@ -18,30 +18,15 @@ struct Module3208Display: LCDModuleDisplay {
             if parts.isPM {
                 Rectangle().fill(style.ink).frame(width: 9, height: 9).offset(x: 122, y: 130)
             }
-            LCDText(
-                text: parts.weekday, font: style.letters, glyph: Self.weekdayGlyph,
-                edge: .trailing(Self.weekdayTrailing),
-                baseline: Self.weekdayBaseline, tracking: Self.weekdayTracking, xScale: Self.weekdayScale, style: style)
-            LiveHoursMinutes(
-                context: context, font: style.digits, glyph: Self.timeGlyph, trailing: Self.timeTrailing,
-                baseline: Self.timeBaseline, xScale: Self.timeScale, colonGap: Self.colonGap, style: style)
-            LiveSeconds(
-                context: context, glyph: Self.timeGlyph, trailing: Self.secondsTrailing,
-                baseline: Self.secondsBaseline, xScale: Self.timeScale, style: style)
+            LCDText(text: parts.weekday, font: style.letters, run: Self.weekday, style: style)
+            LiveHoursMinutes(context: context, font: style.digits, run: Self.time, style: style)
+            LiveSeconds(context: context, run: Self.seconds, style: style)
         }
     }
 
     // Measured on the CA-53W photo (canvas points).
-    static let weekdayGlyph: CGFloat = 47.5
-    static let weekdayTrailing: CGFloat = 519
-    static let weekdayBaseline: CGFloat = 180
-    static let weekdayScale: CGFloat = 0.95
-    static let weekdayTracking: CGFloat = 0
-    static let timeGlyph: CGFloat = 71.5
-    static let timeTrailing: CGFloat = 369
-    static let timeBaseline: CGFloat = 267
-    static let timeScale: CGFloat = 0.86
-    static let colonGap: CGFloat = 51.5
-    static let secondsTrailing: CGFloat = 529
-    static let secondsBaseline: CGFloat = 265
+    static let weekday = LCDRun(glyph: 47.5, edge: .trailing(519), baseline: 180, xScale: 0.95, tracking: 0)
+    static let time = LCDRun(glyph: 71.5, edge: .trailing(369), baseline: 267, xScale: 0.86, colonGap: 51.5)
+    static let seconds = LCDRun(glyph: 71.5, edge: .trailing(529), baseline: 265, xScale: 0.86)
+    static let runs = [weekday, time, seconds]
 }

@@ -22,9 +22,8 @@ struct W800HDisplay: LCDModuleDisplay {
             RoundedRectangle(cornerRadius: 7).stroke(style.ink, lineWidth: 2.5)
                 .frame(width: 143, height: 62).offset(x: 165.25, y: 224.25)
             LCDText(
-                text: DisplayParts.weekday3(for: context.date, calendar: context.calendar),
-                font: style.letters, glyph: Self.weekdayGlyph, edge: .leading(Self.weekdayLeading),
-                baseline: Self.weekdayBaseline, tracking: Self.weekdayTracking, xScale: Self.weekdayScale, style: style)
+                text: DisplayParts.weekday3(for: context.date, calendar: context.calendar), font: style.letters,
+                run: Self.weekday, style: style)
             label("SNZ", CGRect(x: 325.5, y: 227.5, width: 49.5, height: 12))
             label("ALM", CGRect(x: 325.5, y: 245.5, width: 49.5, height: 11.5))
             label("SIG", CGRect(x: 326, y: 263, width: 49, height: 12.5))
@@ -36,13 +35,8 @@ struct W800HDisplay: LCDModuleDisplay {
                 InkText(text: "P", font: CaseFont.saira)
                     .placed(in: CGRect(x: 164.5, y: 313, width: 13, height: 16.5), color: style.ink, bold: 0.6)
             }
-            LiveHoursMinutes(
-                context: context, font: style.digits, glyph: Self.timeGlyph, trailing: Self.timeTrailing,
-                baseline: Self.timeBaseline, xScale: Self.timeScale, colonGap: Self.colonGap,
-                tracking: Self.timeTracking, style: style)
-            LiveSeconds(
-                context: context, glyph: Self.secondsGlyph, trailing: Self.secondsTrailing,
-                baseline: Self.secondsBaseline, xScale: Self.secondsScale, tracking: Self.secondsTracking, style: style)
+            LiveHoursMinutes(context: context, font: style.digits, run: Self.time, style: style)
+            LiveSeconds(context: context, run: Self.seconds, style: style)
             Rectangle().fill(style.ink).frame(width: 287, height: 3).offset(x: 147, y: 393)
             // Year as "20 24", month, a short dash, day.
             bottomDigits(String(year.prefix(2)), trailing: Self.yearCenturyTrailing)
@@ -60,31 +54,17 @@ struct W800HDisplay: LCDModuleDisplay {
     }
 
     private func bottomDigits(_ text: String, trailing: CGFloat) -> some View {
-        LCDText(
-            text: text, font: style.digits, glyph: Self.bottomGlyph, edge: .trailing(trailing),
-            baseline: Self.bottomBaseline, xScale: Self.bottomScale, style: style)
+        LCDText(text: text, font: style.digits, run: Self.bottomRow.trailing(trailing), style: style)
     }
 
     // Measured on the W-800H image (canvas points).
-    static let weekdayGlyph: CGFloat = 39
-    static let weekdayLeading: CGFloat = 188.5
-    static let weekdayBaseline: CGFloat = 274
-    static let weekdayTracking: CGFloat = 2
-    static let weekdayScale: CGFloat = 1
-    static let timeGlyph: CGFloat = 84
-    static let timeTrailing: CGFloat = 342.5
-    static let timeBaseline: CGFloat = 383
-    static let timeScale: CGFloat = 0.78
-    static let timeTracking: CGFloat = -13.4
-    static let colonGap: CGFloat = 10
-    static let secondsScale: CGFloat = 0.8
-    static let secondsTracking: CGFloat = -8.1
-    static let secondsGlyph: CGFloat = 62
-    static let secondsTrailing: CGFloat = 419.5
-    static let secondsBaseline: CGFloat = 383
-    static let bottomGlyph: CGFloat = 35.5
-    static let bottomBaseline: CGFloat = 438.5
-    static let bottomScale: CGFloat = 0.89
+    static let weekday = LCDRun(glyph: 39, edge: .leading(188.5), baseline: 274, xScale: 1, tracking: 2)
+    static let time = LCDRun(
+        glyph: 84, edge: .trailing(342.5), baseline: 383, xScale: 0.78, tracking: -13.4, colonGap: 10)
+    static let seconds = LCDRun(glyph: 62, edge: .trailing(419.5), baseline: 383, xScale: 0.8, tracking: -8.1)
+    /// Anchored at its last group; the other groups use `.trailing(_:)`.
+    static let bottomRow = LCDRun(glyph: 35.5, edge: .trailing(409.5), baseline: 438.5, xScale: 0.89)
+    static let runs = [weekday, time, seconds, bottomRow]
     static let yearCenturyTrailing: CGFloat = 225
     static let yearTrailing: CGFloat = 288.5
     static let monthTrailing: CGFloat = 344

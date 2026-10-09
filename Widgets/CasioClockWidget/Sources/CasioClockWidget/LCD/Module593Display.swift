@@ -6,11 +6,19 @@ import SwiftUI
 struct Module593Display: LCDModuleDisplay {
     /// The glass the layout was measured in.
     static let glass = CGSize(width: 389.5, height: 184.5)
-    /// Width of the big digits relative to DSEG's (the module's digits are narrower).
-    static let digitSqueeze: CGFloat = 0.9
 
     let context: CasioFaceContext
     let style: LCDStyle
+
+    /// Width of the big digits relative to DSEG's (the module's digits are narrower).
+    static let digitSqueeze: CGFloat = 0.9
+
+    // Measured character runs (canvas points).
+    static let weekday = LCDRun(glyph: 43, edge: .leading(130), baseline: 55.5, tracking: 7.5)
+    static let day = LCDRun(glyph: 47.5, edge: .trailing(380.7), baseline: 60, tracking: 4.5, width: 120)
+    static let time = LCDRun(glyph: 88.5, edge: .trailing(279), baseline: 166, xScale: digitSqueeze)
+    static let seconds = LCDRun(glyph: 67, edge: .trailing(382), baseline: 166, xScale: digitSqueeze)
+    static let runs = [weekday, day, time, seconds]
 
     var body: some View {
         let parts = context.displayParts(blankDigit: style.digits.blankDigit)
@@ -29,17 +37,10 @@ struct Module593Display: LCDModuleDisplay {
                     .place(centerX: 87.3, centerY: 53.1)
             }
             // Day of week and date share the top row.
-            LCDText(
-                text: parts.weekday, font: style.letters, glyph: 43, edge: .leading(130), baseline: 55.5, tracking: 7.5,
-                style: style)
-            LCDText(
-                text: parts.day, font: style.digits, glyph: 47.5, edge: .trailing(380.7), baseline: 60, width: 120,
-                tracking: 4.5, style: style)
-            LiveHoursMinutes(
-                context: context, font: style.digits, glyph: 88.5, trailing: 279, baseline: 166,
-                xScale: Self.digitSqueeze, style: style)
-            LiveSeconds(
-                context: context, glyph: 67, trailing: 382, baseline: 166, xScale: Self.digitSqueeze, style: style)
+            LCDText(text: parts.weekday, font: style.letters, run: Self.weekday, style: style)
+            LCDText(text: parts.day, font: style.digits, run: Self.day, style: style)
+            LiveHoursMinutes(context: context, font: style.digits, run: Self.time, style: style)
+            LiveSeconds(context: context, run: Self.seconds, style: style)
         }
     }
 }

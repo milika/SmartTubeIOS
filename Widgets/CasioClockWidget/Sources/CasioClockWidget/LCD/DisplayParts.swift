@@ -24,6 +24,12 @@ struct DisplayParts: Equatable {
         number < 10 ? blank + "\(number)" : "\(number)"
     }
 
+    /// A weekday in Casio's 7-segment letter shapes for a DSEG7 font: S is drawn as a full "5", U as
+    /// a full-height U (DSEG7's "V") and O as a full "0"; DSEG7's own S, U and O are small lower-case.
+    static func sevenSegmentLetters(_ weekday: String) -> String {
+        String(weekday.map { ["S": "5", "U": "V", "O": "0"][$0] ?? $0 })
+    }
+
     static func make(
         for date: Date, calendar: Calendar, twelveHour: Bool, blankDigit: String = figureSpace
     ) -> DisplayParts {

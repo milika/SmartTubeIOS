@@ -41,12 +41,12 @@ struct ModelTests {
         #expect(Module240Display.dateText(date2, calendar: cal, blank: "!") == "!6-28")
     }
 
-    @Test("CA-53W weekday: S, U and O in the module's full-height 7-segment shapes")
+    @Test("7-segment weekdays: S, U and O in the full-height shapes (CA-53W, A168W)")
     func ca53wWeekdayLetters() {
-        #expect(Module3208Display.segmentLetters("SU") == "5V")
-        #expect(Module3208Display.segmentLetters("MO") == "M0")
-        #expect(Module3208Display.segmentLetters("TU") == "TV")
-        #expect(Module3208Display.segmentLetters("WE") == "WE")
+        #expect(DisplayParts.sevenSegmentLetters("SU") == "5V")
+        #expect(DisplayParts.sevenSegmentLetters("MO") == "M0")
+        #expect(DisplayParts.sevenSegmentLetters("TU") == "TV")
+        #expect(DisplayParts.sevenSegmentLetters("WE") == "WE")
     }
 
     @Test("complication kinds are unique and differ from the iPhone kinds")

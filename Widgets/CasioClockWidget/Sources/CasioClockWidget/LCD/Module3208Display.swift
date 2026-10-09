@@ -19,7 +19,7 @@ struct Module3208Display: LCDModuleDisplay {
                 Rectangle().fill(style.ink).frame(width: 9, height: 9).offset(x: 122, y: 130)
             }
             LCDText(
-                text: Self.segmentLetters(parts.weekday), font: style.letters, glyph: Self.weekdayGlyph,
+                text: DisplayParts.sevenSegmentLetters(parts.weekday), font: style.letters, glyph: Self.weekdayGlyph,
                 edge: .trailing(Self.weekdayTrailing),
                 baseline: Self.weekdayBaseline, tracking: Self.weekdayTracking, xScale: Self.weekdayScale, style: style)
             LiveHoursMinutes(
@@ -32,12 +32,6 @@ struct Module3208Display: LCDModuleDisplay {
         .lcdSegmentShadow(style)
         .offset(x: -Self.canvasOrigin.x, y: -Self.canvasOrigin.y)
         .frame(width: Self.glass.width, height: Self.glass.height, alignment: .topLeading)
-    }
-
-    /// The weekday as this module's 7-segment letters: S is drawn as a full "5", U as a full-height U
-    /// (DSEG7's "V") and O as a full "0"; DSEG7's own S, U and O are small lower-case shapes.
-    static func segmentLetters(_ weekday: String) -> String {
-        String(weekday.map { ["S": "5", "U": "V", "O": "0"][$0] ?? $0 })
     }
 
     // Measured on the CA-53W photo (canvas points).

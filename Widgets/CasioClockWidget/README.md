@@ -20,6 +20,9 @@ published together as `CasioWidgets.homeScreen`:
   ALARM CHRONO, gold WR, upright 7-segment LCD with seconds as large as the minutes) above the
   keypad (16 keys, white digits, red operators, tan function labels). The real watch has no
   light; the widget keeps tap-for-light.
+- **A168W** (`CasioA168W`): chrome case, black face with blue and white octagon lines, the blue
+  ElectroLuminescence banner, ◀ILLUMINATOR▶, WATER [WR] RESIST, the module-3298 display (signal
+  and alarm marks, PM, weekday and date top right) and a blue-green EL light.
 
 Self-contained Swift package — no
 dependencies on any app code. Its resources are fonts, all under the SIL Open Font License 1.1
@@ -46,7 +49,7 @@ typefaces per Fonts In Use (fontsinuse.com/uses/74290). A158W: Wikimedia Commons
 GMW-B5000: Wikimedia Commons `Wikipedia-Casio-G-Shock-Edelstahl-800.jpg`. DW-5000C:
 Wikimedia Commons `DW-5000.jpg`; W-59: Wikimedia Commons `Casio W-59 digital watch.jpg`
 (public domain); CA-53W: Wikimedia Commons `Casio CA-53W, 1.jpg` by Morn (CC BY-SA 4.0), levelled
-by 0.8°; its printed labels are `InkText`, glyph outlines stretched to
+by 0.8°; A168W: Casio's A168WA-1W product image (supplied by the owner; measured only, not shipped); its printed labels are `InkText`, glyph outlines stretched to
 the ink boxes measured on the photo. Known difference: the DW-5000C draws a double-width W in
 the weekday; DSEG14's W is single width.
 
@@ -110,7 +113,7 @@ Sources/CasioClockWidget/
                      displays (LCDModuleDisplay): Module593Display (F-91W, A158W, A168W…) and its
                      compact Module593Complication, Module3459Display (GMW-B5000, GW-B5600…),
                      Module240Display (DW-5000C), Module590Display (W-59),
-                     Module3208Display (CA-53W)
+                     Module3208Display (CA-53W), Module3298Display (A168W)
   Kit/               FaceCanvas + place(...) modifiers, CaseFont, BundledFonts, shapes (incl. the
                      G-Shock BrickPattern), text effects, InkText (a label filling a measured ink box)
   Models/F91W/       the F-91W: model (palette, LCD style, Xcode previews), face, complication
@@ -119,6 +122,7 @@ Sources/CasioClockWidget/
   Models/DW5000C/    the G-Shock DW-5000C: model, face
   Models/W59/        the W-59: model, face
   Models/CA53W/      the CA-53W calculator watch: model, face (display section and keypad)
+  Models/A168W/      the A168W: model, face
   Resources/         fonts and their licences (all models)
 ```
 

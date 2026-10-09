@@ -2,6 +2,9 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
+// The iPhone widget (systemSmall doesn't exist on watchOS).
+#if !os(watchOS)
+
 // How a Casio widget stays live:
 // - Hours and minutes come from a timeline with one entry per minute (an hour of entries,
 //   then WidgetKit asks for the next hour), so the display changes exactly on the minute.
@@ -28,3 +31,4 @@ struct CasioWatchWidget<Model: CasioModel>: Widget {
         .contentMarginsDisabled()
     }
 }
+#endif

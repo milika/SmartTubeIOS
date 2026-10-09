@@ -6,7 +6,7 @@ import PackageDescription
 // Add the library to a widget extension and list the widgets in its WidgetBundle (README.md).
 let package = Package(
     name: "CasioClockWidget",
-    platforms: [.iOS(.v17), .macOS(.v14)],
+    platforms: [.iOS(.v17), .macOS(.v14), .watchOS(.v10)],
     products: [
         .library(name: "CasioClockWidget", targets: ["CasioClockWidget"])
     ],

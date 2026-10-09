@@ -1,6 +1,9 @@
 import SwiftUI
 import WidgetKit
 
+// The iPhone widget (systemSmall doesn't exist on watchOS).
+#if !os(watchOS)
+
 /// Casio F-91W: list `CasioF91WWidget()` in a WidgetBundle.
 public struct CasioF91WWidget: Widget {
     public init() {}
@@ -14,3 +17,4 @@ public struct CasioF91WWidget: Widget {
     CasioClockEntry(date: .now)
     CasioClockEntry(date: .now, backlit: true)
 }
+#endif

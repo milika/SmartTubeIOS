@@ -3,12 +3,20 @@
 A small Home Screen widget: a live digital clock drawn as a Casio F-91W
 (black resin case, blue bezel line, gold labels, grey-green LCD with seven-segment
 digits, day/date, PM marker, running seconds). Self-contained Swift package — no
-dependencies on any app code. Its only resources are the LCD fonts DSEG7 / DSEG14 Classic Bold
-Italic by Keshikan (SIL Open Font License 1.1, `Resources/DSEG-LICENSE.txt`; keshikan.net).
+dependencies on any app code. Its resources are fonts, all under the SIL Open Font License 1.1
+(licenses in `Resources/`):
+
+- LCD: DSEG7 / DSEG14 Classic Bold Italic by Keshikan (keshikan.net).
+- Printed text, free look-alikes of the watch's typefaces (Google Fonts): Michroma for
+  Microgramma / Eurostile Extended, Archivo Expanded Black (a static instance of Archivo's
+  variable font, wght 900 / wdth 125) for Neue Helvetica Extended Black, Saira Medium for
+  Eurostile Medium. Subset to the characters the face uses.
+
+Tap the widget for the backlight (an `AppIntent`, iOS 17 interactive widgets): the LCD glows
+green from the left for 3 seconds, like the watch's LED.
 
 The layout is measured from a front-on photo of a real F-91W (Wikimedia Commons,
-`Casio_F-91W_5051.jpg`). Printed text on the watch is Eurostile Extended / Microgramma
-(per Fonts In Use); SF Pro Expanded stands in for it.
+`Casio_F-91W_5051.jpg`); typefaces per Fonts In Use (fontsinuse.com/uses/74290).
 
 ## Add to a project
 

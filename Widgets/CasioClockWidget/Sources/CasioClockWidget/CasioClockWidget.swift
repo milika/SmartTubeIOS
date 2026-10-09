@@ -1,3 +1,4 @@
+import AppIntents
 import CoreText
 import SwiftUI
 import WidgetKit
@@ -13,6 +14,8 @@ import WidgetKit
 //   counting up from the start of the minute, clipped to its last two digits ("0:23" shows
 //   as "23"). All LCD characters use the bundled DSEG fonts so the live seconds match the
 //   rest of the display.
+// - Tapping the widget runs CasioBacklightIntent: like pressing LIGHT on the watch, the LCD
+//   glows green for a few seconds.
 
 public struct CasioClockWidget: Widget {
     public static let kind = "CasioClockWidget"
@@ -21,13 +24,40 @@ public struct CasioClockWidget: Widget {
 
     public var body: some WidgetConfiguration {
         StaticConfiguration(kind: Self.kind, provider: CasioClockProvider()) { entry in
-            CasioWatchFace(date: entry.date)
-                .containerBackground(for: .widget) { CasioWatchFace.resin }
+            Button(intent: CasioBacklightIntent()) {
+                CasioWatchFace(date: entry.date, backlit: entry.backlit)
+            }
+            .buttonStyle(.plain)
+            .containerBackground(for: .widget) { CasioWatchFace.resin }
         }
         .configurationDisplayName("Casio F-91W")
-        .description("A live digital clock in the style of the Casio F-91W.")
+        .description("A live digital clock in the style of the Casio F-91W. Tap it for the light.")
         .supportedFamilies([.systemSmall])
         .contentMarginsDisabled()
+    }
+}
+
+// MARK: - Backlight
+
+/// Turns the LCD light on for a few seconds, like the watch's LIGHT button.
+public struct CasioBacklightIntent: AppIntent {
+    public static let title: LocalizedStringResource = "Casio Light"
+    public static let description = IntentDescription("Lights up the Casio F-91W widget for a few seconds.")
+    public static let isDiscoverable = false
+
+    static let duration: TimeInterval = 3
+    static let defaultsKey = "CasioClockWidget.backlightUntil"
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult {
+        // WidgetKit reloads the widget's timeline after a widget intent runs.
+        UserDefaults.standard.set(Date().addingTimeInterval(Self.duration), forKey: Self.defaultsKey)
+        return .result()
+    }
+
+    static func backlightUntil(defaults: UserDefaults = .standard) -> Date? {
+        defaults.object(forKey: defaultsKey) as? Date
     }
 }
 
@@ -35,6 +65,7 @@ public struct CasioClockWidget: Widget {
 
 struct CasioClockEntry: TimelineEntry {
     let date: Date
+    var backlit = false
 }
 
 struct CasioClockProvider: TimelineProvider {
@@ -45,7 +76,15 @@ struct CasioClockProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<CasioClockEntry>) -> Void) {
-        completion(Timeline(entries: Self.minuteEntries(from: Date()), policy: .atEnd))
+        let entries = Self.entries(from: Date(), backlightUntil: CasioBacklightIntent.backlightUntil())
+        completion(Timeline(entries: entries, policy: .atEnd))
+    }
+
+    /// The minute entries, preceded by a lit entry while the light is on.
+    static func entries(from now: Date, backlightUntil: Date?, calendar: Calendar = .current) -> [CasioClockEntry] {
+        guard let until = backlightUntil, until > now else { return minuteEntries(from: now, calendar: calendar) }
+        return [CasioClockEntry(date: now, backlit: true), CasioClockEntry(date: until)]
+            + minuteEntries(from: until, calendar: calendar).filter { $0.date > until }
     }
 
     /// One entry at the start of the current minute and at each of the next 59.
@@ -84,6 +123,8 @@ struct LCDFont: Equatable {
             allSegments: "~", blankDigit: "!")
     }
 
+    static func registerBundledFonts() { _ = registered }
+
     private static let registered: Bool = {
         for url in Bundle.module.urls(forResourcesWithExtension: "ttf", subdirectory: nil) ?? [] {
             CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
@@ -105,13 +146,25 @@ struct LCDFont: Equatable {
     }
 }
 
+/// The printed case text fonts (registered with the LCD fonts).
+enum CaseFont {
+    static func michroma(_ size: CGFloat) -> Font { custom("Michroma-Regular", size) }
+    static func archivoBlack(_ size: CGFloat) -> Font { custom("ArchivoExpanded-Black", size) }
+    static func saira(_ size: CGFloat) -> Font { custom("Saira-Medium", size) }
+
+    private static func custom(_ name: String, _ size: CGFloat) -> Font {
+        LCDFont.registerBundledFonts()
+        return .custom(name, fixedSize: size)
+    }
+}
+
 /// Look options for the face; the widget uses `.standard` (chosen from prototypes: DSEG Bold
 /// Italic with unlit segments on grey-green glass).
 struct CasioFaceStyle {
     var digits: LCDFont = .dseg7("BoldItalic")
     var letters: LCDFont = .dseg14("BoldItalic")
     /// Opacity of the unlit segments behind the digits; 0 = off.
-    var unlitOpacity: Double = 0.08
+    var unlitOpacity: Double = 0.055
     var glass: Color = Color(red: 0.77, green: 0.79, blue: 0.75)
     var ink: Color = Color(red: 0.12, green: 0.15, blue: 0.13)
 
@@ -124,13 +177,17 @@ struct CasioFaceStyle {
 // an F-91W (Wikimedia Commons, Casio_F-91W_5051.jpg), then scaled to the widget.
 // Typefaces per Fonts In Use (fontsinuse.com/uses/74290): CASIO logo Microgramma; "F-91W"
 // Neue Helvetica Extended Black; "ALARM CHRONOGRAPH" regular-width Medium; the other labels
-// Eurostile Extended Regular / Medium. SF Pro Expanded stands in for the extended faces.
+// Eurostile Extended Regular / Medium. Free look-alikes (SIL OFL, Google Fonts) stand in:
+// Michroma for Microgramma / Eurostile Extended, Archivo Expanded Black (an instance of
+// Archivo's variable font) for Neue Helvetica Extended Black, Saira Medium for Eurostile Medium.
 
 struct CasioWatchFace: View {
     let date: Date
     var calendar: Calendar = .current
     var uses12HourClock: Bool = CasioWatchFace.localeUses12HourClock
     var style: CasioFaceStyle = .standard
+    /// The LIGHT button's green backlight.
+    var backlit = false
     /// Fixed seconds instead of the live timer (static previews; the timer only animates
     /// inside a widget).
     var previewSeconds: Int? = nil
@@ -144,6 +201,7 @@ struct CasioWatchFace: View {
     static let gold = Color(red: 0.91, green: 0.76, blue: 0.29)
     static let printWhite = Color(white: 0.94)
     static let red = Color(red: 0.89, green: 0.15, blue: 0.17)
+    static let backlight = Color(red: 0.36, green: 0.86, blue: 0.62)
 
     static var localeUses12HourClock: Bool {
         DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: .current)?.contains("a") ?? true
@@ -186,11 +244,12 @@ struct CasioWatchFace: View {
         ZStack(alignment: .topLeading) {
             // CASIO / F-91W
             Text("CASIO")
-                .font(.system(size: 31, weight: .bold).width(.expanded))
+                .font(CaseFont.michroma(28))
                 .foregroundStyle(Self.printWhite)
+                .emboldened(1.3)
                 .place(centerX: 195, centerY: 91)
             Text("F-91W")
-                .font(.system(size: 25.5, weight: .black).width(.expanded))
+                .font(CaseFont.archivoBlack(25))
                 .foregroundStyle(Self.gold)
                 .oblique()
                 .place(centerX: 397, centerY: 91)
@@ -199,22 +258,22 @@ struct CasioWatchFace: View {
             // ◀ LIGHT   ALARM CHRONOGRAPH
             Pointer(left: true).fill(Self.red).frame(width: 16, height: 7).position(x: 96, y: 155)
             Text("LIGHT")
-                .font(.system(size: 14, weight: .regular).width(.expanded))
+                .font(CaseFont.michroma(11.5))
                 .foregroundStyle(Self.printWhite)
                 .place(leading: 116, centerY: 155)
             Text("ALARM CHRONOGRAPH")
-                .font(.system(size: 21, weight: .medium))
+                .font(CaseFont.saira(23))
                 .foregroundStyle(Self.gold)
                 .place(trailing: 497, centerY: 154, width: 290)
 
             // ◀ MODE   ALARM ON·OFF/24HR ▶
             Pointer(left: true).fill(Self.red).frame(width: 18, height: 7).position(x: 97, y: 400)
             Text("MODE")
-                .font(.system(size: 15.5, weight: .regular).width(.expanded))
+                .font(CaseFont.michroma(13))
                 .foregroundStyle(Self.printWhite)
                 .place(leading: 116, centerY: 400)
             Text("ALARM ON·OFF/24HR")
-                .font(.system(size: 16.5, weight: .regular).width(.expanded))
+                .font(CaseFont.michroma(13))
                 .foregroundStyle(Self.printWhite)
                 .place(trailing: 472, centerY: 400, width: 240)
             Pointer(left: false).fill(Self.red).frame(width: 18, height: 7).position(x: 491, y: 400)
@@ -227,17 +286,21 @@ struct CasioWatchFace: View {
                 .frame(width: 143, height: 48)
                 .offset(x: 222, y: 412)
             Text("WR")
-                .font(.system(size: 31, weight: .heavy).width(.expanded))
+                .font(CaseFont.archivoBlack(31))
                 .foregroundStyle(Self.red)
                 .oblique()
                 .place(centerX: 294, centerY: 437)
             Text("WATER")
-                .font(.system(size: 24.5, weight: .bold).width(.expanded))
+                .font(CaseFont.michroma(19.5))
+                .tracking(0.8)
                 .foregroundStyle(Self.printWhite)
+                .emboldened(0.75)
                 .place(centerX: 155, centerY: 438, width: 120)
             Text("RESIST")
-                .font(.system(size: 24.5, weight: .bold).width(.expanded))
+                .font(CaseFont.michroma(19.5))
+                .tracking(0.8)
                 .foregroundStyle(Self.printWhite)
+                .emboldened(0.75)
                 .place(centerX: 435, centerY: 438, width: 130)
             Text("u")
                 .font(.system(size: 8, weight: .medium))
@@ -271,6 +334,18 @@ struct CasioWatchFace: View {
                         colors: [style.glass, style.glass.opacity(0.9)],
                         startPoint: .top, endPoint: .bottom)
                 )
+                .overlay {
+                    if backlit {
+                        // The F-91W's light is one green LED at the left edge, so the glow is
+                        // strongest on the left and fades toward the right.
+                        RoundedRectangle(cornerRadius: 11, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [Self.backlight, Self.backlight.opacity(0.75), Self.backlight.opacity(0.45)],
+                                    startPoint: .leading, endPoint: .trailing)
+                            )
+                    }
+                }
                 .frame(width: 389, height: 184)
                 .offset(x: 98, y: 186)
 
@@ -397,6 +472,18 @@ private struct Pointer: Shape {
 // MARK: - Placement on the canvas
 
 extension View {
+    /// Michroma has a single weight; the watch prints CASIO, WATER and RESIST bold. Overlaying
+    /// copies shifted by `amount` points thickens the strokes.
+    fileprivate func emboldened(_ amount: CGFloat) -> some View {
+        ZStack {
+            ForEach(0..<8, id: \.self) { i in
+                let angle = Double(i) * .pi / 4
+                self.offset(x: amount * cos(angle), y: amount * sin(angle))
+            }
+            self
+        }
+    }
+
     /// Slants the view like the printed italics ("F-91W", "WR"). SF Pro Expanded has no
     /// italic face, so `.italic()` would draw it upright.
     fileprivate func oblique() -> some View {

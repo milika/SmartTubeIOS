@@ -32,7 +32,7 @@ enum CasioLA20WH: CasioModel {
 
     /// Inverted: light segments on black glass; lit, the segments glow.
     static let lcd = LCDStyle(
-        digits: .dseg7("BoldItalic"), letters: .dseg7("BoldItalic"), glass: Color(white: 0.02),
+        digits: .casio("LA20WH"), letters: .dseg7("BoldItalic"), glass: Color(white: 0.02),
         ink: Color(red: 0.86, green: 0.85, blue: 0.87),
         shadow: LCDShadow(edgeOpacity: 0, segmentOpacity: 0.05),
         litInk: Color(red: 0.80, green: 0.97, blue: 1.0))

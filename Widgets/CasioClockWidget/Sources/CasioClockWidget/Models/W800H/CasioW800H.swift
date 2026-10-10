@@ -29,7 +29,7 @@ enum CasioW800H: CasioModel {
 
     /// Upright 7-segment digits and letters on pale grey glass.
     static let lcd = LCDStyle(
-        digits: .dseg7("Bold"), letters: .dseg7("Bold"),
+        digits: .casio("W800H"), letters: .dseg7("Bold"),
         glass: Color(red: 0.66, green: 0.68, blue: 0.62), ink: Color(white: 0.09))
 }
 

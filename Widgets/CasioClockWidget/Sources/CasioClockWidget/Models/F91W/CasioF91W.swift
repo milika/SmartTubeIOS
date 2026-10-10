@@ -44,7 +44,7 @@ enum CasioF91W: CasioComplicationModel {
     static let red = Color(red: 0.95, green: 0.13, blue: 0.13)
 
     /// The LCD: DSEG Bold Italic on grey-green glass, no unlit segments (LCDStyle's defaults).
-    static let lcd = LCDStyle()
+    static let lcd = LCDStyle(digits: .casio("F91W"))
 }
 
 #if !os(watchOS)

@@ -1,0 +1,280 @@
+{
+ "note": "Per-face 7-segment fonts (tools/casio_segfont.py). thickness, gap, slant, corner: fitted to the reference image digits (IoU) with the glyph drawn in a 2:3 box and scaled to each photo digit; aspect: the face rendered digit ink width / height (for reference); box: the DSEG7 Classic variant whose ink box the font keeps.",
+ "fonts": {
+  "A158W": {
+   "box": "BoldItalic",
+   "replaces": "DSEG7Classic-BoldItalic",
+   "aspect": 0.515,
+   "thickness": 0.14,
+   "gap": 0.03,
+   "slant": 0.06,
+   "fit": 0.721,
+   "corner": "miter"
+  },
+  "A168W": {
+   "box": "BoldItalic",
+   "replaces": "DSEG7Classic-BoldItalic",
+   "aspect": 0.633,
+   "thickness": 0.12,
+   "gap": 0.03,
+   "slant": 0.08,
+   "fit": 0.64,
+   "corner": "miter"
+  },
+  "A178W": {
+   "box": "Bold",
+   "replaces": "DSEG7Classic-Light",
+   "aspect": 0.312,
+   "thickness": 0.1,
+   "gap": 0.03,
+   "slant": 0.1,
+   "fit": 0.797,
+   "corner": "point",
+   "one": {
+    "left": 525,
+    "width": 179
+   }
+  },
+  "A700W": {
+   "box": "BoldItalic",
+   "replaces": "DSEG7Classic-BoldItalic",
+   "aspect": 0.544,
+   "thickness": 0.14,
+   "gap": 0.03,
+   "slant": 0.08,
+   "fit": 0.757,
+   "corner": "miter",
+   "one": {
+    "left": 541,
+    "width": 221
+   }
+  },
+  "A700WNegative": {
+   "box": "BoldItalic",
+   "replaces": "DSEG7Classic-BoldItalic",
+   "aspect": 0.553,
+   "thickness": 0.13,
+   "gap": 0.03,
+   "slant": 0.08,
+   "fit": 0.771,
+   "corner": "miter",
+   "one": {
+    "left": 521,
+    "width": 210
+   }
+  },
+  "ABL100WE": {
+   "box": "Bold",
+   "replaces": "DSEG7Classic-Bold",
+   "aspect": 0.6,
+   "thickness": 0.13,
+   "gap": 0.03,
+   "slant": 0.08,
+   "fit": 0.762,
+   "corner": "miter",
+   "one": {
+    "left": 527,
+    "width": 174
+   }
+  },
+  "AE1200WH": {
+   "box": "BoldItalic",
+   "replaces": "DSEG7Classic-BoldItalic",
+   "aspect": 0.591,
+   "thickness": 0.15,
+   "gap": 0.014,
+   "slant": 0.16,
+   "fit": 0.74,
+   "corner": "miter",
+   "one": {
+    "left": 388,
+    "width": 326
+   }
+  },
+  "CA53W": {
+   "box": "Bold",
+   "replaces": "DSEG7Classic-Bold",
+   "aspect": 0.528,
+   "thickness": 0.13,
+   "gap": 0.03,
+   "slant": 0.06,
+   "fit": 0.638,
+   "corner": "miter",
+   "seven": "abcf",
+   "one": {
+    "left": 500,
+    "width": 147
+   }
+  },
+  "DBC32": {
+   "box": "BoldItalic",
+   "replaces": "DSEG7Classic-BoldItalic",
+   "aspect": 0.599,
+   "thickness": 0.19,
+   "gap": 0.014,
+   "slant": 0.06,
+   "fit": 0.751,
+   "corner": "miter"
+  },
+  "DW5600E": {
+   "box": "BoldItalic",
+   "replaces": "DSEG7Classic-BoldItalic",
+   "aspect": 0.521,
+   "thickness": 0.17,
+   "gap": 0.014,
+   "slant": 0.06,
+   "fit": 0.711,
+   "corner": "miter",
+   "one": {
+    "left": 549,
+    "width": 229
+   }
+  },
+  "F105W": {
+   "box": "Bold",
+   "replaces": "DSEG7Classic-Bold",
+   "aspect": 0.533,
+   "thickness": 0.14,
+   "gap": 0.014,
+   "slant": 0.06,
+   "fit": 0.776,
+   "corner": "miter",
+   "one": {
+    "left": 538,
+    "width": 191
+   }
+  },
+  "F108WH": {
+   "box": "BoldItalic",
+   "replaces": "DSEG7Classic-BoldItalic",
+   "aspect": 0.467,
+   "thickness": 0.18,
+   "gap": 0.014,
+   "slant": 0.08,
+   "fit": 0.709,
+   "corner": "point",
+   "one": {
+    "left": 440,
+    "width": 278
+   }
+  },
+  "F91W": {
+   "box": "BoldItalic",
+   "replaces": "DSEG7Classic-BoldItalic",
+   "aspect": 0.602,
+   "thickness": 0.15,
+   "gap": 0.02,
+   "slant": 0.06,
+   "fit": 0.771,
+   "corner": "miter"
+  },
+  "GMWB5000": {
+   "box": "BoldItalic",
+   "replaces": "DSEG7Classic-BoldItalic",
+   "aspect": 0.539,
+   "thickness": 0.2,
+   "gap": 0.014,
+   "slant": 0.08,
+   "fit": 0.728,
+   "corner": "point"
+  },
+  "GWB5600": {
+   "box": "BoldItalic",
+   "replaces": "DSEG7Classic-BoldItalic",
+   "aspect": 0.534,
+   "thickness": 0.17,
+   "gap": 0.014,
+   "slant": 0.08,
+   "fit": 0.695,
+   "corner": "miter",
+   "one": {
+    "left": 448,
+    "width": 274
+   }
+  },
+  "LA20WH": {
+   "box": "BoldItalic",
+   "replaces": "DSEG7Classic-BoldItalic",
+   "aspect": 0.456,
+   "thickness": 0.15,
+   "gap": 0.03,
+   "slant": 0.12,
+   "fit": 0.695,
+   "corner": "miter",
+   "one": {
+    "left": 459,
+    "width": 275
+   }
+  },
+  "LA680W": {
+   "box": "Bold",
+   "replaces": "DSEG7Classic-Bold",
+   "aspect": 0.437,
+   "thickness": 0.18,
+   "gap": 0.014,
+   "slant": 0.08,
+   "fit": 0.711,
+   "corner": "miter",
+   "one": {
+    "left": 500,
+    "width": 233
+   }
+  },
+  "W59": {
+   "box": "BoldItalic",
+   "replaces": "DSEG7Classic-BoldItalic",
+   "aspect": 0.615,
+   "thickness": 0.12,
+   "gap": 0.03,
+   "slant": 0.08,
+   "fit": 0.614,
+   "corner": "point",
+   "one": {
+    "left": 533,
+    "width": 190
+   }
+  },
+  "W738H": {
+   "box": "BoldItalic",
+   "replaces": "DSEG7Classic-BoldItalic",
+   "aspect": 0.484,
+   "thickness": 0.19,
+   "gap": 0.014,
+   "slant": 0.06,
+   "fit": 0.744,
+   "corner": "miter",
+   "one": {
+    "left": 489,
+    "width": 249
+   }
+  },
+  "W800H": {
+   "box": "Bold",
+   "replaces": "DSEG7Classic-Bold",
+   "aspect": 0.482,
+   "thickness": 0.13,
+   "gap": 0.014,
+   "slant": 0.08,
+   "fit": 0.769,
+   "corner": "miter",
+   "one": {
+    "left": 465,
+    "width": 221
+   }
+  },
+  "W86": {
+   "box": "BoldItalic",
+   "replaces": "DSEG7Classic-BoldItalic",
+   "aspect": 0.616,
+   "thickness": 0.14,
+   "gap": 0.014,
+   "slant": 0.1,
+   "fit": 0.753,
+   "corner": "point",
+   "one": {
+    "left": 546,
+    "width": 237
+   }
+  }
+ }
+}

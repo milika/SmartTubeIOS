@@ -44,7 +44,7 @@ enum CasioDBC32: CasioModel {
 
     /// Slanted 7-segment digits on yellow-green glass.
     static let lcd = LCDStyle(
-        digits: .dseg7("BoldItalic"), letters: .dseg7("BoldItalic"),
+        digits: .casio("DBC32"), letters: .dseg7("BoldItalic"),
         glass: Color(red: 0.64, green: 0.65, blue: 0.56), ink: Color(red: 0.10, green: 0.11, blue: 0.15),
         shadow: LCDShadow(edgeOpacity: 0))
 }

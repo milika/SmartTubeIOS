@@ -34,6 +34,7 @@ enum CasioW86: CasioModel {
 
     /// Italic 7-segment digits on pale grey glass; the EL panel glows ice-blue (photo of it lit).
     static let lcd = LCDStyle(
+        digits: .casio("W86"),
         letters: .dseg7("BoldItalic"), glass: Color(red: 0.72, green: 0.74, blue: 0.69), ink: Color(white: 0.12),
         backlight: Color(red: 0.55, green: 0.86, blue: 1.0), backlightFalloff: [1, 1, 0.95])
 }

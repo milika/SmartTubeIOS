@@ -32,6 +32,7 @@ enum CasioGWB5600: CasioModel {
 
     /// Italic 7-segment digits and letters on pale grey glass; a white LED.
     static let lcd = LCDStyle(
+        digits: .casio("GWB5600"),
         letters: .dseg7("BoldItalic"), glass: Color(red: 0.65, green: 0.67, blue: 0.64), ink: Color(white: 0.08),
         backlight: Color(red: 0.86, green: 0.95, blue: 1.0), backlightFalloff: [0.85, 0.85, 0.85])
 }

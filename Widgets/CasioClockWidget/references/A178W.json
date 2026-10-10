@@ -4,8 +4,17 @@
   "canvas": {"origin": [250, 215], "scale": 0.8, "size": [640, 640]},
   "time": "2024-06-30T22:58:50",
   "twelveHour": true,
-  "masks": {"print": {"lum": [100, null], "sat": [null, 60]}, "wrBlue": {"b-r": [60, null], "lum": [60, null]}, "glass": {"lum": [56, 215]}},
-  "notes": ["The image is a product render; colours sampled from it.", "HHMM leaves out the hours 1 (a DSEG 1, see the method).", "weekday leaves out the N: the A178W N has a split top bar overhanging to the left, which DSEG cannot draw (a font limitation).", "month starts below the 6's top bar, which sits 2 pt lower than DSEG's (a font limitation)."],
+  "masks": {
+    "print": {"lum": [100, null], "sat": [null, 60]},
+    "wrBlue": {"b-r": [60, null], "lum": [60, null]},
+    "glass": {"lum": [56, 215]}
+  },
+  "notes": [
+    "The image is a product render; colours sampled from it.",
+    "weekday leaves out the N: the A178W N has a split top bar overhanging to the left, which DSEG cannot draw (a font limitation).",
+    "month starts below the 6's top bar, which sits 2 pt lower than DSEG's (a font limitation).",
+    "LCD digits: CasioLCD-A178W (tools/lcd_fonts.json), segments measured on this image; the hour 1 too."
+  ],
   "elements": [
     {"name": "CASIO", "mask": "print", "box": [139, 112, 253, 141]},
     {"name": "ILLUMINATOR", "mask": "print", "box": [269, 104, 458, 122]},
@@ -26,7 +35,7 @@
     {"name": "dash", "mask": "dark", "box": [358, 203, 374, 215]},
     {"name": "day", "mask": "dark", "box": [378, 172, 444, 249]},
     {"name": "P", "mask": "dark", "box": [145, 294, 165, 325]},
-    {"name": "HHMM", "mask": "dark", "box": [192, 270, 361, 421]},
+    {"name": "HHMM", "mask": "dark", "box": [168.2, 270, 361, 421]},
     {"name": "sec", "mask": "dark", "box": [368, 301, 452, 418]},
     {"name": "SNZ", "mask": "dark", "box": [161, 432, 238, 456]},
     {"name": "ALM", "mask": "dark", "box": [257, 431, 335, 454]},

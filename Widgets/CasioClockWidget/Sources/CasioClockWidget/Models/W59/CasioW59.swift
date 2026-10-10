@@ -33,7 +33,7 @@ enum CasioW59: CasioModel {
     static let red = Color(red: 0.86, green: 0.34, blue: 0.28)
 
     /// Module 590's display (Module590Display) on slightly warmer glass.
-    static let lcd = LCDStyle(glass: Color(red: 0.70, green: 0.68, blue: 0.60))
+    static let lcd = LCDStyle(digits: .casio("W59"), glass: Color(red: 0.70, green: 0.68, blue: 0.60))
 }
 
 #if !os(watchOS)

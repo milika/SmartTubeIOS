@@ -8,7 +8,8 @@
   "notes": [
     "The image shows the year 2030 ('30-); 30 June 2030 is a Sunday.",
     "The image's step bar is full: rendered with 10,000 steps (the goal). MUTE and the signal and alarm marks are drawn as on the image.",
-    "Font limitation: DSEG's 3 and 6 reach further left than the module's (month-day within 1.5 pt); the hours' 1 is left out of HHMM (DSEG's 1 sits at the right of its cell)."
+    "The month-day's 3 and 6 reach a little further left than the module's (within 1.5 pt).",
+    "LCD digits: CasioLCD-ABL100WE (tools/lcd_fonts.json), segments measured on this image; the hour 1 too."
   ],
   "masks": {
     "white": {"lum": [150, null], "sat": [null, 50]},
@@ -39,7 +40,7 @@
     {"name": "year", "mask": "ink", "box": [281, 291, 352, 332]},
     {"name": "month-day", "mask": "ink", "box": [374, 291, 462, 332]},
     {"name": "P", "mask": "ink", "box": [168, 371, 185, 388]},
-    {"name": "HHMM", "mask": "ink", "box": [225, 368, 380, 440]},
+    {"name": "HHMM", "mask": "ink", "box": [203.8, 368, 380, 440]},
     {"name": "marks", "mask": "ink", "box": [401, 366, 453, 391]},
     {"name": "sec", "mask": "ink", "box": [386, 393, 462, 440]},
     {"name": "LCD glass", "mask": "glass", "box": [150, 238, 474, 458], "kind": "edges"}

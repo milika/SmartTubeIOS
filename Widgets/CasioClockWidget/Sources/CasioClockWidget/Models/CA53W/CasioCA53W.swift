@@ -40,7 +40,7 @@ enum CasioCA53W: CasioModel {
     /// Upright 7-segment digits and letters (DSEG7 Bold, squeezed to the module's narrower cells) on
     /// pale grey glass.
     static let lcd = LCDStyle(
-        digits: .dseg7("Bold"), letters: .dseg7("Bold"),
+        digits: .casio("CA53W"), letters: .dseg7("Bold"),
         glass: Color(red: 0.78, green: 0.79, blue: 0.73), ink: Color(red: 0.19, green: 0.23, blue: 0.23))
 }
 

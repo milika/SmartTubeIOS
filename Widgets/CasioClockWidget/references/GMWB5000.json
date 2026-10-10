@@ -5,8 +5,16 @@
   "time": "2026-06-28T15:19:16",
   "timeZone": "Europe/Berlin",
   "twelveHour": false,
-  "notes": ["HMM and sec leave out the leading 1s: the module 3459 1 is wider than DSEG’s (a font limitation)."],
-  "masks": {"white": {"lum": [150, null], "|r-b|": [null, 50]}, "ink": {"b-r": [50, null], "lum": [null, 90]}, "print": {"lum": [80, null], "sat": [null, 40]}, "glass": {"lum": [86, null]}},
+  "notes": [
+    "HMM and sec leave out the leading 1s: the module 3459 1 is wider than DSEG’s (a font limitation).",
+    "LCD digits: CasioLCD-GMWB5000 (tools/lcd_fonts.json), segments measured on this image."
+  ],
+  "masks": {
+    "white": {"lum": [150, null], "|r-b|": [null, 50]},
+    "ink": {"b-r": [50, null], "lum": [null, 90]},
+    "print": {"lum": [80, null], "sat": [null, 40]},
+    "glass": {"lum": [86, null]}
+  },
   "elements": [
     {"name": "CASIO", "mask": "white", "box": [180, 95, 265, 115]},
     {"name": "TOUGH SOLAR", "mask": "print", "box": [272, 98, 440, 115], "renderMask": "white"},

@@ -34,7 +34,7 @@ enum CasioA178W: CasioModel {
     /// Thin upright 7-segment digits (DSEG Light) on pale grey-green glass; the EL panel glows
     /// blue-green.
     static let lcd = LCDStyle(
-        digits: .dseg7("Light"), letters: .dseg7("Light"), glass: Color(red: 0.64, green: 0.66, blue: 0.60),
+        digits: .casio("A178W"), letters: .dseg7("Light"), glass: Color(red: 0.64, green: 0.66, blue: 0.60),
         ink: Color(red: 0.08, green: 0.09, blue: 0.12), backlight: Color(red: 0.55, green: 0.95, blue: 0.92),
         backlightFalloff: [1, 1, 0.95])
 }

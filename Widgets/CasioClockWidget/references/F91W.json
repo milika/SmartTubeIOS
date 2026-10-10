@@ -4,7 +4,17 @@
   "canvas": {"origin": [370.1, 818.5], "scale": 1.951, "size": [594, 530]},
   "time": "2024-07-26T18:04:56",
   "twelveHour": true,
-  "masks": {"white": {"r": [170, null], "g": [170, null], "b": [170, null], "|r-b|": [null, 40]}, "gold": {"r": [120, null], "r-b": [50, null]}, "red": {"r": [140, null], "g": [null, 90], "b": [null, 100]}, "blue": {"b": [110, null], "b-r": [50, null], "b-g": [20, null]}, "dark": {"lum": [null, 80]}, "glass": {"lum": [41, null]}},
+  "notes": [
+    "LCD digits: CasioLCD-F91W (tools/lcd_fonts.json), segments measured on this image."
+  ],
+  "masks": {
+    "white": {"r": [170, null], "g": [170, null], "b": [170, null], "|r-b|": [null, 40]},
+    "gold": {"r": [120, null], "r-b": [50, null]},
+    "red": {"r": [140, null], "g": [null, 90], "b": [null, 100]},
+    "blue": {"b": [110, null], "b-r": [50, null], "b-g": [20, null]},
+    "dark": {"lum": [null, 80]},
+    "glass": {"lum": [41, null]}
+  },
   "elements": [
     {"name": "CASIO", "mask": "white", "box": [90, 70, 290, 112]},
     {"name": "F-91W", "mask": "gold", "box": [300, 60, 530, 118]},

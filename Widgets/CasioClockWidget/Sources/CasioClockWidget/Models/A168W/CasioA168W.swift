@@ -38,6 +38,7 @@ enum CasioA168W: CasioModel {
     /// Module 3298: italic 7-segment digits and letters on grey-green glass; its EL backlight glows
     /// blue-green.
     static let lcd = LCDStyle(
+        digits: .casio("A168W"),
         letters: .dseg7("BoldItalic"), glass: Color(red: 0.66, green: 0.68, blue: 0.63), ink: Color(white: 0.07),
         backlight: Color(red: 0.55, green: 0.95, blue: 0.92), backlightFalloff: [1, 1, 0.95])
 }

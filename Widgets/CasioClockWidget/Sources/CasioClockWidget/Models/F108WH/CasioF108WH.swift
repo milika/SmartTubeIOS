@@ -36,7 +36,7 @@ enum CasioF108WH: CasioModel {
 
     /// Slanted 7-segment digits on pale grey-green glass.
     static let lcd = LCDStyle(
-        digits: .dseg7("BoldItalic"), letters: .dseg7("BoldItalic"),
+        digits: .casio("F108WH"), letters: .dseg7("BoldItalic"),
         glass: Color(red: 0.64, green: 0.66, blue: 0.60), ink: Color(red: 0.07, green: 0.08, blue: 0.07))
 }
 

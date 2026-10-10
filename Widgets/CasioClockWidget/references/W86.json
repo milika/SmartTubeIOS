@@ -4,8 +4,13 @@
   "canvas": {"origin": [435, 390], "scale": 1.5, "size": [720, 640]},
   "time": "2024-05-19T15:22:23",
   "twelveHour": false,
-  "notes": ["date leaves out the 1 of 19: the W-86 1 sits further right than DSEG’s (a font limitation)."],
-  "masks": {"glass": {"lum": [100, null], "g-b": [4, null]}},
+  "notes": [
+    "date leaves out the 1 of 19: the W-86 1 sits further right than DSEG’s (a font limitation).",
+    "LCD digits: CasioLCD-W86 (tools/lcd_fonts.json), segments measured on this image."
+  ],
+  "masks": {
+    "glass": {"lum": [100, null], "g-b": [4, null]}
+  },
   "elements": [
     {"name": "CASIO", "mask": "white", "box": [155, 58, 340, 95]},
     {"name": "ALARM CHRONO", "mask": "white", "box": [345, 60, 590, 92]},

@@ -38,7 +38,7 @@ enum CasioABL100WE: CasioModel {
 
     /// Upright 7-segment digits on pale grey glass.
     static let lcd = LCDStyle(
-        digits: .dseg7("Bold"), letters: .dseg7("Bold"), glass: Color(red: 0.64, green: 0.655, blue: 0.61),
+        digits: .casio("ABL100WE"), letters: .dseg7("Bold"), glass: Color(red: 0.64, green: 0.655, blue: 0.61),
         ink: Color(red: 0.08, green: 0.09, blue: 0.07), shadow: LCDShadow(edgeOpacity: 0))
 }
 

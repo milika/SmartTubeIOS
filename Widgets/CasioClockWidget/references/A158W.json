@@ -4,7 +4,18 @@
   "canvas": {"origin": [110, 175], "scale": 0.6666666666666666, "size": [600, 488]},
   "time": "2024-06-24T14:17:13",
   "twelveHour": false,
-  "masks": {"white": {"r": [150, null], "g": [150, null], "b": [150, null], "|r-b|": [null, 45]}, "gold": {"r": [120, null], "r-b": [35, null], "g": [90, null]}, "red": {"r-g": [25, null], "r": [60, null]}, "dark": {"lum": [null, 80]}, "photoWhite": {"lum": [82, null], "sat": [null, 35]}, "photoGold": {"lum": [75, null], "r-b": [12, null]}, "glass": {"lum": [23, null]}},
+  "notes": [
+    "LCD digits: CasioLCD-A158W (tools/lcd_fonts.json), segments measured on this image."
+  ],
+  "masks": {
+    "white": {"r": [150, null], "g": [150, null], "b": [150, null], "|r-b|": [null, 45]},
+    "gold": {"r": [120, null], "r-b": [35, null], "g": [90, null]},
+    "red": {"r-g": [25, null], "r": [60, null]},
+    "dark": {"lum": [null, 80]},
+    "photoWhite": {"lum": [82, null], "sat": [null, 35]},
+    "photoGold": {"lum": [75, null], "r-b": [12, null]},
+    "glass": {"lum": [23, null]}
+  },
   "elements": [
     {"name": "CASIO", "mask": "white", "box": [100, 75, 290, 104]},
     {"name": "ALARM CHRONO", "mask": "gold", "box": [270, 72, 485, 100]},

@@ -34,7 +34,7 @@ enum CasioLA680W: CasioModel {
 
     /// Upright 7-segment digits on pale grey glass; the EL panel glows blue-green.
     static let lcd = LCDStyle(
-        digits: .dseg7("Bold"), letters: .dseg7("Bold"), glass: Color(red: 0.62, green: 0.62, blue: 0.58),
+        digits: .casio("LA680W"), letters: .dseg7("Bold"), glass: Color(red: 0.62, green: 0.62, blue: 0.58),
         ink: Color(white: 0.08),
         backlight: Color(red: 0.55, green: 0.95, blue: 0.92), backlightFalloff: [1, 1, 0.95])
 }

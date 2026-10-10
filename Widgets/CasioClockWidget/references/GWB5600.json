@@ -4,8 +4,12 @@
   "canvas": {"origin": [270, 420], "scale": 1, "size": [660, 600]},
   "time": "2024-06-30T22:58:50",
   "twelveHour": true,
-  "notes": ["HHMM leaves out the leading 1: the GW-B5600 1 sits on the left of its cell, DSEG’s on the right (a font limitation)."],
-  "masks": {"glass": {"lum": [50, null]}},
+  "notes": [
+    "LCD digits: CasioLCD-GWB5600 (tools/lcd_fonts.json), segments measured on this image; the hour 1 too."
+  ],
+  "masks": {
+    "glass": {"lum": [50, null]}
+  },
   "elements": [
     {"name": "CASIO", "mask": "white", "box": [240, 35, 380, 70]},
     {"name": "ADJUST", "mask": "white", "box": [25, 180, 55, 270]},
@@ -25,7 +29,7 @@
     {"name": "SNZ", "mask": "dark", "box": [420, 288, 470, 310]},
     {"name": "mute icon", "mask": "dark", "box": [475, 285, 502, 315]},
     {"name": "P", "mask": "dark", "box": [128, 275, 152, 300]},
-    {"name": "HHMM", "mask": "dark", "box": [184, 288, 395, 392]},
+    {"name": "HHMM", "mask": "dark", "box": [154.1, 288, 395, 392]},
     {"name": "sec", "mask": "dark", "box": [405, 315, 505, 392]},
     {"name": "LCD glass", "mask": "glass", "box": [110, 146, 517, 418], "kind": "edges"}
   ]

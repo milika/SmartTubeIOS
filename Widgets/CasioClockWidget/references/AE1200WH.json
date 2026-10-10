@@ -7,8 +7,9 @@
   "notes": [
     "The image has a transparent background; casio_measure puts it on white.",
     "The dial's hands (hour and minute inside the ring, the seconds on it) are left out: the widget redraws once an hour, so they could not keep time. The dial's crosshair, ring and centre disc are drawn.",
-    "Font limitations: Casio's 1 fills the left of its cell (DSEG's sits right) and the seconds' 3 is wider; the HHMM box starts after the hours' 1 and the seconds box holds the 6.",
-    "The map's dark zone segments are drawn as on the image (they don't follow the device's time zone)."
+    "The seconds' 3 is wider on the watch than in the face's font (within 1.5 pt).",
+    "The map's dark zone segments are drawn as on the image (they don't follow the device's time zone).",
+    "LCD digits: CasioLCD-AE1200WH (tools/lcd_fonts.json), segments measured on this image; the hour 1 too."
   ],
   "masks": {
     "print": {"lum": [110, null], "sat": [null, 35]},
@@ -47,7 +48,7 @@
     {"name": "weekday", "mask": "ink", "box": [333, 363.5, 407, 400]},
     {"name": "date", "mask": "ink", "box": [425, 363.5, 495, 400]},
     {"name": "PM", "mask": "ink", "box": [168, 426, 212, 444]},
-    {"name": "HHMM", "mask": "ink", "box": [236, 412, 412, 498]},
+    {"name": "HHMM", "mask": "ink", "box": [209.9, 412, 412, 498]},
     {"name": "sec", "mask": "ink", "box": [453, 434, 489, 498]}
   ]
 }

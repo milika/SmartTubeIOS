@@ -11,7 +11,8 @@
     "The weekday reads SAM (the watch was set to French); the face shows English weekdays in the same 5x5 block letters, so the weekday box is compared on SAT.",
     "The LCD's printed words (AUTO LIGHT, 3 sec., MUTE) and their boxes appear twice on the photo, the print and its shadow on the reflector; they are measured on the darker print (mask small).",
     "Font limitations: the year's leading 2 is a narrower fixed shape on the watch, Casio's 4 is shorter than DSEG's (top and bottom), and the 1 is further left; the year boxes leave the leading 2 and the 1s out, and the month (a lone 4) is not an element.",
-    "The photo's watch is in 12-hour mode in the morning; the P the face shows for PM (left of the hours) is not on the photo."
+    "The photo's watch is in 12-hour mode in the morning; the P the face shows for PM (left of the hours) is not on the photo.",
+    "LCD digits: CasioLCD-DBC32 (tools/lcd_fonts.json), segments measured on this image."
   ],
   "masks": {
     "white": {"lum": [140, null], "sat": [null, 70]},

@@ -63,6 +63,7 @@ enum CasioA700W: CasioModel {
 
     /// Italic 7-segment digits on pale grey glass; the EL panel glows blue-green.
     static let lcd = LCDStyle(
+        digits: .casio("A700W"),
         letters: .dseg7("BoldItalic"), glass: Color(red: 0.65, green: 0.65, blue: 0.61), ink: Color(white: 0.05),
         backlight: Color(red: 0.55, green: 0.95, blue: 0.92), backlightFalloff: [1, 1, 0.95])
 }

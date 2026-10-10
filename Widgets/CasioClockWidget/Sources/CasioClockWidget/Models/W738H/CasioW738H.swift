@@ -31,6 +31,7 @@ enum CasioW738H: CasioModel {
 
     /// Inverted: light grey segments on near-black glass; lit, the segments glow cool white.
     static let lcd = LCDStyle(
+        digits: .casio("W738H"),
         letters: .dseg7("BoldItalic"), glass: Color(white: 0.11), ink: Color(red: 0.72, green: 0.72, blue: 0.69),
         shadow: LCDShadow(edgeOpacity: 0.5, edgeWidth: 9, segmentOpacity: 0.08),
         litInk: Color(red: 0.86, green: 0.96, blue: 1.0))

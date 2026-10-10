@@ -37,7 +37,7 @@ enum CasioA158W: CasioModel {
     static let marker = Color(red: 0.55, green: 0.12, blue: 0.14)
 
     /// The same LCD module (593) as the F-91W: same glass, ink and layout (Module593Display).
-    static let lcd = LCDStyle()
+    static let lcd = LCDStyle(digits: .casio("A158W"))
 }
 
 #if !os(watchOS)

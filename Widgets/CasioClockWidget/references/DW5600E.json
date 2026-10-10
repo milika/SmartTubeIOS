@@ -4,7 +4,12 @@
   "canvas": {"origin": [540, 580], "scale": 1, "size": [860, 700]},
   "time": "2024-06-30T22:58:50",
   "twelveHour": true,
-  "masks": {"glass": {"lum": [60, null]}},
+  "notes": [
+    "LCD digits: CasioLCD-DW5600E (tools/lcd_fonts.json), segments measured on this image."
+  ],
+  "masks": {
+    "glass": {"lum": [60, null]}
+  },
   "elements": [
     {"name": "CASIO", "mask": "white", "box": [370, 144, 503, 173]},
     {"name": "ILLUMINATOR", "mask": "blue", "box": [320, 177, 552, 199]},

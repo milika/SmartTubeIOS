@@ -39,7 +39,7 @@ enum CasioAE1200WH: CasioModel {
 
     /// Slanted segments on pale grey-green glass; the image shows almost no segment shadow.
     static let lcd = LCDStyle(
-        digits: .dseg7("BoldItalic"), letters: .dseg14("BoldItalic"),
+        digits: .casio("AE1200WH"), letters: .dseg14("BoldItalic"),
         glass: Color(red: 0.64, green: 0.65, blue: 0.60), ink: Color(red: 0.075, green: 0.085, blue: 0.075),
         shadow: LCDShadow(edgeOpacity: 0, segmentOpacity: 0.1))
 }

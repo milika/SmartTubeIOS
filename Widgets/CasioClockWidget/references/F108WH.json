@@ -6,7 +6,7 @@
   "twelveHour": true,
   "notes": [
     "The image is soft (the watch is about 500 px wide), so edges are measured to about 1 pt.",
-    "Font limitation: Casio's 1 fills the left of its cell (DSEG's sits right); the HHMM box starts after the hours' 1."
+    "LCD digits: CasioLCD-F108WH (tools/lcd_fonts.json), segments measured on this image; the hour 1 too."
   ],
   "masks": {
     "gold": {"r-b": [50, null], "r": [120, null]},
@@ -34,7 +34,7 @@
     {"name": "PM", "mask": "ink", "box": [202, 355, 250, 376]},
     {"name": "weekday", "mask": "ink", "box": [306, 298, 388, 364]},
     {"name": "day", "mask": "ink", "box": [413, 298, 493, 364]},
-    {"name": "HHMM", "mask": "ink", "box": [248, 375, 420, 478]},
+    {"name": "HHMM", "mask": "ink", "box": [224.4, 375, 420, 478]},
     {"name": "sec", "mask": "ink", "box": [420, 402, 497, 478]},
     {"name": "LCD glass", "mask": "glass", "box": [184, 279, 507, 496], "kind": "edges"}
   ]

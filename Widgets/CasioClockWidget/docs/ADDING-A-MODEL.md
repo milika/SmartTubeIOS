@@ -167,8 +167,16 @@ measured in the reference's canvas coordinates:
   - `colonGap`: the gap from the hours' last digit to the minutes' first, minus one digit cell and
     the colon cell (0.2 em + tracking), all × xScale.
   An `LCDText` run with wide tracking needs a larger `width`, or SwiftUI truncates it to "…".
-- **Segment weight**: compare the photo's stroke with the digit height. DSEG7 Classic Light is
-  about 0.06, Regular 0.095, Bold 0.126; `xScale` thins the vertical strokes. The A178W needs Light.
+- **LCD font**: each face has its own 7-segment font, `LCDFont.casio("<Model>")`, generated
+  from `tools/lcd_fonts.json` by `tools/casio_segfont.py` (needs fontTools). The fonts are
+  drop-in replacements for DSEG7 Classic (same advances and the same ink box for "8": `box`
+  "Bold" upright, "BoldItalic" slanted), so runs measured with DSEG stay valid. Per face:
+  - `thickness`, `gap` and `slant` relative to a 2:3 digit box (as fitted on the photo's digits);
+  - `corner`: "point" (DSEG-like bar ends) or "miter" (outer bars reach the corners);
+  - `seven`: the 7's segments ("abcf" for a 7 with the top-left hook);
+  - `one`: `{left, width}` in font units, the 1's ink measured on the photo (many modules draw
+    it wider or further left than a plain b+c).
+  Measure them on the photo's digits, regenerate, and keep the element boxes including the 1s.
 - **Text**:
   - Fixed text uses `LCDText(text:font:run:style:)`; the live time uses `LiveHoursMinutes` and
     `LiveSeconds`.
@@ -236,7 +244,7 @@ For every flag, look at `flagged.png` and decide which kind it is:
 | the photo's print is dim, the render's bright | the photo is dark, or the face's colour comes from a real photo | a photo mask and `renderMask` |
 | a label is narrower, wider or shifted | the label was sized by font metrics | `InkText` in the measured box |
 | a whole LCD line is off | `xScale`, `tracking`, `colonGap` or the anchor | measure the digits one by one (`runs`) and fix the run |
-| one digit is off, the rest match | a DSEG glyph shape (see below) | leave the digit out of the box and add a note |
+| one digit is off, the rest match | the face's font (see below) | fix `one` / `seven` in `tools/lcd_fonts.json` and regenerate |
 | an icon is a different size or shape | drawn from a guess | zoom in, redraw it, place it in its ink box |
 | an indicator is missing | a state the render doesn't have (DST, PM) | `timeZone` / `twelveHour` in the manifest |
 | part of a label is missing | another layer covers it (a window surround) | fix the window or the drawing order |
@@ -247,10 +255,9 @@ visible ends): look at `side.png` too. The W-800H's ADJUST lost its last 2.5 pt 
 Never loosen the tolerance and never drop an element to make the check pass. Leave something out
 only for a documented limitation, and say why in `notes`.
 
-**Font limitations** (in the notes of the manifests they affect): DSEG's "1" sits at the right of
-its cell with thin segments, while some Casio modules draw it wider or further left (CA-53W,
-GMW-B5000, W-738H, GW-B5600, W-86). DSEG's "7" has a longer top bar than module 593's. Live digits
-come from WidgetKit's timer text, so one glyph can't be swapped without a modified font.
+**Font limitations**: live digits come from WidgetKit's timer text, so a glyph can't be swapped
+in the view; change the face's font instead. One "1" per font: where a module draws the 1 in
+different places in different lines, the hours' 1 is measured and the others are noted.
 
 ## 9. Review and ship
 

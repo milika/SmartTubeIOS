@@ -4,8 +4,18 @@
   "canvas": {"origin": [240, 205], "scale": 0.8, "size": [640, 640]},
   "time": "2024-06-30T22:58:50",
   "twelveHour": true,
-  "masks": {"print": {"lum": [110, null], "sat": [null, 40]}, "cyan": {"b-r": [50, null], "g-r": [50, null]}, "yellow": {"lum": [100, null], "r-b": [8, null]}, "green": {"g-r": [40, null], "g-b": [10, null]}, "magenta": {"r-g": [40, null], "b-g": [30, null]}, "glass": {"lum": [60, null], "r-b": [-3, null]}},
-  "notes": ["The image is a product render; colours sampled from it."],
+  "masks": {
+    "print": {"lum": [110, null], "sat": [null, 40]},
+    "cyan": {"b-r": [50, null], "g-r": [50, null]},
+    "yellow": {"lum": [100, null], "r-b": [8, null]},
+    "green": {"g-r": [40, null], "g-b": [10, null]},
+    "magenta": {"r-g": [40, null], "b-g": [30, null]},
+    "glass": {"lum": [60, null], "r-b": [-3, null]}
+  },
+  "notes": [
+    "The image is a product render; colours sampled from it.",
+    "LCD digits: CasioLCD-A700W (tools/lcd_fonts.json), segments measured on this image; the hour 1 too."
+  ],
   "elements": [
     {"name": "CASIO", "mask": "print", "box": [247, 137, 366, 166]},
     {"name": "WATER", "mask": "print", "box": [177, 186, 265, 208]},
@@ -27,7 +37,7 @@
     {"name": "PM", "mask": "dark", "box": [140, 298, 182, 322]},
     {"name": "weekday", "mask": "dark", "box": [246, 272, 318, 317]},
     {"name": "day", "mask": "dark", "box": [396, 272, 469, 322]},
-    {"name": "HHMM", "mask": "dark", "box": [188, 332, 379, 421]},
+    {"name": "HHMM", "mask": "dark", "box": [162.8, 332, 379, 421]},
     {"name": "sec", "mask": "dark", "box": [386, 352, 469, 422]},
     {"name": "LCD glass", "mask": "glass", "box": [123, 252, 488, 439], "kind": "edges"}
   ]

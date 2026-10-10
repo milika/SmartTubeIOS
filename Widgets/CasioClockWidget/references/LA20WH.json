@@ -7,7 +7,7 @@
   "notes": [
     "The image is small (the face about 180 px wide, 2 pt per pixel), so edges are measured to about 1 pt.",
     "Inverted display: the segments are the light mask; the LCD window is checked by its white rim.",
-    "Font limitation: Casio's 1 fills the left of its cell (DSEG's sits right); the HHMM box starts after the hours' 1."
+    "LCD digits: CasioLCD-LA20WH (tools/lcd_fonts.json), segments measured on this image; the hour 1 too."
   ],
   "masks": {
     "white": {"lum": [150, null], "sat": [null, 40]},
@@ -30,7 +30,7 @@
     {"name": "PM", "mask": "seg", "box": [167, 221, 204, 238]},
     {"name": "weekday", "mask": "seg", "box": [250, 183, 314, 228]},
     {"name": "day", "mask": "seg", "box": [326, 182, 383, 228]},
-    {"name": "HHMM", "mask": "seg", "box": [200, 237, 330, 318]},
+    {"name": "HHMM", "mask": "seg", "box": [182.2, 237, 330, 318]},
     {"name": "sec", "mask": "seg", "box": [329, 258, 384, 318]}
   ]
 }

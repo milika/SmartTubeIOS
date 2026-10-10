@@ -41,6 +41,7 @@ enum CasioGMWB5000: CasioModel {
 
     /// Blue-grey glass and navy ink (the photo's), DSEG digits; the LED lights the whole display.
     static let lcd = LCDStyle(
+        digits: .casio("GMWB5000"),
         glass: Color(red: 0.47, green: 0.71, blue: 0.89), ink: Color(red: 0.06, green: 0.17, blue: 0.57),
         backlight: Color(red: 0.86, green: 0.95, blue: 1.0), backlightFalloff: [0.85, 0.85, 0.85])
     static let surround = Color(white: 0.22)

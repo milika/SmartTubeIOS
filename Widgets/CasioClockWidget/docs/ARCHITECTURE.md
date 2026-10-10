@@ -64,7 +64,8 @@ Fixed marks shared by displays are in `LCDMarks.swift` (the hourly signal "D" wi
 alarm bell); `DotMatrixText` draws dot-matrix characters in three glyph sets (rounded 5×7 for the
 GMW-B5000's date, bold and slanted for the GW-B5600's, 5×5 blocks for the DBC-32's weekday).
 
-`LCDStyle` holds a display's look: DSEG segment fonts, glass and ink colours, the light
+`LCDStyle` holds a display's look: the segment fonts (each face's own `CasioLCD-<Model>` digits,
+made by `tools/casio_segfont.py`; DSEG for letters), glass and ink colours, the light
 (colour and left-to-right falloff), an optional faint unlit-segment layer (off on every model), the
 shadow (`LCDShadow`: the frame's shadow on the glass edge and the segments' faint shadow on the
 reflector), and `litInk` for **inverted (negative) displays** (W-738H): lit, the segments take
@@ -81,7 +82,7 @@ WidgetKit only redraws a widget at its timeline entries, so `LiveClock/` combine
   animates itself. It starts 10 hours before the entry's hour, so it always reads "10:MM:SS" with
   the current minutes and seconds; `LiveHoursMinutes` and `LiveSeconds` show the digits they need
   through clipped windows.
-- **Digit spacing:** when a module's digits sit closer or further apart than DSEG's cells
+- **Digit spacing:** when a module's digits sit closer or further apart than the font's cells
   (`tracking`), each live digit is its own `TimerDigit` window onto the untracked timer text, so
   the clipping stays exact. Digits switch instantly (`contentTransition(.identity)`), like
   segments, instead of WidgetKit's rolling-digit animation.

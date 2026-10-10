@@ -4,8 +4,19 @@
   "canvas": {"origin": [250, 230], "scale": 0.75, "size": [640, 640]},
   "time": "2024-06-30T22:58:50",
   "twelveHour": true,
-  "masks": {"print": {"lum": [150, null], "sat": [null, 45]}, "beige": {"lum": [150, null], "r-b": [10, null]}, "labelBlue": {"lum": [140, null], "b-r": [30, null]}, "brown": {"lum": [null, 90], "r-b": [15, null]}, "ill": {"lum": [150, null], "b-r": [10, null]}, "notch": {"b-r": [null, 60]}, "glass": {"lum": [60, null]}},
-  "notes": ["The image is a product render; colours sampled from it."],
+  "masks": {
+    "print": {"lum": [150, null], "sat": [null, 45]},
+    "beige": {"lum": [150, null], "r-b": [10, null]},
+    "labelBlue": {"lum": [140, null], "b-r": [30, null]},
+    "brown": {"lum": [null, 90], "r-b": [15, null]},
+    "ill": {"lum": [150, null], "b-r": [10, null]},
+    "notch": {"b-r": [null, 60]},
+    "glass": {"lum": [60, null]}
+  },
+  "notes": [
+    "The image is a product render; colours sampled from it.",
+    "LCD digits: CasioLCD-F105W (tools/lcd_fonts.json), segments measured on this image; the hour 1 too."
+  ],
   "elements": [
     {"name": "CASIO", "mask": "print", "box": [149, 116, 266, 144]},
     {"name": "ALARM CHRONO", "mask": "print", "box": [277, 119, 497, 145]},
@@ -25,7 +36,7 @@
     {"name": "PM", "mask": "dark", "box": [142, 265, 186, 291]},
     {"name": "weekday", "mask": "dark", "box": [253, 236, 329, 285]},
     {"name": "day", "mask": "dark", "box": [412, 236, 489, 290]},
-    {"name": "HHMM", "mask": "dark", "box": [195, 300, 394, 398]},
+    {"name": "HHMM", "mask": "dark", "box": [166.7, 300, 394, 398]},
     {"name": "sec", "mask": "dark", "box": [402, 322, 490, 398]},
     {"name": "LCD glass", "mask": "glass", "box": [123, 213, 521, 417], "kind": "edges"}
   ]

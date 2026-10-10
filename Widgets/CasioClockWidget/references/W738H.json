@@ -4,8 +4,12 @@
   "canvas": {"origin": [280, 180], "scale": 1, "size": [640, 660]},
   "time": "2024-06-30T22:58:50",
   "twelveHour": true,
-  "notes": ["HHMM leaves out the leading 1: the W-738H 1 is wider than DSEG’s (a font limitation)."],
-  "masks": {"print": {"lum": [120, null], "sat": [null, 40]}},
+  "notes": [
+    "LCD digits: CasioLCD-W738H (tools/lcd_fonts.json), segments measured on this image; the hour 1 too."
+  ],
+  "masks": {
+    "print": {"lum": [120, null], "sat": [null, 40]}
+  },
   "elements": [
     {"name": "VIBRATION ALARM", "mask": "print", "box": [170, 40, 470, 68]},
     {"name": "CASIO", "mask": "print", "box": [260, 152, 380, 182]},
@@ -25,7 +29,7 @@
     {"name": "P", "mask": "print", "box": [160, 305, 182, 325]},
     {"name": "weekday", "mask": "print", "box": [250, 228, 330, 292]},
     {"name": "date", "mask": "print", "box": [360, 228, 475, 292]},
-    {"name": "HHMM", "mask": "print", "box": [212, 315, 392, 418]},
+    {"name": "HHMM", "mask": "print", "box": [188.9, 315, 392, 418]},
     {"name": "sec", "mask": "print", "box": [398, 345, 475, 418]},
     {"name": "signal", "mask": "print", "box": [405, 318, 445, 340]},
     {"name": "bell", "mask": "print", "box": [448, 312, 478, 345]}

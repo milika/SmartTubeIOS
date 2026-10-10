@@ -52,6 +52,7 @@ enum CasioA700WNegative: CasioModel {
 
     /// Light segments on dark glass; lit, the segments glow.
     static let lcd = LCDStyle(
+        digits: .casio("A700WNegative"),
         letters: .dseg7("BoldItalic"), glass: Color(red: 0.19, green: 0.21, blue: 0.26),
         ink: Color(red: 0.65, green: 0.70, blue: 0.62),
         shadow: LCDShadow(edgeOpacity: 0.5, edgeWidth: 9, segmentOpacity: 0.08),

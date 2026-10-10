@@ -5,15 +5,27 @@
   "renderOffset": [40, 0],
   "time": "2024-06-30T17:06:18",
   "twelveHour": false,
-  "notes": ["HHMM and sec leave out the 1s: the CA-53W's 1 is thicker and further left than DSEG's (a font limitation)."],
-  "masks": {"white": {"lum": [150, null], "sat": [null, 70]}, "blue": {"b": [130, null], "b-r": [40, null]}, "gold": {"r": [120, null], "r-b": [45, null], "lum": [null, 210]}, "tan": {"r": [90, null], "r-b": [25, null], "lum": [80, 190]}, "red": {"r": [70, null], "r-g": [25, null], "r-b": [35, null]}, "ink": {"lum": [null, 75]}, "bar": {"b": [95, null], "b-r": [12, null], "lum": [70, 160]}, "glass": {"lum": [102, null]}},
+  "notes": [
+    "The seconds box leaves out the 1 of 18 (the font's 1 is measured on the hours).",
+    "LCD digits: CasioLCD-CA53W (tools/lcd_fonts.json), segments measured on this image; the hour 1 too."
+  ],
+  "masks": {
+    "white": {"lum": [150, null], "sat": [null, 70]},
+    "blue": {"b": [130, null], "b-r": [40, null]},
+    "gold": {"r": [120, null], "r-b": [45, null], "lum": [null, 210]},
+    "tan": {"r": [90, null], "r-b": [25, null], "lum": [80, 190]},
+    "red": {"r": [70, null], "r-g": [25, null], "r-b": [35, null]},
+    "ink": {"lum": [null, 75]},
+    "bar": {"b": [95, null], "b-r": [12, null], "lum": [70, 160]},
+    "glass": {"lum": [102, null]}
+  },
   "elements": [
     {"name": "CASIO", "mask": "white", "box": [85, 50, 220, 85]},
     {"name": "WATER RESIST", "mask": "blue", "box": [240, 45, 420, 66]},
     {"name": "ALARM CHRONO", "mask": "blue", "box": [240, 68, 428, 90]},
     {"name": "WR", "mask": "gold", "box": [435, 48, 555, 92]},
     {"name": "vert ADJ..", "mask": "white", "box": [565, 110, 600, 295]},
-    {"name": "HHMM", "mask": "ink", "box": [160, 185, 380, 280]},
+    {"name": "HHMM", "mask": "ink", "box": [142.7, 185, 380, 280]},
     {"name": "sec", "mask": "ink", "box": [476, 185, 535, 280]},
     {"name": "weekday", "mask": "ink", "box": [440, 125, 535, 185]},
     {"name": "bar", "mask": "bar", "box": [80, 345, 595, 375]},

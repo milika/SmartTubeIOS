@@ -4,8 +4,14 @@
   "canvas": {"origin": [360, 300], "scale": 0.75, "size": [640, 640]},
   "time": "2024-06-30T22:58:50",
   "twelveHour": true,
-  "masks": {"grey": {"lum": [80, null], "sat": [null, 40]}, "glass": {"lum": [49, null]}},
-  "notes": ["The image is a product render; colours sampled from it.", "HHMM leaves out the hours 1: the LA680W 1 is wider than DSEG’s (a font limitation)."],
+  "masks": {
+    "grey": {"lum": [80, null], "sat": [null, 40]},
+    "glass": {"lum": [49, null]}
+  },
+  "notes": [
+    "The image is a product render; colours sampled from it.",
+    "LCD digits: CasioLCD-LA680W (tools/lcd_fonts.json), segments measured on this image; the hour 1 too."
+  ],
   "elements": [
     {"name": "CASIO", "mask": "white", "box": [249, 171, 374, 199]},
     {"name": "START dot", "mask": "white", "box": [102, 233, 118, 250]},
@@ -25,7 +31,7 @@
     {"name": "PM", "mask": "dark", "box": [174, 318, 220, 338]},
     {"name": "weekday", "mask": "dark", "box": [281, 266, 361, 323]},
     {"name": "day", "mask": "dark", "box": [380, 265, 451, 322]},
-    {"name": "HHMM", "mask": "dark", "box": [216, 338, 382, 441]},
+    {"name": "HHMM", "mask": "dark", "box": [194.9, 338, 382, 441]},
     {"name": "sec", "mask": "dark", "box": [382, 364, 452, 440]},
     {"name": "LCD glass", "mask": "glass", "box": [154, 243, 466, 465], "kind": "edges"}
   ]

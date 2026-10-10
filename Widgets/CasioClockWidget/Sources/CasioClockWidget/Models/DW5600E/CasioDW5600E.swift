@@ -33,6 +33,7 @@ enum CasioDW5600E: CasioModel {
 
     /// Module 3229: italic 7-segment digits and letters on pale grey-green glass; EL light.
     static let lcd = LCDStyle(
+        digits: .casio("DW5600E"),
         letters: .dseg7("BoldItalic"), glass: Color(red: 0.72, green: 0.77, blue: 0.74), ink: Color(white: 0.09),
         backlight: Color(red: 0.55, green: 0.95, blue: 0.92), backlightFalloff: [1, 1, 0.95])
 }

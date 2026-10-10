@@ -37,7 +37,7 @@ enum CasioF105W: CasioModel {
 
     /// Upright 7-segment digits on pale green glass; the EL panel glows blue-green.
     static let lcd = LCDStyle(
-        digits: .dseg7("Bold"), letters: .dseg7("Bold"), glass: Color(red: 0.71, green: 0.76, blue: 0.67),
+        digits: .casio("F105W"), letters: .dseg7("Bold"), glass: Color(red: 0.71, green: 0.76, blue: 0.67),
         ink: Color(red: 0.05, green: 0.06, blue: 0.02), backlight: Color(red: 0.55, green: 0.95, blue: 0.92),
         backlightFalloff: [1, 1, 0.95])
 }

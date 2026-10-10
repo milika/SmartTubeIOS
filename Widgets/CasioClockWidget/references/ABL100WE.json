@@ -1,0 +1,46 @@
+{
+  "model": "CasioABL100WE",
+  "image": "ABL-100WE - owner, ABL-100WE-1A step tracker product image (measured).avif",
+  "canvas": {"origin": [280, 230], "scale": 1, "size": [640, 700]},
+  "time": "2030-06-30T22:58:50",
+  "twelveHour": true,
+  "notes": [
+    "The image shows the year 2030 ('30-); 30 June 2030 is a Sunday.",
+    "The step bar, MUTE and the signal and alarm marks are drawn as on the image: the widget has no step count.",
+    "Font limitation: DSEG's 3 and 6 reach further left than the module's (month-day within 1.5 pt); the hours' 1 is left out of HHMM (DSEG's 1 sits at the right of its cell)."
+  ],
+  "masks": {
+    "white": {"lum": [150, null], "sat": [null, 50]},
+    "gold": {"r-b": [50, null], "r": [120, null]},
+    "blue": {"b-r": [50, null]},
+    "red": {"r-g": [60, null], "r-b": [40, null]},
+    "ink": {"lum": [null, 80]},
+    "glass": {"lum": [140, null], "sat": [null, 30]}
+  },
+  "elements": [
+    {"name": "CASIO", "mask": "white", "box": [156, 165, 266, 190]},
+    {"name": "STEP", "mask": "gold", "box": [289, 167, 347, 188]},
+    {"name": "TRACKER", "mask": "gold", "box": [352, 167, 459, 188]},
+    {"name": "ILLUMINATOR", "mask": "blue", "box": [192, 198, 433, 224]},
+    {"name": "ADJUST", "mask": "white", "box": [105, 259, 128, 347]},
+    {"name": "MODE", "mask": "white", "box": [106, 360, 129, 425]},
+    {"name": "LIGHT", "mask": "white", "box": [486, 259, 508, 323]},
+    {"name": "SEARCH", "mask": "white", "box": [485, 339, 508, 428]},
+    {"name": "dot TL", "mask": "red", "box": [108, 236, 130, 257]},
+    {"name": "dot BR", "mask": "red", "box": [485, 431, 507, 452]},
+    {"name": "WATER", "mask": "red", "box": [176, 467, 259, 486]},
+    {"name": "WR box", "mask": "red", "box": [264, 459, 349, 494]},
+    {"name": "RESIST", "mask": "red", "box": [353, 467, 440, 487]},
+    {"name": "Bluetooth", "mask": "gold", "box": [264, 507, 345, 531]},
+    {"name": "step bar", "mask": "ink", "box": [200, 245, 440, 263.5]},
+    {"name": "MUTE", "mask": "ink", "box": [319, 274, 377, 290]},
+    {"name": "weekday", "mask": "ink", "box": [162, 292, 275, 331]},
+    {"name": "year", "mask": "ink", "box": [281, 291, 352, 332]},
+    {"name": "month-day", "mask": "ink", "box": [374, 291, 462, 332]},
+    {"name": "P", "mask": "ink", "box": [168, 371, 185, 388]},
+    {"name": "HHMM", "mask": "ink", "box": [225, 368, 380, 440]},
+    {"name": "marks", "mask": "ink", "box": [401, 366, 453, 391]},
+    {"name": "sec", "mask": "ink", "box": [386, 393, 462, 440]},
+    {"name": "LCD glass", "mask": "glass", "box": [150, 238, 474, 458], "kind": "edges"}
+  ]
+}

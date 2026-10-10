@@ -17,7 +17,8 @@ struct A700WFace<Display: LCDModuleDisplay>: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             bandAndPlate
-            InkText(text: "CASIO", font: CaseFont.michroma).placed(in: layout.casio, color: palette.logo, bold: 0.9)
+            InkText(text: "CASIO", font: CaseFont.michroma).placed(
+                in: layout.casio, color: palette.logo, bold: 1.5, barBold: 0.9)
             waterResist.band(.upperSides, of: stretch)
             window.band(.display, of: stretch)
             buttonLabels.band(.lowerSides, of: stretch)
@@ -73,10 +74,40 @@ struct A700WFace<Display: LCDModuleDisplay>: View {
             InkText(text: "LIGHT", font: CaseFont.michroma).placed(in: layout.light, color: palette.print, bold: 0.4)
             square(layout.modeSquare)
             InkText(text: "MODE", font: CaseFont.michroma).placed(in: layout.mode, color: palette.print, bold: 0.4)
-            InkText(text: "START·STOP/12·24H", font: CaseFont.michroma)
-                .placed(in: layout.startStop, color: palette.print, bold: 0.4)
+            startStop
             square(layout.rightSquare)
         }
+    }
+
+    /// START · STOP / 12 · 24H in pieces, at their places in the measured box (fractions measured on
+    /// the A700WE image): the watch's dots are large and spaced, Michroma's are small and tight.
+    private var startStop: some View {
+        let box = layout.startStop
+        func piece(_ x0: CGFloat, _ x1: CGFloat, _ y0: CGFloat = 0, _ y1: CGFloat = 1) -> CGRect {
+            CGRect(
+                x: box.minX + x0 * box.width, y: box.minY + y0 * box.height, width: (x1 - x0) * box.width,
+                height: (y1 - y0) * box.height)
+        }
+        return ZStack(alignment: .topLeading) {
+            ForEach(Array(startStopWords.enumerated()), id: \.offset) { _, word in
+                InkText(text: word.text, font: CaseFont.michroma)
+                    .placed(
+                        in: piece(word.span.lowerBound, word.span.upperBound), color: palette.print, bold: 0.6,
+                        barBold: 0.4)
+            }
+            ForEach([piece(0.3022, 0.3244, 0.3, 0.633), piece(0.7756, 0.7978, 0.333, 0.667)], id: \.minX) { dot in
+                Circle().fill(palette.print).frame(width: dot.width, height: dot.height).offset(
+                    x: dot.minX, y: dot.minY)
+            }
+        }
+    }
+
+    /// Each word and its span of the box's width.
+    private var startStopWords: [(text: String, span: ClosedRange<CGFloat>)] {
+        [
+            ("START", 0...0.2844), ("STOP", 0.3422...0.5711), ("/", 0.5778...0.6289), ("12", 0.6489...0.7556),
+            ("24H", 0.8178...1),
+        ]
     }
 
     private func square(_ box: CGRect) -> some View {

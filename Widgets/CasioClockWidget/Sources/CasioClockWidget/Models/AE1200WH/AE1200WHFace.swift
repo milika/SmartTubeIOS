@@ -134,12 +134,11 @@ struct AE1200WHFace: View {
                     .offset(x: ring.x + offset.x - 5.5, y: ring.y + offset.y - 5.5)
             }
             Circle().fill(CasioAE1200WH.dialRing).frame(width: 182, height: 182).offset(x: ring.x - 91, y: ring.y - 91)
-            ForEach(0..<60, id: \.self) { minute in
-                tick(minute)
-            }
-            ForEach(Array(Self.numerals.enumerated()), id: \.offset) { index, numeral in
-                self.numeral(index, numeral)
-            }
+            // One shape each for the ticks and the numerals: as separate rotated views they made the
+            // widget's timeline archive too large for WidgetKit (over 10 MB).
+            DialTicks(center: ring).fill(CasioAE1200WH.print)
+            DialNumerals().fill(CasioAE1200WH.print)
+            DialNumerals().stroke(CasioAE1200WH.print, style: StrokeStyle(lineWidth: 0.8, lineJoin: .round))
             LCDPanel(
                 display: AE1200WHDialDisplay.self,
                 frame: CGRect(x: window.x - 65, y: window.y - 65, width: 130, height: 130), frameRadius: 65,
@@ -152,44 +151,6 @@ struct AE1200WHFace: View {
     private static let dialScrews = [
         CGPoint(x: -76, y: -72), CGPoint(x: 70, y: -72), CGPoint(x: -76, y: 72), CGPoint(x: 70, y: 72),
     ]
-
-    /// A minute tick on the dial's ring: longer and wider every five minutes, a square at the
-    /// quarters.
-    private func tick(_ minute: Int) -> some View {
-        let ring = AE1200WHDialDisplay.center
-        let quarter = minute % 15 == 0
-        let five = minute % 5 == 0
-        let width: CGFloat = quarter ? 5 : (five ? 2.5 : 1.5)
-        let inner: CGFloat = five ? 69 : 70.5
-        let outer: CGFloat = five ? 76 : 74.5
-        return Rectangle().fill(CasioAE1200WH.print)
-            .frame(width: width, height: outer - inner)
-            .offset(y: -(inner + outer) / 2)
-            .rotationEffect(.degrees(Double(minute) * 6))
-            .frame(width: 0, height: 0)
-            .offset(x: ring.x, y: ring.y)
-    }
-
-    /// 60, 05, 10 … 55 around the ring: each one's measured centre and upright width (narrower
-    /// with a 1), 8.5 pt tall.
-    private static let numerals: [(center: CGPoint, width: CGFloat)] = [
-        (233.25, 201, 20.5), (273.75, 211.25, 20.5), (305.25, 241, 17), (316.5, 283, 17), (304.5, 324.5, 20.5),
-        (275, 354.75, 20.5), (234, 366.25, 20.5), (193.5, 354.25, 20.5), (164.75, 323.75, 20.5),
-        (153.75, 282.25, 20.5), (164.25, 241.25, 20.5), (193.5, 211.75, 20.5),
-    ].map { (CGPoint(x: $0.0, y: $0.1), $0.2) }
-
-    /// A numeral, upright in the upper half, turned to read in the lower.
-    private func numeral(_ index: Int, _ numeral: (center: CGPoint, width: CGFloat)) -> some View {
-        let angle = Double(index) * 30
-        let text = index == 0 ? "60" : String(format: "%02d", index * 5)
-        let turn = angle > 90 && angle < 270 ? angle - 180 : angle
-        let width = numeral.width
-        return InkText(text: text, font: CaseFont.michroma)
-            .placed(in: CGRect(x: 0, y: 0, width: width, height: 8.5), color: CasioAE1200WH.print, bold: 0.4)
-            .frame(width: width, height: 8.5, alignment: .topLeading)
-            .rotationEffect(.degrees(turn))
-            .offset(x: numeral.center.x - width / 2, y: numeral.center.y - 4.25)
-    }
 
     // MARK: Windows
 
@@ -211,15 +172,21 @@ struct AE1200WHFace: View {
 
     // MARK: Plate print
 
-    private func ink(_ text: String, _ box: CGRect, _ color: Color, bold: CGFloat = 0.5) -> some View {
-        InkText(text: text, font: CaseFont.michroma).placed(in: box, color: color, bold: bold)
+    private func ink(
+        _ text: String, _ box: CGRect, _ color: Color, bold: CGFloat = 0.5, barBold: CGFloat? = nil
+    )
+        -> some View
+    {
+        InkText(text: text, font: CaseFont.michroma).placed(in: box, color: color, bold: bold, barBold: barBold)
     }
 
     private var platePrint: some View {
         ZStack(alignment: .topLeading) {
             ink("5", CGRect(x: 194, y: 171, width: 13, height: 11), CasioAE1200WH.print)
             ink("ALARMS", CGRect(x: 211, y: 170, width: 96.5, height: 11.5), CasioAE1200WH.print)
-            ink("CASIO", CGRect(x: 368, y: 171.5, width: 94, height: 18), CasioAE1200WH.printBright, bold: 0.9)
+            ink(
+                "CASIO", CGRect(x: 368, y: 171.5, width: 94, height: 18), CasioAE1200WH.printBright, bold: 1.2,
+                barBold: 0.75)
             ink("WR100M", CGRect(x: 185, y: 382, width: 98, height: 11.5), CasioAE1200WH.print)
             ink("10", CGRect(x: 233.5, y: 521.5, width: 23, height: 15), CasioAE1200WH.printBright)
             ink("YEAR", CGRect(x: 261, y: 522, width: 55.5, height: 14.5), CasioAE1200WH.printBright)
@@ -241,6 +208,55 @@ struct AE1200WHFace: View {
                     vertical: CGRect(x: 513, y: 380, width: 9.5, height: 97), angle: 90,
                     color: CasioAE1200WH.printSide, bold: 0.5)
         }
+    }
+}
+
+/// The dial ring's minute ticks: longer and wider every five minutes, a square at the quarters.
+private struct DialTicks: Shape {
+    let center: CGPoint
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        for minute in 0..<60 {
+            let quarter = minute % 15 == 0
+            let five = minute % 5 == 0
+            let width: CGFloat = quarter ? 5 : (five ? 2.5 : 1.5)
+            let inner: CGFloat = five ? 69 : 70.5
+            let outer: CGFloat = five ? 76 : 74.5
+            let tick = Path(CGRect(x: -width / 2, y: -outer, width: width, height: outer - inner))
+            let turn = CGAffineTransform(rotationAngle: CGFloat(minute) * .pi / 30)
+                .concatenating(CGAffineTransform(translationX: rect.minX + center.x, y: rect.minY + center.y))
+            path.addPath(tick, transform: turn)
+        }
+        return path
+    }
+}
+
+/// 60, 05, 10 … 55 around the dial's ring, each at its measured centre and upright width (narrower
+/// with a 1), 8.5 pt tall less the 0.4 pt the stroke adds; upright in the upper half, turned to
+/// read in the lower.
+private struct DialNumerals: Shape {
+    private static let numerals: [(center: CGPoint, width: CGFloat)] = [
+        (233.25, 201, 20.5), (273.75, 211.25, 20.5), (305.25, 241, 17), (316.5, 283, 17), (304.5, 324.5, 20.5),
+        (275, 354.75, 20.5), (234, 366.25, 20.5), (193.5, 354.25, 20.5), (164.75, 323.75, 20.5),
+        (153.75, 282.25, 20.5), (164.25, 241.25, 20.5), (193.5, 211.75, 20.5),
+    ].map { (CGPoint(x: $0.0, y: $0.1), $0.2) }
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        for (index, numeral) in Self.numerals.enumerated() {
+            let angle = Double(index) * 30
+            let text = index == 0 ? "60" : String(format: "%02d", index * 5)
+            let turn = angle > 90 && angle < 270 ? angle - 180 : angle
+            let width = numeral.width - 0.8
+            let glyphs = InkText(text: text, font: CaseFont.michroma)
+                .path(in: CGRect(x: -width / 2, y: -3.85, width: width, height: 7.7))
+            let place = CGAffineTransform(rotationAngle: turn * .pi / 180)
+                .concatenating(
+                    CGAffineTransform(translationX: rect.minX + numeral.center.x, y: rect.minY + numeral.center.y))
+            path.addPath(glyphs, transform: place)
+        }
+        return path
     }
 }
 

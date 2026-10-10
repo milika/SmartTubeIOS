@@ -46,7 +46,8 @@ struct GWB5600Face: View {
         ZStack(alignment: .topLeading) {
             ink("CASIO", CaseFont.michroma)
                 .placed(
-                    in: CGRect(x: 250.5, y: 41, width: 118, height: 23.5), color: CasioGWB5600.printWhite, bold: 0.8)
+                    in: CGRect(x: 250.5, y: 41, width: 118, height: 23.5), color: CasioGWB5600.printWhite, bold: 1.3,
+                    barBold: 0.8)
             ink("TOUGH SOLAR", CaseFont.michroma)
                 .placed(in: CGRect(x: 212.5, y: 108.5, width: 197, height: 13.5), color: CasioGWB5600.mint, bold: 0.6)
         }

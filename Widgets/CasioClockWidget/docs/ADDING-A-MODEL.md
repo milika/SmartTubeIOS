@@ -126,6 +126,11 @@ In `Sources/CasioClockWidget/Models/<Name>/`:
   - Every printed label as `InkText(text:font:).placed(in: measuredBox, color:)`; vertical labels
     use `placed(vertical:angle:)`. Never size print with `Text` and a font size: font metrics
     drift by points (the A158W's and GMW-B5000's labels did).
+  - Weight: compare a stem (the I of CASIO) on photo and render; the photo's is about 0.5 pt
+    wider from blur. Heavy print takes `bold` with a smaller `barBold`: thickened equally all
+    round, Michroma's S closes into an 8 ("CA8IO").
+  - A middle dot "·" in an InkText string is drawn as a round dot a third of the cap height with
+    space on both sides, as the watches print it (the fonts' own are small and tight).
   - When the stand-in font's glyph differs from the watch's, split the string and place the
     pieces. Michroma's slash drops below the baseline, so the W-800H's 12/24H is three boxes.
   - The window: an `LCDPanel` with `frame`, the measured `glass` and the module display. Draw the
@@ -192,6 +197,11 @@ measured in the reference's canvas coordinates:
 
 Check the live path too: render with `CASIO_LIVE=1` and compare it with the static render.
 
+**Keep the timeline small.** WidgetKit refuses a timeline archive over about 10 MB ("too large
+timeline archive" in the simulator's log, and the widget stays a placeholder). Every separate view
+adds to it: draw repeated marks (dial ticks, numerals, grid dots) as one `Shape`, not a `ForEach`
+of views. The AE-1200WH's 60 ticks and 12 numerals as views made 10.5 MB; as two shapes, 5 MB.
+
 ## 7. Register
 
 In `CasioCatalogue.swift`, add the model to `CasioModels.all` and
@@ -230,6 +240,9 @@ For every flag, look at `flagged.png` and decide which kind it is:
 | an icon is a different size or shape | drawn from a guess | zoom in, redraw it, place it in its ink box |
 | an indicator is missing | a state the render doesn't have (DST, PM) | `timeZone` / `twelveHour` in the manifest |
 | part of a label is missing | another layer covers it (a window surround) | fix the window or the drawing order |
+
+The ink-box check can miss a label that another layer partly covers (its box still spans the
+visible ends): look at `side.png` too. The W-800H's ADJUST lost its last 2.5 pt under the window.
 
 Never loosen the tolerance and never drop an element to make the check pass. Leave something out
 only for a documented limitation, and say why in `notes`.

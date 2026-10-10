@@ -41,24 +41,25 @@ struct A158WFace: View {
 
     private var topPrint: some View {
         ZStack(alignment: .topLeading) {
-            Text("CASIO")
-                .font(CasioA158W.michroma(23))
-                .tracking(1)
-                .foregroundStyle(CasioA158W.printWhite)
-                .emboldened(1.4)
-                .place(centerX: 191.5, centerY: 88.75)
-            Text("ALARM CHRONO")
-                .font(CasioA158W.saira(22))
-                .tracking(1.5)
-                .foregroundStyle(CasioA158W.gold)
-                .emboldened(0.4)
-                .place(leading: 278.5, centerY: 85.25, width: 220)
+            // Ink boxes measured on the photo (which is turned a little: CHRONO sits higher).
+            InkText(text: "CASIO", font: CaseFont.michroma)
+                .placed(
+                    in: CGRect(x: 136, y: 80.5, width: 107.5, height: 19.5), color: CasioA158W.printWhite, bold: 1.1,
+                    barBold: 0.7)
+            InkText(text: "ALARM", font: CaseFont.saira)
+                .placed(in: CGRect(x: 279.5, y: 80.5, width: 76.5, height: 13), color: CasioA158W.gold, bold: 0.4)
+            InkText(text: "CHRONO", font: CaseFont.saira)
+                .placed(in: CGRect(x: 372.5, y: 79, width: 94.5, height: 14.5), color: CasioA158W.gold, bold: 0.4)
             Rectangle().fill(CasioA158W.line).frame(width: 408, height: 2).offset(x: 94.5, y: 105.5)
 
             // ▬ LIGHT / LAP · RESET   ▬ MODE        Lithium   START · STOP / 12 · 24H ▬
             marker(x: 100.5, centerY: 132)
             marker(x: 100.5, centerY: 150)
-            label("LIGHT / LAP · RESET", leading: 127.5, centerY: 131.5, tracking: 0.9)
+            label("LIGHT", CGRect(x: 127.5, y: 126, width: 44, height: 12.5))
+            label("/", CGRect(x: 176.5, y: 127, width: 6.5, height: 10))
+            label("LAP", CGRect(x: 188.5, y: 125.5, width: 29, height: 12))
+            Circle().fill(CasioA158W.printWhite).frame(width: 4, height: 4).offset(x: 220.5, y: 129.75)
+            label("RESET", CGRect(x: 229.5, y: 124.5, width: 47.5, height: 12.5))
             // Ink boxes measured on the photo.
             InkText(text: "MODE", font: CaseFont.saira, tracking: 0.063)
                 .placed(in: CGRect(x: 127.5, y: 144, width: 45.5, height: 12), color: CasioA158W.printWhite)
@@ -70,12 +71,8 @@ struct A158WFace: View {
         }
     }
 
-    private func label(_ text: String, leading: CGFloat, centerY: CGFloat, tracking: CGFloat) -> some View {
-        Text(text)
-            .font(CasioA158W.saira(14.3))
-            .tracking(tracking)
-            .foregroundStyle(CasioA158W.printWhite)
-            .place(leading: leading, centerY: centerY, width: 220)
+    private func label(_ text: String, _ box: CGRect) -> some View {
+        InkText(text: text, font: CaseFont.saira).placed(in: box, color: CasioA158W.printWhite, bold: 0.2)
     }
 
     /// The small dark-red dashes beside the button labels.

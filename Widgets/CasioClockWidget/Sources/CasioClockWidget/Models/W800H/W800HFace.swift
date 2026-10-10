@@ -9,8 +9,9 @@ struct W800HFace: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             caseShape
-            printed
             lcd
+            // The print after the window: ADJUST reaches into the window's dark surround.
+            printed
         }
     }
 
@@ -78,7 +79,7 @@ struct W800HFace: View {
                 .placed(vertical: CGRect(x: 128, y: 374, width: 9, height: 64.5), angle: -90, color: white, bold: 0.3)
             ink("LIGHT", CaseFont.michroma)
                 .placed(
-                    vertical: CGRect(x: 439, y: 224, width: 10, height: 63), angle: 90, color: white, bold: 0.3)
+                    vertical: CGRect(x: 438.5, y: 225.5, width: 8.5, height: 61), angle: 90, color: white, bold: 0.3)
             // 12/24H in three pieces: Michroma's slash drops below the baseline, the watch's doesn't.
             ink("12", CaseFont.michroma)
                 .placed(vertical: CGRect(x: 436.5, y: 366, width: 9, height: 20), angle: 90, color: white, bold: 0.3)

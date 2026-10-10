@@ -45,42 +45,24 @@ struct F91WFace: View {
 
     private var printedFace: some View {
         ZStack(alignment: .topLeading) {
-            // CASIO / F-91W
-            Text("CASIO")
-                .font(CasioF91W.michroma(25.5))
-                .tracking(4)
-                .foregroundStyle(CasioF91W.printWhite)
-                .emboldened(1.6)
-                .place(centerX: 199.5, centerY: 91.75)
-            Text("F-91W")
-                .font(CasioF91W.archivoBlack(23.6))
-                .tracking(5.6)
-                .foregroundStyle(CasioF91W.gold)
-                .emboldened(0.6)
-                .oblique()
-                .place(centerX: 398, centerY: 93.5)
+            // CASIO / F-91W (ink boxes measured on the photo)
+            ink(
+                "CASIO", CGRect(x: 132, y: 81.5, width: 130, height: 23.5), CasioF91W.printWhite, bold: 2.0,
+                barBold: 1.0)
+            // F-91W is widely spaced on the watch: each glyph in its measured box.
+            ForEach(Array(Self.modelName.enumerated()), id: \.offset) { _, glyph in
+                InkText(text: glyph.text, font: CaseFont.archivoBlack, slant: 0.21)
+                    .placed(in: glyph.box, color: CasioF91W.gold)
+            }
             bar(x: 70, y: 123.5, width: 453, height: 9)
 
             // ◀ LIGHT   ALARM  CHRONOGRAPH
             Pointer(left: true).fill(CasioF91W.red).frame(width: 21, height: 7).position(x: 96.75, y: 157.75)
-            Text("LIGHT")
-                .font(CasioF91W.michroma(12.4))
-                .tracking(1)
-                .foregroundStyle(CasioF91W.printWhite)
-                .emboldened(0.25)
-                .place(leading: 116.5, centerY: 157)
-            Text("ALARM")
-                .font(CasioF91W.saira(21.7))
-                .tracking(1.6)
-                .foregroundStyle(CasioF91W.gold)
-                .emboldened(0.25)
-                .place(leading: 227.5, centerY: 154.75, width: 100)
-            Text("CHRONOGRAPH")
-                .font(CasioF91W.saira(21.7))
-                .tracking(1.6)
-                .foregroundStyle(CasioF91W.gold)
-                .emboldened(0.25)
-                .place(trailing: 504.5, centerY: 154.75, width: 200)
+            ink("LIGHT", CGRect(x: 117.5, y: 152.5, width: 54.5, height: 10), CasioF91W.printWhite, bold: 0.3)
+            InkText(text: "ALARM", font: CaseFont.saira)
+                .placed(in: CGRect(x: 226.5, y: 146, width: 81.5, height: 16.5), color: CasioF91W.gold, bold: 0.3)
+            InkText(text: "CHRONOGRAPH", font: CaseFont.saira)
+                .placed(in: CGRect(x: 321, y: 146, width: 179.5, height: 16.5), color: CasioF91W.gold, bold: 0.3)
 
         }
         .overlay(alignment: .topLeading) { bottomPrint.band(.bottom, of: stretch) }
@@ -90,24 +72,13 @@ struct F91WFace: View {
         ZStack(alignment: .topLeading) {
             // ◀ MODE   ALARM  ON · OFF / 24HR ▶
             Pointer(left: true).fill(CasioF91W.red).frame(width: 20, height: 6.5).position(x: 98, y: 404.5)
-            Text("MODE")
-                .font(CasioF91W.michroma(12.8))
-                .tracking(1.1)
-                .foregroundStyle(CasioF91W.printWhite)
-                .emboldened(0.25)
-                .place(leading: 116.5, centerY: 402.75)
-            Text("ALARM")
-                .font(CasioF91W.michroma(12.8))
-                .tracking(0.85)
-                .foregroundStyle(CasioF91W.printWhite)
-                .emboldened(0.25)
-                .place(leading: 242.75, centerY: 402.75, width: 90)
-            Text("ON · OFF / 24HR")
-                .font(CasioF91W.michroma(12.8))
-                .tracking(0.65)
-                .foregroundStyle(CasioF91W.printWhite)
-                .emboldened(0.25)
-                .place(trailing: 476.3, centerY: 402.75, width: 170)
+            ink("MODE", CGRect(x: 118, y: 398.5, width: 58.5, height: 10.5), CasioF91W.printWhite, bold: 0.3)
+            ink("ALARM", CGRect(x: 243.5, y: 398.5, width: 70.5, height: 10.5), CasioF91W.printWhite, bold: 0.3)
+            ink("ON", CGRect(x: 328.5, y: 398.5, width: 28.5, height: 10.5), CasioF91W.printWhite, bold: 0.3)
+            Circle().fill(CasioF91W.printWhite).frame(width: 3.5, height: 3.5).offset(x: 362.5, y: 401.5)
+            ink("OFF", CGRect(x: 370, y: 398, width: 36, height: 11), CasioF91W.printWhite, bold: 0.3)
+            ink("/", CGRect(x: 409.5, y: 398.5, width: 8, height: 10), CasioF91W.printWhite, bold: 0.3)
+            ink("24HR", CGRect(x: 422.5, y: 398, width: 52.5, height: 11), CasioF91W.printWhite, bold: 0.3)
             Pointer(left: false).fill(CasioF91W.red).frame(width: 20.5, height: 7).position(x: 497.25, y: 404.25)
 
             // WATER [WR] RESIST
@@ -118,30 +89,31 @@ struct F91WFace: View {
                 .stroke(CasioF91W.blue, lineWidth: 3.75)
                 .frame(width: 140.6, height: 47)
                 .offset(x: 226.6, y: 417.6)
-            // The watch's WR is wider than any free extended face; Saira Expanded is stretched.
-            Text("WR")
-                .font(CasioF91W.sairaExpanded(33.8))
-                .foregroundStyle(CasioF91W.red)
-                .oblique()
-                .scaleEffect(x: 1.6, y: 1)
-                .place(centerX: 295.25, centerY: 441.75)
-            Text("WATER")
-                .font(CasioF91W.michroma(17))
-                .tracking(3.35)
-                .foregroundStyle(CasioF91W.printWhite)
-                .emboldened(1.3)
-                .place(centerX: 158, centerY: 441.5, width: 130)
-            Text("RESIST")
-                .font(CasioF91W.michroma(17))
-                .tracking(4.2)
-                .foregroundStyle(CasioF91W.printWhite)
-                .emboldened(1.5)
-                .place(centerX: 441, centerY: 441.5, width: 130)
-            Text("u")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(CasioF91W.printWhite.opacity(0.85))
-                .place(centerX: 459.5, centerY: 463)
+            InkText(text: "WR", font: CaseFont.sairaExpanded, slant: 0.21)
+                .placed(in: CGRect(x: 249, y: 430, width: 97, height: 24), color: CasioF91W.red)
+            ink(
+                "WATER", CGRect(x: 102.5, y: 435, width: 106.5, height: 15.5), CasioF91W.printWhite, bold: 1.2,
+                barBold: 0.7)
+            ink(
+                "RESIST", CGRect(x: 384, y: 434.5, width: 109.5, height: 16), CasioF91W.printWhite, bold: 1.2,
+                barBold: 0.7)
+            InkText(text: "u", font: CaseFont.saira)
+                .placed(
+                    in: CGRect(x: 456.5, y: 460.5, width: 5.5, height: 6.5), color: CasioF91W.printWhite.opacity(0.85))
         }
+    }
+
+    private static let modelName: [(text: String, box: CGRect)] = [
+        ("F", CGRect(x: 338.5, y: 83.5, width: 22.5, height: 19)),
+        ("-", CGRect(x: 365, y: 90.5, width: 11.5, height: 5.5)),
+        ("9", CGRect(x: 382.5, y: 83.5, width: 21.5, height: 18.5)),
+        ("1", CGRect(x: 410, y: 83.5, width: 12, height: 19)),
+        ("W", CGRect(x: 428.5, y: 83.5, width: 33, height: 19)),
+    ]
+
+    private func ink(_ text: String, _ box: CGRect, _ color: Color, bold: CGFloat, barBold: CGFloat? = nil) -> some View
+    {
+        InkText(text: text, font: CaseFont.michroma).placed(in: box, color: color, bold: bold, barBold: barBold)
     }
 
     private func bar(x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat = 6) -> some View {

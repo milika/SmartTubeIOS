@@ -48,7 +48,7 @@ struct W738HFace: View {
         let white = CasioW738H.printWhite
         return ZStack(alignment: .topLeading) {
             ink("CASIO", CaseFont.michroma)
-                .placed(in: CGRect(x: 272, y: 160.5, width: 95, height: 17), color: white, bold: 0.7)
+                .placed(in: CGRect(x: 272, y: 160.5, width: 95, height: 17), color: white, bold: 1.0, barBold: 0.6)
             ink("10 YEAR BATTERY", CaseFont.michroma)
                 .placed(in: CGRect(x: 215, y: 188.5, width: 210, height: 12), color: white, bold: 0.45)
             square(x: 125, y: 221)

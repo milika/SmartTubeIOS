@@ -48,7 +48,8 @@ struct A168WFace: View {
         ZStack(alignment: .topLeading) {
             ink("CASIO", CaseFont.michroma)
                 .placed(
-                    in: CGRect(x: 149.5, y: 96.5, width: 97.5, height: 17.5), color: CasioA168W.printWhite, bold: 0.7)
+                    in: CGRect(x: 149.5, y: 96.5, width: 97.5, height: 17.5), color: CasioA168W.printWhite, bold: 0.95,
+                    barBold: 0.6)
             ink("ALARM CHRONO", CaseFont.michroma)
                 .placed(in: CGRect(x: 270, y: 99.5, width: 142.5, height: 11), color: CasioA168W.gold, bold: 0.75)
             Banner().fill(CasioA168W.banner).frame(width: 288, height: 28).offset(x: 128.5, y: 126.5)

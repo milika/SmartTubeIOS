@@ -55,8 +55,12 @@ struct LA20WHFace: View {
 
     // MARK: Print (ink boxes measured on the image)
 
-    private func ink(_ text: String, _ box: CGRect, _ color: Color, bold: CGFloat = 0.5) -> some View {
-        InkText(text: text, font: CaseFont.michroma).placed(in: box, color: color, bold: bold)
+    private func ink(
+        _ text: String, _ box: CGRect, _ color: Color, bold: CGFloat = 0.5, barBold: CGFloat? = nil
+    )
+        -> some View
+    {
+        InkText(text: text, font: CaseFont.michroma).placed(in: box, color: color, bold: bold, barBold: barBold)
     }
 
     private var print: some View {
@@ -65,7 +69,7 @@ struct LA20WHFace: View {
             InkText(text: "ILLUMINATOR", font: CaseFont.archivoBlack, slant: 0.22)
                 .placed(in: CGRect(x: 178, y: 64, width: 194.5, height: 14), color: white)
             ink("WATER RESIST", CGRect(x: 183.5, y: 424, width: 177.5, height: 17), white, bold: 1.1)
-            ink("CASIO", CGRect(x: 223.5, y: 116, width: 88.5, height: 16.5), white, bold: 1)
+            ink("CASIO", CGRect(x: 223.5, y: 116, width: 88.5, height: 16.5), white, bold: 1.3, barBold: 0.8)
             Pointer(left: true).fill(slate).frame(width: 10.5, height: 10.5).offset(x: 133, y: 142)
             ink("START", CGRect(x: 150, y: 142, width: 51, height: 11), slate)
             ink("/", CGRect(x: 203, y: 143, width: 5, height: 8), slate)

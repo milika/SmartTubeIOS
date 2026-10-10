@@ -19,7 +19,8 @@ struct F105WFace: View {
             panelLabels.band(.lowerSides, of: stretch)
             InkText(text: "WATER RESIST", font: CaseFont.michroma)
                 .placed(
-                    in: CGRect(x: 171, y: 483.5, width: 292.5, height: 24), color: CasioF105W.printWhite, bold: 0.8
+                    in: CGRect(x: 171, y: 483.5, width: 292.5, height: 24), color: CasioF105W.printWhite, bold: 1.4,
+                    barBold: 0.8
                 )
                 .band(.bottom, of: stretch)
         }
@@ -63,10 +64,12 @@ struct F105WFace: View {
         ZStack(alignment: .topLeading) {
             InkText(text: "CASIO", font: CaseFont.michroma)
                 .placed(
-                    in: CGRect(x: 152.5, y: 119.5, width: 110.5, height: 21.5), color: CasioF105W.printWhite, bold: 1)
+                    in: CGRect(x: 152.5, y: 119.5, width: 110.5, height: 21.5), color: CasioF105W.printWhite, bold: 1.4,
+                    barBold: 0.8)
             InkText(text: "ALARM CHRONO", font: CaseFont.michroma)
                 .placed(
-                    in: CGRect(x: 280.5, y: 122.5, width: 213.5, height: 19.5), color: CasioF105W.printWhite, bold: 0.6)
+                    in: CGRect(x: 280.5, y: 122.5, width: 213.5, height: 19.5), color: CasioF105W.printWhite, bold: 1,
+                    barBold: 0.6)
         }
     }
 

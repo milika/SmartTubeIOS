@@ -57,7 +57,8 @@ struct DW5000CFace: View {
         ZStack(alignment: .topLeading) {
             ink("CASIO", CaseFont.michroma, tracking: 0.02)
                 .placed(
-                    in: CGRect(x: 181.5, y: 63.5, width: 100, height: 18), color: CasioDW5000C.printWhite, bold: 0.7)
+                    in: CGRect(x: 181.5, y: 63.5, width: 100, height: 18), color: CasioDW5000C.printWhite, bold: 1.2,
+                    barBold: 0.75)
             ink("Lithium", CaseFont.saira)
                 .placed(in: CGRect(x: 305, y: 66.5, width: 66.5, height: 14.5), color: CasioDW5000C.gold)
             BatteryMark()

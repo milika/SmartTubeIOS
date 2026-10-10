@@ -44,7 +44,7 @@ struct W86Face: View {
         let white = CasioW86.printWhite
         return ZStack(alignment: .topLeading) {
             ink("CASIO", CaseFont.michroma)
-                .placed(in: CGRect(x: 163, y: 63, width: 171, height: 30), color: white, bold: 1)
+                .placed(in: CGRect(x: 163, y: 63, width: 171, height: 30), color: white, bold: 2.0, barBold: 1.2)
             ink("ALARM CHRONO", CaseFont.michroma)
                 .placed(in: CGRect(x: 351, y: 65.5, width: 234, height: 21.5), color: white, bold: 0.7)
             Slanted(points: [(58, 159), (151, 89), (151, 108), (128, 159)]).fill(CasioW86.teal)

@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The display of Casio's module 3459 (GMW-B5000; the GW-B5600 family shows the same layout):
-/// PS / RCVD / DST / P indicators, weekday, a boxed dot-matrix date, H:MM and live seconds.
+/// PS / RCVD / DST / P indicators, the "(■)" mark, weekday, a boxed dot-matrix date, H:MM and live seconds.
 /// Measured on the GMW-B5000 photo, in that face's canvas coordinates; `canvasOrigin` is where its
 /// 313 × 207 glass sits on that canvas, so the layout lands in any model's glass (`placed(in:)`).
 struct Module3459Display: LCDModuleDisplay {
@@ -23,6 +23,13 @@ struct Module3459Display: LCDModuleDisplay {
         inGlass(style: style) {
             indicator("PS", leading: 178, centerY: 197.75, tracking: 5.3)
             indicator("RCVD", leading: 250, centerY: 198.25)
+            // "(■)" above the seconds, as on the photo.
+            ZStack(alignment: .topLeading) {
+                Capsule().frame(width: 3.5, height: 10).offset(x: 407, y: 270.5)
+                Rectangle().frame(width: 9, height: 9).offset(x: 413.5, y: 271)
+                Capsule().frame(width: 3.5, height: 10).offset(x: 426, y: 270.5)
+            }
+            .foregroundStyle(style.ink)
             if context.calendar.timeZone.isDaylightSavingTime(for: context.date) {
                 indicator("DST", leading: 197, centerY: 270.75, tracking: 3.1)
             }

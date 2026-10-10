@@ -43,7 +43,9 @@ struct CA53WFace: View {
     private var topPrint: some View {
         ZStack(alignment: .topLeading) {
             ink("CASIO", CaseFont.michroma)
-                .placed(in: CGRect(x: 89.5, y: 58.5, width: 118, height: 22.5), color: CasioCA53W.printWhite, bold: 0.8)
+                .placed(
+                    in: CGRect(x: 89.5, y: 58.5, width: 118, height: 22.5), color: CasioCA53W.printWhite, bold: 1.5,
+                    barBold: 0.9)
             ink("WATER RESIST", CaseFont.michroma)
                 .placed(in: CGRect(x: 242, y: 49, width: 165.5, height: 15), color: CasioCA53W.blue, bold: 0.5)
             ink("ALARM CHRONO", CaseFont.michroma)

@@ -24,10 +24,35 @@ struct InkText: Shape {
                 .translatedBy(x: -bounds.minX, y: -bounds.minY))
     }
 
-    /// The glyph outlines at 100 pt, y pointing down.
+    /// The glyph outlines at 100 pt, y pointing down. A middle dot "·" is drawn as a round dot a
+    /// third of the cap height across with space on both sides, as the watches print it (the case
+    /// fonts' own middle dots are small and tight: "12·24H" read as "12:24H").
     static func outline(_ text: String, font: String, tracking: CGFloat) -> Path {
         BundledFonts.register()
         let ctFont = CTFontCreateWithName(font as CFString, 100, nil)
+        let capHeight = CTFontGetCapHeight(ctFont)
+        let diameter = 0.33 * capHeight, gap = 0.2 * capHeight
+        let path = CGMutablePath()
+        var x: CGFloat = 0
+        for (index, segment) in text.components(separatedBy: "·").enumerated() {
+            if index > 0 {
+                x += gap
+                path.addEllipse(
+                    in: CGRect(x: x, y: -(capHeight + diameter) / 2, width: diameter, height: diameter))
+                x += diameter + gap
+            }
+            x += addGlyphs(of: segment, font: ctFont, tracking: tracking, at: x, to: path)
+        }
+        return Path(path)
+    }
+
+    /// Adds `text`'s glyph outlines starting at `x` (y pointing down); returns the advance.
+    private static func addGlyphs(
+        of text: String, font ctFont: CTFont, tracking: CGFloat, at x: CGFloat, to path: CGMutablePath
+    )
+        -> CGFloat
+    {
+        guard !text.isEmpty else { return 0 }
         let string = NSAttributedString(
             string: text,
             attributes: [
@@ -35,7 +60,6 @@ struct InkText: Shape {
                 NSAttributedString.Key(kCTKernAttributeName as String): tracking * 100,
             ])
         let line = CTLineCreateWithAttributedString(string)
-        let path = CGMutablePath()
         for run in CTLineGetGlyphRuns(line) as? [CTRun] ?? [] {
             let count = CTRunGetGlyphCount(run)
             var glyphs = [CGGlyph](repeating: 0, count: count)
@@ -47,24 +71,36 @@ struct InkText: Shape {
             for (glyph, position) in zip(glyphs, positions) {
                 guard let glyphPath = CTFontCreatePathForGlyph(runFont, glyph, nil) else { continue }
                 path.addPath(
-                    glyphPath, transform: CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: position.x, ty: -position.y))
+                    glyphPath,
+                    transform: CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: x + position.x, ty: -position.y))
             }
         }
-        return Path(path)
+        return CGFloat(CTLineGetTypographicBounds(line, nil, nil, nil))
     }
 }
 
 extension InkText {
     /// The text filling `box` on the canvas; `bold` thickens the strokes by that many points on
-    /// each side (the box still holds the thickened ink).
-    func placed(in box: CGRect, color: Color, bold: CGFloat = 0) -> some View {
-        let inset = box.insetBy(dx: bold, dy: bold)
-        return ZStack(alignment: .topLeading) {
-            fill(color)
-            if bold > 0 { stroke(color, style: StrokeStyle(lineWidth: 2 * bold, lineJoin: .round)) }
+    /// each side (the box still holds the thickened ink). `barBold`, when smaller, thickens the
+    /// horizontal bars less than the stems: heavy print bolded equally all round closes the narrow
+    /// gaps between bars (the F-91W's S read as an 8, "CA8IO").
+    func placed(in box: CGRect, color: Color, bold: CGFloat = 0, barBold: CGFloat? = nil) -> some View {
+        let barBold = min(barBold ?? bold, bold)
+        return Group {
+            if barBold < bold {
+                Thickened(ink: self, dx: bold, dy: barBold).fill(color)
+                    .frame(width: box.width, height: box.height)
+                    .offset(x: box.minX, y: box.minY)
+            } else {
+                let inset = box.insetBy(dx: bold, dy: bold)
+                ZStack(alignment: .topLeading) {
+                    fill(color)
+                    if bold > 0 { stroke(color, style: StrokeStyle(lineWidth: 2 * bold, lineJoin: .round)) }
+                }
+                .frame(width: inset.width, height: inset.height)
+                .offset(x: inset.minX, y: inset.minY)
+            }
         }
-        .frame(width: inset.width, height: inset.height)
-        .offset(x: inset.minX, y: inset.minY)
     }
 
     /// Vertical text: `box` is its ink box on the canvas, `angle` -90 reads upwards, 90 downwards.
@@ -77,5 +113,33 @@ extension InkText {
         .frame(width: inset.height, height: inset.width)
         .rotationEffect(.degrees(angle))
         .position(x: inset.midX, y: inset.midY)
+    }
+}
+
+/// An InkText's glyphs thickened by `dx` points sideways and `dy` vertically (dy < dx), as one
+/// path: the glyphs fill the rect less those margins, and the thickened ink fills it exactly.
+private struct Thickened: Shape {
+    let ink: InkText
+    let dx: CGFloat
+    let dy: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let glyphs = ink.path(in: rect.insetBy(dx: dx, dy: dy)).cgPath
+        // Round strokes thicken by dy all round; copies shifted sideways make up the rest of dx.
+        let round =
+            dy > 0
+            ? glyphs.union(glyphs.copy(strokingWithWidth: 2 * dy, lineCap: .round, lineJoin: .round, miterLimit: 10))
+            : glyphs
+        var thick = round
+        let extra = dx - dy
+        let steps = max(1, Int((extra / 0.25).rounded(.up)))
+        for step in 1...steps {
+            let shift = extra * CGFloat(step) / CGFloat(steps)
+            for sign: CGFloat in [-1, 1] {
+                var move = CGAffineTransform(translationX: sign * shift, y: 0)
+                if let moved = round.copy(using: &move) { thick = thick.union(moved) }
+            }
+        }
+        return Path(thick)
     }
 }

@@ -49,13 +49,14 @@ struct DW5600EFace: View {
         let white = CasioDW5600E.printWhite
         return ZStack(alignment: .topLeading) {
             ink("CASIO", CaseFont.michroma)
-                .placed(in: CGRect(x: 373.5, y: 147, width: 126.5, height: 23), color: white, bold: 0.8)
+                .placed(in: CGRect(x: 373.5, y: 147, width: 126.5, height: 23), color: white, bold: 1.0, barBold: 0.6)
             Pointer(left: true).fill(CasioDW5600E.blue).frame(width: 30, height: 10).offset(x: 286, y: 183)
-            ink("ILLUMINATOR", CaseFont.archivoBlack, slant: 0.22)
-                .placed(in: CGRect(x: 318, y: 179.5, width: 236, height: 17.5), color: CasioDW5600E.blue)
+            // Lighter and more widely spaced than the other faces' ILLUMINATOR.
+            InkText(text: "ILLUMINATOR", font: CaseFont.sairaExpanded, tracking: 0.14, slant: 0.22)
+                .placed(in: CGRect(x: 318, y: 179.5, width: 236, height: 17.5), color: CasioDW5600E.blue, bold: 0.4)
             Pointer(left: false).fill(CasioDW5600E.blue).frame(width: 32, height: 10).offset(x: 558.5, y: 183)
             ink("WATER 200M RESIST", CaseFont.michroma)
-                .placed(in: CGRect(x: 302.5, y: 207.5, width: 272, height: 14), color: white, bold: 0.5)
+                .placed(in: CGRect(x: 302.5, y: 207.5, width: 272, height: 14), color: white, bold: 1.1, barBold: 0.6)
         }
     }
 

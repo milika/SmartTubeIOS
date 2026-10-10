@@ -24,11 +24,11 @@ struct A178WFace: View {
                 cut: CGSize(width: 51.5, height: 51.5), bottomCut: CGSize(width: 43.5, height: 47.5), radius: 14
             )
             .fill(CasioA178W.ring)
-            .frame(width: 440.5, height: 428.5)
+            .frame(width: 440.5, height: 440)
             .offset(x: 73, y: 95)
             CutCornerRect(cut: CGSize(width: 48, height: 48), bottomCut: CGSize(width: 40, height: 44), radius: 12)
                 .fill(CasioA178W.plate)
-                .frame(width: 427, height: 417.5)
+                .frame(width: 427, height: 427.5)
                 .offset(x: 80, y: 101)
         }
     }
@@ -39,7 +39,7 @@ struct A178WFace: View {
         let white = CasioA178W.printWhite
         return ZStack(alignment: .topLeading) {
             InkText(text: "CASIO", font: CaseFont.michroma)
-                .placed(in: CGRect(x: 142, y: 115.5, width: 108, height: 22), color: white, bold: 0.9)
+                .placed(in: CGRect(x: 142, y: 115.5, width: 108, height: 22), color: white, bold: 1.4, barBold: 0.85)
             Pointer(left: true).fill(white).frame(width: 17.5, height: 10).offset(x: 272, y: 108)
             InkText(text: "ILLUMINATOR", font: CaseFont.archivoBlack, slant: 0.22)
                 .placed(in: CGRect(x: 292, y: 106, width: 143.5, height: 14.5), color: white)
@@ -76,18 +76,27 @@ struct A178WFace: View {
         RoundedRectangle(cornerRadius: 2).fill(CasioA178W.printWhite).frame(width: 9, height: height).offset(x: x, y: y)
     }
 
+    private func heavy(_ text: String, _ box: CGRect, tracking: CGFloat = 0) -> some View {
+        InkText(text: text, font: CaseFont.michroma, tracking: tracking)
+            .placed(in: box, color: CasioA178W.printWhite, bold: 0.8, barBold: 0.5)
+    }
+
     private var bottomPrint: some View {
         let white = CasioA178W.printWhite
         return ZStack(alignment: .topLeading) {
             InkText(text: "WR", font: CaseFont.sairaExpanded, slant: 0.2)
                 .placed(in: CGRect(x: 134.5, y: 486.5, width: 101.5, height: 25.5), color: CasioA178W.blue)
-            InkText(text: "DUAL TIME", font: CaseFont.michroma, tracking: 0.2)
-                .placed(in: CGRect(x: 259.5, y: 485, width: 190, height: 17.5), color: white, bold: 0.5)
-            InkText(text: "10YEAR BATTERY", font: CaseFont.michroma)
-                .placed(in: CGRect(x: 258, y: 503, width: 191.5, height: 16.5), color: white, bold: 0.5)
-            Rectangle().fill(white).frame(width: 6.5, height: 2).offset(x: 243, y: 520.5)
-            InkText(text: "u", font: CaseFont.saira)
-                .placed(in: CGRect(x: 253, y: 519, width: 5, height: 4.5), color: white)
+            // Heavy extended print, one box per word (the image is turned a little: the right-hand
+            // words sit higher).
+            heavy("DUAL", CGRect(x: 259.5, y: 488.5, width: 85.5, height: 14), tracking: 0.36)
+            heavy("TIME", CGRect(x: 365, y: 485.5, width: 84.5, height: 14), tracking: 0.42)
+            heavy("10YEAR", CGRect(x: 258, y: 505.5, width: 84.5, height: 13))
+            heavy("BATTERY", CGRect(x: 352, y: 503, width: 97.5, height: 15.5))
+            // "·v·" under WR.
+            Circle().fill(white).frame(width: 3.5, height: 3.5).offset(x: 235.5, y: 519.5)
+            InkText(text: "v", font: CaseFont.saira)
+                .placed(in: CGRect(x: 243.5, y: 519.5, width: 5.5, height: 5), color: white, bold: 0.3)
+            Circle().fill(white).frame(width: 3, height: 3).offset(x: 254, y: 520)
         }
     }
 

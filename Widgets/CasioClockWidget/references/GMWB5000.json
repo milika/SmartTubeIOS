@@ -28,6 +28,7 @@
     {"name": "datebox", "mask": "ink", "box": [305, 196, 452, 267]},
     {"name": "DST", "mask": "ink", "box": [190, 262, 245, 281]},
     {"name": "HMM", "mask": "ink", "box": [209, 282, 390, 380]},
+    {"name": "(■) mark", "mask": "ink", "box": [404, 266, 433, 284]},
     {"name": "sec", "mask": "ink", "box": [412, 300, 455, 380]},
     {"name": "LCD glass", "mask": "glass", "box": [146, 171, 470, 389], "kind": "edges"}
   ]

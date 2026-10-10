@@ -49,9 +49,13 @@ struct W59Face: View {
     private var topPrint: some View {
         ZStack(alignment: .topLeading) {
             ink("CASIO", CaseFont.michroma)
-                .placed(in: CGRect(x: 116.5, y: 56, width: 111.5, height: 21.5), color: CasioW59.printWhite, bold: 0.8)
+                .placed(
+                    in: CGRect(x: 116.5, y: 56, width: 111.5, height: 21.5), color: CasioW59.printWhite, bold: 1.5,
+                    barBold: 0.9)
             ink("ALARM CHRONO", CaseFont.michroma)
-                .placed(in: CGRect(x: 270.5, y: 57.5, width: 154.5, height: 14.5), color: CasioW59.gold, bold: 0.3)
+                .placed(
+                    in: CGRect(x: 270.5, y: 57.5, width: 154.5, height: 14.5), color: CasioW59.gold, bold: 0.6,
+                    barBold: 0.4)
             marker(x: 110, y: 114)
             ink("LIGHT", CaseFont.michroma)
                 .placed(in: CGRect(x: 134, y: 113, width: 40.5, height: 10.5), color: CasioW59.labelWhite, bold: 0.2)

@@ -66,6 +66,10 @@ Naming a new module after a concept not listed here requires adding the term in 
   into several watches; its *module display* (`Module593Display`, …, an `LCDModuleDisplay`) is
   that LCD's layout, measured once and placed in each watch model's glass. A *face* draws the
   case around it. *Rejected*: "screen" (the whole widget), "face" for the display.
+- **LCD font** — a watch model's own 7-segment digit font (`CasioLCD-<Model>`), generated from
+  segments measured on its reference image (`tools/lcd_fonts.json`, `tools/casio_segfont.py`).
+- **Widget area** — the square of a watch model's canvas its widget shows: the face with a thin
+  strip of the case (the A158W's framing).
 - **Run** — one measured line of LCD characters in a module display (weekday, date, time,
   seconds): glyph height, anchored edge, baseline, squeeze and tracking, as an `LCDRun` value.
 - **Reference manifest** — a watch model's measuring record (`references/<Model>.json`): its

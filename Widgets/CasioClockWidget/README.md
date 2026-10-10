@@ -43,6 +43,9 @@ and the LCD window within 1.5 pt (`tools/casio_measure.py check`, see
   `tools/casio_segfont.py`): segment thickness, gaps, slant, corners, the "1" and the "7" are
   measured on the reference image. The DW-5000C keeps DSEG7.
 - Icons such as the signal and alarm marks are always shown, as in the reference images.
+- Each widget shows the face with a thin strip of the case around it (as the A158W), so print on
+  the case outside that strip is left out: the AE-1200WH's WORLD TIME and ILLUMINATOR, the
+  F-108WH's ILLUMINATOR and WATER RESIST, the W-800H's ILLUMINATOR, the W-738H's VIBRATION ALARM.
 - The faces' fonts are free look-alikes, stretched to the measured ink boxes.
 
 ## Use it
@@ -65,6 +68,13 @@ and the LCD window within 1.5 pt (`tools/casio_measure.py check`, see
 
 Each widget is a small (`systemSmall`) Home Screen widget, named after its watch in the widget
 gallery. Tap it for the light (iOS 17 interactive widgets). 12- or 24-hour time follows the device.
+
+The ABL-100WE's step bar reads today's steps from Health, which needs the host app's help (a
+widget can't show Health's permission sheet): the app and the widget extension both get the
+HealthKit entitlement and the App Group `group.com.void.smarttube` (`CasioSteps.sharedSuite`),
+the app has `NSHealthShareUsageDescription`, asks for read access to steps and stores today's
+count in the App Group when it is open. In SmartTube that is `CasioWidgetSteps`
+(`SmartTubeIOS/.../Views/Settings/WidgetStepsSection.swift`). Without it the bar stays empty.
 
 ### Apple Watch
 
@@ -106,9 +116,8 @@ Delete the `CasioWidgets…` lines and the package dependency.
 
 All under the SIL Open Font License 1.1, licences in `Sources/CasioClockWidget/Resources/`:
 the CasioLCD fonts (made for this package) and DSEG7 / DSEG14 Classic by Keshikan for the LCD;
-Michroma, Archivo Expanded Black, Saira Medium
-and Saira Expanded SemiBold (Google Fonts) as look-alikes of the watches' printing. Details in
-[docs/REFERENCES.md](docs/REFERENCES.md#typefaces).
+Michroma, Archivo Expanded Black, Saira Medium and Saira Expanded SemiBold (Google Fonts) as
+look-alikes of the watches' printing. Details in [docs/REFERENCES.md](docs/REFERENCES.md#typefaces).
 
 ## Tests
 

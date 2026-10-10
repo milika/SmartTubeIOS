@@ -43,8 +43,9 @@ add its row to REFERENCES.md.
 Pick an origin in image pixels and a canvas size in points that holds the watch's face (and any
 case print you keep). One image pixel per point is fine; `--scale` handles very large or small
 images, `--rotate` levels a tilted photo. Phone photos stored on their side are turned upright by
-their EXIF orientation first, and images with a transparent background are put on white. A phone's lens bows long straight lines near the photo's edges (the
-DBC-32's keypad rules by up to 5 pt): draw them straight and say so in the manifest's `notes`.
+their EXIF orientation first, and images with a transparent background are put on white. A
+phone's lens bows long straight lines near the photo's edges (the DBC-32's keypad rules by up to
+5 pt): draw them straight and say so in the manifest's `notes`.
 
 ```bash
 python3 tools/casio_measure.py canvas ref.png 540 580 860 700 --out ref-dir
@@ -116,7 +117,8 @@ In `Sources/CasioClockWidget/Models/<Name>/`:
 
 - **`Casio<Name>.swift`**: an `enum` conforming to `CasioModel`, with:
   - `kind`, which is permanent because it identifies placed widgets;
-  - `displayName`, `summary`, `canvas` and `widgetArea` (the square the widget shows);
+  - `displayName`, `summary`, `canvas` and `widgetArea` (the square the widget shows: the face
+    with about 14 pt of case around it, as the A158W; see ARCHITECTURE.md, *Framing*);
   - `caseBackground`, the palette, `lcd` (its `LCDStyle`) and `face(_:)`;
   - a `#Preview`.
 
@@ -160,7 +162,7 @@ measured in the reference's canvas coordinates:
   - `colonGap` places the hours relative to the minutes.
   - Live digits get their own timer windows when `tracking` ≠ 0, so the live clock stays exact.
 - **Computing a run** instead of iterating. Tracking is applied before the `xScale` squeeze, and
-  a DSEG digit advances 0.816 em with about 0.61 em of ink (em = `glyph`):
+  a digit (DSEG7 or CasioLCD) advances 0.816 em with about 0.61 em of ink (em = `glyph`):
   - `xScale` = measured ink width ÷ (0.61 × glyph);
   - `tracking` = measured pitch ÷ xScale − 0.816 × glyph;
   - for a trailing run, `edge` = last ink right edge + (right bearing ≈ 0.1 × glyph + tracking) × xScale;
@@ -267,6 +269,9 @@ different places in different lines, the hours' 1 is measured and the others are
   and `just lint` cover the package.
 - When you change shared code (`LCD/`, `Kit/`), the repository's `.improve/` golden renders show
   which other faces moved.
+- Check the framing: render with the case extension (`CASIO_RENDER=Casio<Name>` without
+  `CASIO_REFERENCE_LAYOUT`) and crop it to `widgetArea`; no case print may be cut in half.
 - Build the app, add the widget on the simulator and tap it for the light.
-- Add the model to the README's list and its reference to REFERENCES.md. A new font goes into
-  `Resources/` with its licence (OFL) and its name into `CaseFont`.
+- Add the model to the README's list and its reference to REFERENCES.md. A new print font goes
+  into `Resources/` with its licence (OFL) and its name into `CaseFont`; the model's LCD font is
+  an entry in `tools/lcd_fonts.json` and `python3 tools/casio_segfont.py` (section 6).

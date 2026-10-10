@@ -1,8 +1,9 @@
 import SwiftUI
 
 /// How a model's LCD looks: segment fonts, glass, ink, optional faint unlit segments and
-/// backlight. The defaults are the F-91W's (DSEG Bold Italic on grey-green glass; no unlit
-/// segments: on the real watch they're invisible straight on).
+/// backlight. The defaults are module 593's look (DSEG Bold Italic on grey-green glass; no unlit
+/// segments: on the real watch they're invisible straight on); models pass their own CasioLCD
+/// digits (`LCDFont.casio`).
 struct LCDStyle {
     var digits: LCDFont = .dseg7("BoldItalic")
     var letters: LCDFont = .dseg14("BoldItalic")

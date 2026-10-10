@@ -317,8 +317,9 @@ struct AppEntry: App {
                             browseViewModel.refreshIfStale()
                             consumePendingRSSFeedURL()
                             #if os(iOS)
-                            // The step widget catches up (Health is readable now).
-                            Task { await CasioWidgetSteps.refresh() }
+                            // The step widget catches up (Health is readable now); the first
+                            // time, Health is asked for access.
+                            Task { await CasioWidgetSteps.refreshOnForeground() }
                             #endif
                             #if os(iOS)
                             consumePendingWatchLaterID()

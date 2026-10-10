@@ -56,7 +56,7 @@ struct ABL100WEDisplay: LCDModuleDisplay {
         }
     }
 
-    /// The step diagnostic shown while the widget is lit: the source code (HEA, APP, WID, NON;
+    /// The step diagnostic shown while the widget is lit: the source code (HEA, APP, WID, NON, ASK;
     /// CasioSteps.Source) and the count ("0" when unknown). Nil when not lit or the timeline had
     /// no step reading (previews, reference renders).
     static func diagnostic(_ context: CasioFaceContext) -> (source: String, steps: String)? {

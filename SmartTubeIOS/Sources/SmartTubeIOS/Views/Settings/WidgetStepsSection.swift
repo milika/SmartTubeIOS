@@ -31,6 +31,33 @@ public enum CasioWidgetSteps {
         return await refresh()
     }
 
+    /// When the app comes to the foreground: if the step widget is on the Home Screen and Health
+    /// hasn't asked for access yet, asks now (until then every read fails); then shares today's
+    /// total with the widget.
+    public static func refreshOnForeground() async {
+        if await needsAccessRequest(), await stepWidgetInstalled() {
+            await requestAccess()
+        } else {
+            await refresh()
+        }
+    }
+
+    private static func needsAccessRequest() async -> Bool {
+        guard isAvailable else { return false }
+        let status = try? await HKHealthStore().statusForAuthorizationRequest(
+            toShare: [], read: [HKQuantityType(.stepCount)])
+        return status == .shouldRequest
+    }
+
+    private static func stepWidgetInstalled() async -> Bool {
+        await withCheckedContinuation { continuation in
+            WidgetCenter.shared.getCurrentConfigurations { result in
+                let widgets = (try? result.get()) ?? []
+                continuation.resume(returning: widgets.contains { $0.kind == widgetKind })
+            }
+        }
+    }
+
     /// Reads today's steps (the app is open, so Health is readable), stores them for the widget
     /// and redraws it. Returns the count, or nil when Health can't be read.
     @discardableResult

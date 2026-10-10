@@ -14,7 +14,7 @@ import HealthKit
 ///   widget shows the highest of its own read and the stored counts from today (a day's steps
 ///   only grow).
 /// - Health doesn't tell an app whether read access was denied: a denied read looks like a day
-///   with no steps.
+///   with no steps. Until access has been asked for, every read fails (source ASK).
 enum CasioSteps {
     /// The daily goal a full step bar stands for.
     static let goal = 10_000
@@ -33,6 +33,8 @@ enum CasioSteps {
         case widget = "WID"
         /// Nothing known.
         case none = "NON"
+        /// Nothing known, and Health hasn't been asked for access yet (open the app).
+        case ask = "ASK"
     }
 
     struct Reading: Equatable {
@@ -57,6 +59,7 @@ enum CasioSteps {
         for case let (steps?, source) in known where best.steps.map({ steps > $0 }) ?? true {
             best = Reading(steps: steps, source: source)
         }
+        if best.steps == nil, await needsAccessRequest() { best.source = .ask }
         return best
     }
 
@@ -87,6 +90,18 @@ enum CasioSteps {
     }
 
     // MARK: Health
+
+    /// Whether Health's permission sheet hasn't been shown yet (every read fails until it has).
+    static func needsAccessRequest() async -> Bool {
+        #if canImport(HealthKit) && os(iOS)
+        guard HKHealthStore.isHealthDataAvailable() else { return false }
+        let status = try? await HKHealthStore().statusForAuthorizationRequest(
+            toShare: [], read: [HKQuantityType(.stepCount)])
+        return status == .shouldRequest
+        #else
+        return false
+        #endif
+    }
 
     /// Today's total from Health; nil when Health isn't available or can't be read (locked).
     static func readToday(now: Date, calendar: Calendar) async -> Int? {

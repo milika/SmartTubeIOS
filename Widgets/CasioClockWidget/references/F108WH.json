@@ -1,0 +1,41 @@
+{
+  "model": "CasioF108WH",
+  "image": "F-108WH - owner, F-108WHC-2A navy gold product image (measured).png",
+  "canvas": {"origin": [270, 240], "scale": 0.75, "size": [720, 740]},
+  "time": "2024-06-30T22:58:50",
+  "twelveHour": true,
+  "notes": [
+    "The image is soft (the watch is about 500 px wide), so edges are measured to about 1 pt.",
+    "Font limitation: Casio's 1 fills the left of its cell (DSEG's sits right); the HHMM box starts after the hours' 1."
+  ],
+  "masks": {
+    "gold": {"r-b": [50, null], "r": [120, null]},
+    "white": {"lum": [170, null], "sat": [null, 40]},
+    "grey": {"lum": [110, null], "sat": [null, 60]},
+    "ink": {"lum": [null, 80]},
+    "glass": {"lum": [100, null], "g-b": [8, null]}
+  },
+  "elements": [
+    {"name": "ILLUMINATOR", "mask": "gold", "box": [211, 140, 481, 166]},
+    {"name": "WATER RESIST", "mask": "gold", "box": [215, 606, 471, 637]},
+    {"name": "gold line", "mask": "gold", "box": [110, 175, 578, 600]},
+    {"name": "CASIO", "mask": "white", "box": [286, 209, 406, 238]},
+    {"name": "START/STOP", "mask": "white", "box": [214, 251, 319, 269]},
+    {"name": "ALARM CHRONO", "mask": "white", "box": [362, 252, 497, 270]},
+    {"name": "MODE", "mask": "white", "box": [213, 505, 262, 523]},
+    {"name": "LIGHT", "mask": "white", "box": [423, 506, 475, 524]},
+    {"name": "arrow START", "mask": "grey", "box": [189, 252, 213, 268]},
+    {"name": "arrow MODE", "mask": "grey", "box": [188, 505, 212, 520]},
+    {"name": "arrow LIGHT", "mask": "grey", "box": [478, 507, 500, 523]},
+    {"name": "WR", "mask": "white", "box": [309, 524, 379, 551]},
+    {"name": "WR badge", "mask": "white", "box": [294, 513, 394, 561]},
+    {"name": "signal", "mask": "ink", "box": [212, 306, 250, 328]},
+    {"name": "bell", "mask": "ink", "box": [255, 304, 280, 332]},
+    {"name": "PM", "mask": "ink", "box": [202, 355, 250, 376]},
+    {"name": "weekday", "mask": "ink", "box": [306, 298, 388, 364]},
+    {"name": "day", "mask": "ink", "box": [413, 298, 493, 364]},
+    {"name": "HHMM", "mask": "ink", "box": [248, 375, 420, 478]},
+    {"name": "sec", "mask": "ink", "box": [420, 402, 497, 478]},
+    {"name": "LCD glass", "mask": "glass", "box": [184, 279, 507, 496], "kind": "edges"}
+  ]
+}

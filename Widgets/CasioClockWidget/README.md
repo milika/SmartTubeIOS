@@ -26,6 +26,7 @@ only resources are free fonts.
 | Casio A700W Negative | `CasioA700WNegative` | A700W display (negative) | segments glow | black face, cyan print, inverted display |
 | Casio F-105W | `CasioF105W` | F-105W display | blue-green EL | black resin, blue face, ILLUMINATOR band |
 | Casio AE-1200WH | `CasioAE1200WH` | AE-1200WH displays (main, dial, MUTE / ALM SIG, world map) | bright mint | silver; the dial's hands are left out (they could not keep time) |
+| Casio F-108WH | `CasioF108WH` | F-108WH display | bright mint | navy and gold (F-108WHC-2A) |
 | Casio DBC-32 | `CasioDBC32` | DBC-32 display (block-letter weekday, year) | bright mint | Databank: the whole face, keypad included |
 | G-Shock DW-5000C | `CasioDW5000C` | module 240 | warm bulb | the first G-Shock (1983) |
 | G-Shock DW-5600E | `CasioDW5600E` | module 3229 | blue-green EL | the widget leaves the PROTECTION / G-SHOCK bezel out |

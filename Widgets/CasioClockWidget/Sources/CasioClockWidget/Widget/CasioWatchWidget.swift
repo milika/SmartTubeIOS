@@ -25,12 +25,8 @@ struct CasioWatchWidget<Model: CasioModel>: Widget, CasioModelWidget {
                 FaceCanvas(size: Model.canvas, visible: Model.widgetArea) {
                     Model.face(
                         CasioFaceContext(
-                            date: entry.date, backlit: entry.backlit, steps: entry.steps, stepSource: entry.stepSource))
+                            date: entry.date, backlit: entry.backlit, steps: entry.steps))
                 }
-                // A new face for each light state: the timer text otherwise keeps its old ink until
-                // its next tick, so on inverted displays the live digits lit up after the rest.
-                .id(entry.backlit)
-                .transition(.identity)
             }
             .buttonStyle(.plain)
             // LCD digits switch, they don't roll (also at the hourly entry change; see LiveClock).

@@ -28,8 +28,6 @@ struct CasioClockEntry: TimelineEntry {
     var backlit = false
     /// Today's steps when the timeline was made (faces with a step display).
     var steps: Int?
-    /// Where the steps came from (CasioSteps.Source code), for the lit diagnostic.
-    var stepSource: String?
 }
 
 enum LiveClock {

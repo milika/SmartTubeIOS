@@ -102,9 +102,10 @@ WidgetKit only redraws a widget at its timeline entries, so `LiveClock/` combine
   detailed face reached 36 MB and was rejected. Hourly entries keep it to a few MB.
 - **The light:** tapping a widget runs `CasioBacklightIntent` for that model only; the provider
   returns a lit entry now, an unlit one 3 s later and two hourly entries, then reloads (a short
-  timeline renders quickly, so the light shows right after the tap). The face gets a new
-  identity per light state (`.id(entry.backlit)`, no transition): the timer text would otherwise
-  keep its old ink until its next tick, and an inverted display's live digits lit late.
+  timeline renders quickly, so the light shows right after the tap). The live digits
+  (`LiveHoursMinutes`, `LiveSeconds`) get a new identity per light state (no transition): timer
+  text would otherwise keep its old ink until its next tick, and an inverted display's live
+  digits lit late. Only they are replaced, so the rest of the face doesn't flash.
 - **12- or 24-hour** follows the device setting, as the watches do (PM, P or 24H marks).
 - **Steps** (`Steps/CasioSteps.swift`): a model with `usesSteps` (the ABL-100WE) gets today's
   step count from the Health app in its entries, toward a 10,000-step goal. The app asks for
@@ -113,10 +114,7 @@ WidgetKit only redraws a widget at its timeline entries, so `LiveClock/` combine
   the widget whenever it comes to the foreground. The provider reads Health when it builds the
   timeline and remakes it every 30 minutes; Health is encrypted while the iPhone is locked, so the app also
   reads today's total whenever it is open and stores it in the App Group, and the widget shows
-  the highest of its own read and today's stored counts. Tapping the widget (the light) shows
-  where the count came from instead of the date: HEA (Health just now), APP (the app's read),
-  WID (the widget's earlier read), NON (nothing) or ASK (Health hasn't asked for access yet:
-  open the app), and the count.
+  the highest of its own read and today's stored counts.
 
 ## The catalogue
 
@@ -143,7 +141,7 @@ F-91W's is `"CasioClockWidget"`, from when it was the only model).
   its elements on its canvas;
 - the case extension: bands move top to bottom, and the reference layout leaves it out;
 - steps (`StepsTests`): progress toward the goal, the ABL-100WE's bars, a stored count only on
-  its day, the highest reading wins, the lit diagnostic, only the ABL-100WE reads steps.
+  its day, the highest reading wins, only the ABL-100WE reads steps.
 
 Faces themselves are checked against their reference images with
 `tools/casio_measure.py check references/<Model>.json`: every element and the LCD window within

@@ -24,26 +24,20 @@ struct ABL100WEDisplay: LCDModuleDisplay {
             stepBar
             Rectangle().fill(style.ink).frame(width: 311.5, height: 1.5).offset(x: 156, y: 269.5)
             label("MUTE", CGRect(x: 322.5, y: 276.5, width: 51, height: 10.5))
-            if let diagnostic = Self.diagnostic(context) {
-                // Lit (tapped): where the steps came from and the count, instead of the date.
-                weekdayLetters(diagnostic.source)
-                LCDText(text: diagnostic.steps, font: style.digits, run: Self.stepCount, style: style)
-            } else {
-                weekdayLetters(DisplayParts.weekday3(for: context.date, calendar: context.calendar))
-                // 'YY- then M-DD.
-                Rectangle().fill(style.ink).frame(width: 3, height: 6).offset(x: 284.5, y: 294.5)
-                LCDText(
-                    text: String(format: "%02d", (date.year ?? 2000) % 100), font: style.digits, run: Self.year,
-                    style: style)
-                Rectangle().fill(style.ink).frame(width: 9.5, height: 4).offset(x: 339.5, y: 309.5)
-                LCDText(
-                    text: DisplayParts.twoCells(date.month ?? 1, blank: blank), font: style.digits, run: Self.month,
-                    style: style)
-                Rectangle().fill(style.ink).frame(width: 9.5, height: 4).offset(x: 401.5, y: 309.5)
-                LCDText(
-                    text: DisplayParts.twoCells(date.day ?? 1, blank: blank), font: style.digits, run: Self.day,
-                    style: style)
-            }
+            weekdayLetters(DisplayParts.weekday3(for: context.date, calendar: context.calendar))
+            // 'YY- then M-DD.
+            Rectangle().fill(style.ink).frame(width: 3, height: 6).offset(x: 284.5, y: 294.5)
+            LCDText(
+                text: String(format: "%02d", (date.year ?? 2000) % 100), font: style.digits, run: Self.year,
+                style: style)
+            Rectangle().fill(style.ink).frame(width: 9.5, height: 4).offset(x: 339.5, y: 309.5)
+            LCDText(
+                text: DisplayParts.twoCells(date.month ?? 1, blank: blank), font: style.digits, run: Self.month,
+                style: style)
+            Rectangle().fill(style.ink).frame(width: 9.5, height: 4).offset(x: 401.5, y: 309.5)
+            LCDText(
+                text: DisplayParts.twoCells(date.day ?? 1, blank: blank), font: style.digits, run: Self.day,
+                style: style)
             Rectangle().fill(style.ink).frame(width: 311.5, height: 3).offset(x: 156, y: 341)
             if parts.isPM {
                 InkText(text: "P", font: CaseFont.saira)
@@ -54,14 +48,6 @@ struct ABL100WEDisplay: LCDModuleDisplay {
             BellMark().fill(style.ink).frame(width: 17, height: 18.5).offset(x: 435.5, y: 369.5)
             LiveSeconds(context: context, run: Self.seconds, style: style)
         }
-    }
-
-    /// The step diagnostic shown while the widget is lit: the source code (HEA, APP, WID, NON, ASK;
-    /// CasioSteps.Source) and the count ("0" when unknown). Nil when not lit or the timeline had
-    /// no step reading (previews, reference renders).
-    static func diagnostic(_ context: CasioFaceContext) -> (source: String, steps: String)? {
-        guard context.backlit, let source = context.stepSource else { return nil }
-        return (source, String(context.steps ?? 0))
     }
 
     private func weekdayLetters(_ text: String) -> some View {
@@ -105,6 +91,5 @@ struct ABL100WEDisplay: LCDModuleDisplay {
         glyph: 64.5, edge: .trailing(379.9), baseline: 436.5, xScale: 0.966, tracking: -1.9, colonGap: 0.4)
     static let seconds = LCDRun(glyph: 41.5, edge: .trailing(457.7), baseline: 436.5, xScale: 0.968, tracking: 3.3)
     /// The lit step count: the date row's digits, right-aligned at the day's edge.
-    static let stepCount = LCDRun(glyph: 34.5, edge: .trailing(460.4), baseline: 329, xScale: 0.93, tracking: -1.9)
-    static let runs = [year, month, day, time, seconds, stepCount]
+    static let runs = [year, month, day, time, seconds]
 }

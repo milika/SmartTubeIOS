@@ -33,7 +33,6 @@ struct CasioClockProvider: TimelineProvider {
             let withSteps = entries.map { entry in
                 var entry = entry
                 entry.steps = reading.steps
-                entry.stepSource = reading.source.rawValue
                 return entry
             }
             completion(Timeline(entries: withSteps, policy: .after(now.addingTimeInterval(Self.stepsRefresh))))

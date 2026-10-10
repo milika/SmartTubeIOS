@@ -19,7 +19,13 @@ struct LiveHoursMinutes: View {
     let style: LCDStyle
 
     var body: some View {
-        if tracking == 0 { packedLayout } else { trackedLayout }
+        Group {
+            if tracking == 0 { packedLayout } else { trackedLayout }
+        }
+        // New timer views for each light state: timer text keeps its old ink until its next tick,
+        // so on inverted displays the live digits lit up after the rest.
+        .id(context.backlit)
+        .transition(.identity)
     }
 
     /// Each character in its own cell, `tracking` apart: hours and colon as text, minutes as two

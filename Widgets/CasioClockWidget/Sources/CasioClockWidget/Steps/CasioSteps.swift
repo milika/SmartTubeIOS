@@ -22,8 +22,7 @@ enum CasioSteps {
     /// The App Group the app and the widget extension share; the app writes its reads here.
     static let sharedSuite = "group.com.void.smarttube"
 
-    /// Where a step count came from: shown as a three-letter code while the widget is lit
-    /// (a diagnostic: tap the widget to see what it read).
+    /// Where a step count came from (which read won).
     enum Source: String {
         /// Read from Health just now.
         case health = "HEA"

@@ -91,6 +91,12 @@ WidgetKit only redraws a widget at its timeline entries, so `LiveClock/` combine
   returns a lit entry now, an unlit one 3 s later and two hourly entries, then reloads (a short
   timeline renders quickly, so the light shows right after the tap).
 - **12- or 24-hour** follows the device setting, as the watches do (PM, P or 24H marks).
+- **Steps** (`Steps/CasioSteps.swift`): a model with `usesSteps` (the ABL-100WE) gets today's
+  step count from the Health app in its entries, toward a 10,000-step goal. The app asks for
+  read access (Settings > Widgets; a widget can't show Health's sheet) and reloads the widget
+  when it comes to the foreground. The provider reads Health when it builds the timeline and
+  remakes it every 30 minutes; Health is encrypted while the iPhone is locked, so the last read
+  of the day is kept and used until a new one succeeds.
 
 ## The catalogue
 

@@ -269,7 +269,8 @@ def cmd_check(args):
     full = os.path.join(out, "render-full.png")
     env = dict(os.environ, CASIO_RENDER=model, CASIO_OUT=full, CASIO_TIME=manifest["time"],
                CASIO_12H="1" if manifest.get("twelveHour") else "0", CASIO_LIT="1" if args.lit else "0",
-               CASIO_REFERENCE_LAYOUT="1", CASIO_TZ=manifest.get("timeZone", "GMT"))
+               CASIO_REFERENCE_LAYOUT="1", CASIO_TZ=manifest.get("timeZone", "GMT"),
+               CASIO_STEPS=str(manifest.get("steps", "")))
     command = ["swift", "test", "--filter", "referenceRender"]
     if os.environ.get("CASIO_SCRATCH"):
         command += ["--scratch-path", os.environ["CASIO_SCRATCH"]]

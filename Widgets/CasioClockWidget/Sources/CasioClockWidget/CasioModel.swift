@@ -20,10 +20,13 @@ protocol CasioModel {
     /// The LCD's look: segment fonts, glass, ink, light.
     static var lcd: LCDStyle { get }
     @ViewBuilder static func face(_ context: CasioFaceContext) -> Face
+    /// Whether the face shows today's steps (CasioSteps); its timeline then reads them.
+    static var usesSteps: Bool { get }
 }
 
 extension CasioModel {
     static var widgetArea: CGRect { CGRect(origin: .zero, size: canvas) }
+    static var usesSteps: Bool { false }
 
     // Case print fonts (CaseFont), as `Model.michroma(size)` in faces.
     static func michroma(_ size: CGFloat) -> Font { CaseFont.custom(CaseFont.michroma, size) }
@@ -51,4 +54,6 @@ struct CasioFaceContext {
     var backlit = false
     /// Fixed seconds for static renders; the timer only animates inside a widget.
     var previewSeconds: Int?
+    /// Today's steps, for faces that show them (nil: not known).
+    var steps: Int?
 }

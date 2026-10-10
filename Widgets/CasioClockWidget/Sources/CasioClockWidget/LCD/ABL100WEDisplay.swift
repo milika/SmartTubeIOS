@@ -5,8 +5,9 @@ import SwiftUI
 /// the month-date; under a second rule P, a large H:MM, the signal and alarm marks and the seconds.
 /// Upright 7-segment digits. Measured on a front-on product image of the ABL-100WE-1A, in that
 /// face's canvas coordinates; `canvasOrigin` is where its 311.5 × 208 glass sits on that canvas
-/// (`placed(in:)`). The step bar, MUTE and the marks are shown as in the image (the widget has no
-/// step count).
+/// (`placed(in:)`). The step bar shows today's steps from the Health app toward 10,000 (CasioSteps):
+/// one bar per 1/17 of the goal, none when the steps aren't known. MUTE and the marks are shown as
+/// in the image.
 struct ABL100WEDisplay: LCDModuleDisplay {
     static let glass = CGSize(width: 311.5, height: 208)
     /// The glass's top-left corner on the ABL-100WE canvas the numbers below were measured on.
@@ -55,11 +56,19 @@ struct ABL100WEDisplay: LCDModuleDisplay {
         }
     }
 
-    /// "0", 17 bars and "100".
+    /// The bar's segments.
+    static let stepSegments = 17
+
+    /// Segments lit for a step count: one per full 1/17 of the goal.
+    static func litSegments(steps: Int?) -> Int {
+        Int((CasioSteps.progress(steps) * Double(stepSegments)).rounded(.down))
+    }
+
+    /// "0", the lit bars and "100".
     private var stepBar: some View {
         ZStack(alignment: .topLeading) {
             label("0", CGRect(x: 204, y: 248, width: 8, height: 9.5))
-            ForEach(0..<17, id: \.self) { index in
+            ForEach(0..<Self.litSegments(steps: context.steps), id: \.self) { index in
                 Rectangle().fill(style.ink).frame(width: 7.25, height: 15)
                     .offset(x: 217.5 + 9.5 * CGFloat(index), y: 245.5)
             }

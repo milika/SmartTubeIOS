@@ -14,7 +14,8 @@ import Testing
 /// CASIO_TZ names the time zone CASIO_TIME is in (default GMT; daylight saving time shows DST on
 /// displays that have it). CASIO_LIT=1 lights the LCD; CASIO_LIVE=1 renders the live timer views instead of fixed seconds;
 /// CASIO_SCALE sets pixels per point (default 2); CASIO_REFERENCE_LAYOUT=1 leaves the case extension
-/// out, as on the reference image (tools/casio_measure.py check does this).
+/// out, as on the reference image (tools/casio_measure.py check does this); CASIO_STEPS sets today's
+/// steps for faces with a step display.
 @Suite("Reference render (opt-in)")
 struct ReferenceRenderTests {
     private static let env = ProcessInfo.processInfo.environment
@@ -34,7 +35,8 @@ struct ReferenceRenderTests {
         let date = try #require(formatter.date(from: env["CASIO_TIME"] ?? "2024-06-30T22:58:50"))
         let context = CasioFaceContext(
             date: date, calendar: calendar, uses12HourClock: env["CASIO_12H"] == "1", backlit: env["CASIO_LIT"] == "1",
-            previewSeconds: env["CASIO_LIVE"] == "1" ? nil : calendar.component(.second, from: date))
+            previewSeconds: env["CASIO_LIVE"] == "1" ? nil : calendar.component(.second, from: date),
+            steps: env["CASIO_STEPS"].flatMap { Int($0) })
         let out = URL(fileURLWithPath: env["CASIO_OUT"] ?? NSTemporaryDirectory() + "\(kind).png")
         let scale = CGFloat(Double(env["CASIO_SCALE"] ?? "2") ?? 2)
         try CaseExtension.$referenceLayout.withValue(env["CASIO_REFERENCE_LAYOUT"] == "1") {

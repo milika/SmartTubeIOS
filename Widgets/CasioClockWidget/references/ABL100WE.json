@@ -4,9 +4,10 @@
   "canvas": {"origin": [280, 230], "scale": 1, "size": [640, 700]},
   "time": "2030-06-30T22:58:50",
   "twelveHour": true,
+  "steps": 10000,
   "notes": [
     "The image shows the year 2030 ('30-); 30 June 2030 is a Sunday.",
-    "The step bar, MUTE and the signal and alarm marks are drawn as on the image: the widget has no step count.",
+    "The image's step bar is full: rendered with 10,000 steps (the goal). MUTE and the signal and alarm marks are drawn as on the image.",
     "Font limitation: DSEG's 3 and 6 reach further left than the module's (month-day within 1.5 pt); the hours' 1 is left out of HHMM (DSEG's 1 sits at the right of its cell)."
   ],
   "masks": {

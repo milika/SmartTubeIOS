@@ -22,6 +22,9 @@ enum CasioABL100WE: CasioModel {
 
     static func face(_ context: CasioFaceContext) -> some View { ABL100WEFace(context: context) }
 
+    /// The step bar fills toward 10,000 steps from the Health app (CasioSteps).
+    static let usesSteps = true
+
     // Colours sampled from the image.
     static let plate = Color(red: 0.06, green: 0.075, blue: 0.105)
     static let blue = Color(red: 0.03, green: 0.37, blue: 0.59)

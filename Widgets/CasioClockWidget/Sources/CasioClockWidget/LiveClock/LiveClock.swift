@@ -26,6 +26,8 @@ import WidgetKit
 struct CasioClockEntry: TimelineEntry {
     let date: Date
     var backlit = false
+    /// Today's steps when the timeline was made (faces with a step display).
+    var steps: Int?
 }
 
 enum LiveClock {

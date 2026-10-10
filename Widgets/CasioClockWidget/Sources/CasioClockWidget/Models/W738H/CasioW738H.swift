@@ -13,8 +13,9 @@ enum CasioW738H: CasioModel {
         "A live digital clock in the style of the Casio W-738H with a negative display. Tap it for the light."
 
     static let canvas = CGSize(width: 640, height: 660)
-    /// The whole front, VIBRATION ALARM to the LIGHT button.
-    static let widgetArea = CGRect(x: 20, y: 40, width: 600, height: 600)
+    /// The bezel with 14 pt of the case around (as the A158W); VIBRATION ALARM and the LIGHT button
+    /// are left out.
+    static let widgetArea = CGRect(x: 82, y: 89, width: 475, height: 475)
 
     static let caseBackground = Color(white: 0.15)
 

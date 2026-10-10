@@ -11,8 +11,9 @@ enum CasioW800H: CasioModel {
     static let summary = "A live digital clock in the style of the navy Casio W-800H. Tap it for the light."
 
     static let canvas = CGSize(width: 580, height: 580)
-    /// The face, its bezel and the moulded ILLUMINATOR above it.
-    static let widgetArea = CGRect(x: 45, y: 58, width: 490, height: 490)
+    /// The bezel with 14 pt of the case around (as the A158W); the moulded ILLUMINATOR above it is
+    /// left out.
+    static let widgetArea = CGRect(x: 84, y: 127, width: 408, height: 408)
 
     /// Navy resin.
     static let caseBackground = Color(red: 0.25, green: 0.29, blue: 0.39)

@@ -14,8 +14,8 @@ enum CasioA178W: CasioModel {
     /// The face is about square; no case extension.
     static let caseExtension: CGFloat = 0
     static let canvas = CGSize(width: 640, height: 640)
-    /// The face, its silver ring and a strip of the chrome case.
-    static let widgetArea = CGRect(x: 49, y: 65, width: 488, height: 488)
+    /// The face and its silver ring with 14 pt of the chrome case around (as the A158W).
+    static let widgetArea = CGRect(x: 59, y: 81, width: 468.5, height: 468.5)
 
     /// Polished steel.
     static let caseBackground = LinearGradient(

@@ -13,8 +13,9 @@ enum CasioAE1200WH: CasioModel {
         "A live digital clock in the style of the Casio AE-1200WH world-time watch. Tap it for the light."
 
     static let canvas = CGSize(width: 680, height: 680)
-    /// The case from button to button, and its bands.
-    static let widgetArea = CGRect(x: 20, y: 18, width: 640, height: 640)
+    /// The bezel with a strip of the steel case above and below (as the A158W); WORLD TIME and
+    /// ILLUMINATOR on the case are left out.
+    static let widgetArea = CGRect(x: 70, y: 91.5, width: 520, height: 520)
 
     static let caseBackground = Color(red: 0.12, green: 0.13, blue: 0.15)
 

@@ -12,8 +12,9 @@ enum CasioF108WH: CasioModel {
     static let summary = "A live digital clock in the style of the Casio F-108WH. Tap it for the light."
 
     static let canvas = CGSize(width: 720, height: 740)
-    /// The face from the case's top edge to its bottom, centred on the gold line.
-    static let widgetArea = CGRect(x: 86, y: 116, width: 516, height: 516)
+    /// The face inside the gold line with a strip of the case above and below (as the A158W); the case's
+    /// ILLUMINATOR and WATER RESIST are left out.
+    static let widgetArea = CGRect(x: 121, y: 164, width: 446, height: 446)
 
     /// Navy resin.
     static let caseBackground = Color(red: 0.20, green: 0.20, blue: 0.32)

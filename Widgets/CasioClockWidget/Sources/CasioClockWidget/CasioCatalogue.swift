@@ -13,7 +13,7 @@ enum CasioModels {
         CasioF91W.self, CasioA158W.self, CasioGMWB5000.self, CasioDW5000C.self, CasioW59.self, CasioCA53W.self,
         CasioA168W.self, CasioW738H.self, CasioW800H.self, CasioDW5600E.self, CasioGWB5600.self, CasioW86.self,
         CasioLA680W.self, CasioA178W.self, CasioA700W.self, CasioA700WNegative.self,
-        CasioF105W.self,
+        CasioF105W.self, CasioDBC32.self,
     ]
     static let complications: [any CasioComplicationModel.Type] = [CasioF91W.self]
 }
@@ -41,6 +41,7 @@ public enum CasioWidgets {
         CasioWatchWidget<CasioA700W>()
         CasioWatchWidget<CasioA700WNegative>()
         CasioWatchWidget<CasioF105W>()
+        CasioWatchWidget<CasioDBC32>()
     }
     #else
     /// Every model's rectangular complication: `CasioWidgets.complications` in the watch

@@ -42,7 +42,9 @@ add its row to REFERENCES.md.
 
 Pick an origin in image pixels and a canvas size in points that holds the watch's face (and any
 case print you keep). One image pixel per point is fine; `--scale` handles very large or small
-images, `--rotate` levels a tilted photo.
+images, `--rotate` levels a tilted photo. Phone photos stored on their side are turned upright by
+their EXIF orientation first. A phone's lens bows long straight lines near the photo's edges (the
+DBC-32's keypad rules by up to 5 pt): draw them straight and say so in the manifest's `notes`.
 
 ```bash
 python3 tools/casio_measure.py canvas ref.png 540 580 860 700 --out ref-dir
@@ -171,8 +173,9 @@ measured in the reference's canvas coordinates:
     an L and a U in a double cell.
 - **Marks**: shared ones are in `LCD/LCDMarks.swift` (`SignalMark(arcs:)`, `BellMark`), the
   rest are shapes in the display, placed in their measured ink boxes.
-- **Dot-matrix dates**: `DotMatrixText` with the right glyph set (`.round5x7` for the GMW-B5000,
-  `.bold5x7` for the GW-B5600), the measured pitch and dot size, and `slant` for italic.
+- **Dot-matrix characters**: `DotMatrixText` with the right glyph set (`.round5x7` for the
+  GMW-B5000, `.bold5x7` for the GW-B5600, `.block5x5` for the DBC-32's weekday), the measured
+  pitch and dot size, and `slant` for italic.
 - **Printed LCD words** use `InkText`.
 - **Two versions of one watch** (the A700W and its negative): one face with a palette and a
   geometry per version (`A700WPalette`, `A700WGeometry`), each measured on its own image mapped

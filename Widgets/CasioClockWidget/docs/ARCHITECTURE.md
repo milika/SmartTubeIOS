@@ -61,8 +61,8 @@ F-91W complication uses `Module593Complication`, a compact layout for the 200 ×
 slot.
 
 Fixed marks shared by displays are in `LCDMarks.swift` (the hourly signal "D" with arcs, the
-alarm bell); `DotMatrixText` draws G-Shock dot-matrix dates in two glyph sets (rounded 5×7 for the
-GMW-B5000, bold and slanted for the GW-B5600).
+alarm bell); `DotMatrixText` draws dot-matrix characters in three glyph sets (rounded 5×7 for the
+GMW-B5000's date, bold and slanted for the GW-B5600's, 5×5 blocks for the DBC-32's weekday).
 
 `LCDStyle` holds a display's look: DSEG segment fonts, glass and ink colours, the light
 (colour and left-to-right falloff), an optional faint unlit-segment layer (off on every model), the

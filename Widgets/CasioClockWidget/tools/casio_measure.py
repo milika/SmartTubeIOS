@@ -40,7 +40,7 @@ import sys
 import tempfile
 
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
 from scipy import ndimage
 
 
@@ -85,9 +85,14 @@ def masks(path, size, spec=None):
     return {**defaults, **custom}
 
 
+def pixel(v):
+    """A canvas point (whole or half) as an index into the 2 px per point images."""
+    return int(round(2 * v))
+
+
 def ink_box(mask, box, min_fraction=0.05):
     x0, y0, x1, y1 = box
-    sub = mask[2 * y0:2 * y1, 2 * x0:2 * x1]
+    sub = mask[pixel(y0):pixel(y1), pixel(x0):pixel(x1)]
     if sub.sum() < 6:
         return None
     labels, n = ndimage.label(sub)
@@ -100,7 +105,8 @@ def ink_box(mask, box, min_fraction=0.05):
 
 
 def photo_canvas(image, ox, oy, w, h, scale=1, rotate=0):
-    photo = Image.open(image).convert("RGB")
+    # Phone photos are often stored on their side with an EXIF orientation tag.
+    photo = ImageOps.exif_transpose(Image.open(image)).convert("RGB")
     if rotate:
         photo = photo.rotate(rotate, resample=Image.BICUBIC, fillcolor=(255, 255, 255))
     return photo.transform((2 * w, 2 * h), Image.EXTENT, (ox, oy, ox + w * scale, oy + h * scale), Image.BICUBIC)
@@ -111,7 +117,7 @@ def window_edges(mask, box):
     each side through a band across the middle, where most of the band is inside the mask. Dark
     characters inside the window don't matter."""
     x0, y0, x1, y1 = box
-    sub = mask[2 * y0:2 * y1, 2 * x0:2 * x1]
+    sub = mask[pixel(y0):pixel(y1), pixel(x0):pixel(x1)]
     h, w = sub.shape
     rows = solid(sub[int(h * 0.4):int(h * 0.6)].mean(0) > 0.6)
     cols = solid(sub[:, int(w * 0.4):int(w * 0.6)].mean(1) > 0.6)

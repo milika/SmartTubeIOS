@@ -106,7 +106,11 @@ def ink_box(mask, box, min_fraction=0.05):
 
 def photo_canvas(image, ox, oy, w, h, scale=1, rotate=0):
     # Phone photos are often stored on their side with an EXIF orientation tag.
-    photo = ImageOps.exif_transpose(Image.open(image)).convert("RGB")
+    photo = ImageOps.exif_transpose(Image.open(image))
+    if "A" in photo.getbands():
+        # Product images with a transparent background: on white, as shops show them.
+        photo = Image.alpha_composite(Image.new("RGBA", photo.size, (255, 255, 255, 255)), photo.convert("RGBA"))
+    photo = photo.convert("RGB")
     if rotate:
         photo = photo.rotate(rotate, resample=Image.BICUBIC, fillcolor=(255, 255, 255))
     return photo.transform((2 * w, 2 * h), Image.EXTENT, (ox, oy, ox + w * scale, oy + h * scale), Image.BICUBIC)

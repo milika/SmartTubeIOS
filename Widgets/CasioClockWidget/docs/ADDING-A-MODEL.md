@@ -43,7 +43,7 @@ add its row to REFERENCES.md.
 Pick an origin in image pixels and a canvas size in points that holds the watch's face (and any
 case print you keep). One image pixel per point is fine; `--scale` handles very large or small
 images, `--rotate` levels a tilted photo. Phone photos stored on their side are turned upright by
-their EXIF orientation first. A phone's lens bows long straight lines near the photo's edges (the
+their EXIF orientation first, and images with a transparent background are put on white. A phone's lens bows long straight lines near the photo's edges (the
 DBC-32's keypad rules by up to 5 pt): draw them straight and say so in the manifest's `notes`.
 
 ```bash
@@ -177,6 +177,12 @@ measured in the reference's canvas coordinates:
   GMW-B5000, `.bold5x7` for the GW-B5600, `.block5x5` for the DBC-32's weekday), the measured
   pitch and dot size, and `slant` for italic.
 - **Printed LCD words** use `InkText`.
+- **Several windows** (the AE-1200WH's dial, indicators, map and main window): one display per
+  window, each an `LCDPanel`; a round window is a square glass with a radius of half its width.
+  Shapes that are not characters (a world map, a zone's segments) are traced from the image into
+  1 pt rows.
+- **Analogue indicators** (LCD hands) can't keep time in a widget that redraws hourly: leave them
+  out and say so in `notes`.
 - **Two versions of one watch** (the A700W and its negative): one face with a palette and a
   geometry per version (`A700WPalette`, `A700WGeometry`), each measured on its own image mapped
   onto the same canvas; their displays share one layout type (`A700WLayout`).

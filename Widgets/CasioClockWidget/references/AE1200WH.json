@@ -1,0 +1,53 @@
+{
+  "model": "CasioAE1200WH",
+  "image": "AE-1200WH - owner, AE-1200WH-1CV silver product image (measured).webp",
+  "canvas": {"origin": [200, 160], "scale": 1, "size": [680, 680]},
+  "time": "2024-06-30T22:08:36",
+  "twelveHour": true,
+  "notes": [
+    "The image has a transparent background; casio_measure puts it on white.",
+    "The dial's hands (hour and minute inside the ring, the seconds on it) are left out: the widget redraws once an hour, so they could not keep time. The dial's crosshair, ring and centre disc are drawn.",
+    "Font limitations: Casio's 1 fills the left of its cell (DSEG's sits right) and the seconds' 3 is wider; the HHMM box starts after the hours' 1 and the seconds box holds the 6.",
+    "The map's dark zone segments are drawn as on the image (they don't follow the device's time zone)."
+  ],
+  "masks": {
+    "print": {"lum": [110, null], "sat": [null, 35]},
+    "ink": {"lum": [null, 80]},
+    "glass": {"lum": [100, null], "sat": [null, 30], "g-b": [3, null]}
+  },
+  "elements": [
+    {"name": "WORLD", "mask": "ink", "box": [232, 71, 346, 94]},
+    {"name": "TIME", "mask": "ink", "box": [356, 70, 435, 94]},
+    {"name": "ILLUMINATOR", "mask": "ink", "box": [228, 610, 435, 633]},
+    {"name": "5 ALARMS", "mask": "print", "box": [190, 167, 311, 185]},
+    {"name": "CASIO", "mask": "print", "box": [364, 168, 466, 193]},
+    {"name": "WR100M", "mask": "print", "box": [181, 378, 287, 397]},
+    {"name": "10", "mask": "print", "box": [230, 518, 259, 540]},
+    {"name": "YEAR", "mask": "print", "box": [258.5, 518, 320, 540]},
+    {"name": "BATTERY", "mask": "print", "box": [324, 518, 424, 540]},
+    {"name": "ADJUST", "mask": "print", "box": [125, 248, 142, 345]},
+    {"name": "MODE", "mask": "print", "box": [131, 407, 148, 481]},
+    {"name": "LIGHT", "mask": "print", "box": [508, 219, 526, 296]},
+    {"name": "SEARCH", "mask": "print", "box": [509, 376, 527, 481]},
+    {"name": "dial 60", "mask": "print", "box": [219, 193, 248, 206]},
+    {"name": "dial 15", "mask": "print", "box": [312.5, 271, 323, 295]},
+    {"name": "dial 30", "mask": "print", "box": [219, 359, 248, 375]},
+    {"name": "dial 45", "mask": "print", "box": [146, 268, 159, 296]},
+    {"name": "dial glass", "mask": "glass", "box": [168.5, 214, 305.5, 351], "kind": "edges"},
+    {"name": "dial disc", "mask": "ink", "box": [212, 257, 262, 307]},
+    {"name": "MUTE window", "mask": "glass", "box": [340, 200, 503, 247], "kind": "edges"},
+    {"name": "MUTE", "mask": "ink", "box": [376, 205.5, 466, 219.5]},
+    {"name": "ALM", "mask": "ink", "box": [352, 224.5, 416, 239.5]},
+    {"name": "SIG", "mask": "ink", "box": [431, 224, 490, 239.5]},
+    {"name": "map window", "mask": "glass", "box": [340, 255, 503, 350], "kind": "edges"},
+    {"name": "map zone", "mask": "ink", "box": [453, 266, 468, 277]},
+    {"name": "map zone south", "mask": "ink", "box": [466, 314, 480, 331]},
+    {"name": "main window", "mask": "glass", "box": [158, 412, 503, 509], "kind": "edges"},
+    {"name": "main window top", "mask": "glass", "box": [345, 357, 503, 420], "kind": "edges"},
+    {"name": "weekday", "mask": "ink", "box": [333, 363.5, 407, 400]},
+    {"name": "date", "mask": "ink", "box": [425, 363.5, 495, 400]},
+    {"name": "PM", "mask": "ink", "box": [168, 426, 212, 444]},
+    {"name": "HHMM", "mask": "ink", "box": [236, 412, 412, 498]},
+    {"name": "sec", "mask": "ink", "box": [453, 434, 489, 498]}
+  ]
+}

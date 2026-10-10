@@ -37,6 +37,7 @@ compares the face with its reference again in one step (see [ADDING-A-MODEL.md](
 | LA680W | LA680WA-1 product image (1200 px) | supplied by the owner (2026-10-09); measured only | image px = (360, 300) + 0.75 × canvas, before the case extension |
 | AE-1200WH | AE-1200WH-1CV (silver) product image (1080 px, transparent background) | supplied by the owner (2026-10-10); measured only | canvas = image − (200, 160) |
 | F-108WH | F-108WHC-2A (navy, gold) product image (1080 px; the watch about 500 px wide) | supplied by the owner (2026-10-10); measured only | image px = (270, 240) + 0.75 × canvas |
+| LA-20WH | LA-20WH-1B (negative display) product image (500 × 600 px) | supplied by the owner (2026-10-10); measured only (a larger image would sharpen the small print) | image px = (110, 160) + 0.5 × canvas |
 | DBC-32 | `Casio DBC-32-1AES mit Resin Armband.jpg` (phone photo, 4032 × 3024, upright by its EXIF orientation) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Casio_DBC-32-1AES_mit_Resin_Armband.jpg), Lebensanalyst Biogr. Herr Binjansen, CC BY-SA 4.0 (an angled photo of a silver DBC-32 archived for comparison) | levelled by 0.8°, image px = (560, 800) + 3 × canvas |
 | G-Shock DW-5600E | DW-5600E-1V product image (2000 px, TACEQ) | supplied by the owner; measured only (an angled Amazon image archived for colours) | canvas = image − (540, 580), before the case extension |
 
@@ -87,6 +88,7 @@ at hand, the display is named after the watch.
 | `F105WDisplay` | not checked | F-105W | — |
 | `DBC32Display` | not checked | DBC-32 | — |
 | `F108WHDisplay` | not checked | F-108WH | — |
+| `LA20WHDisplay` | not checked | LA-20WH | — |
 | `AE1200WHDisplay`, `AE1200WHDialDisplay`, `AE1200WHIndicatorDisplay`, `AE1200WHMapDisplay` | not checked | AE-1200WH | one display per window |
 | `A700WDisplay`, `A700WNegativeDisplay` | not checked | A700W, A700W Negative | one layout (`A700WLayout`) measured on each version's image |
 

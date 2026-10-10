@@ -1,0 +1,36 @@
+{
+  "model": "CasioLA20WH",
+  "image": "LA-20WH - owner, LA-20WH-1B negative display product image (measured).png",
+  "canvas": {"origin": [110, 160], "scale": 0.5, "size": [560, 600]},
+  "time": "2024-06-30T22:58:50",
+  "twelveHour": true,
+  "notes": [
+    "The image is small (the face about 180 px wide, 2 pt per pixel), so edges are measured to about 1 pt.",
+    "Inverted display: the segments are the light mask; the LCD window is checked by its white rim.",
+    "Font limitation: Casio's 1 fills the left of its cell (DSEG's sits right); the HHMM box starts after the hours' 1."
+  ],
+  "masks": {
+    "white": {"lum": [150, null], "sat": [null, 40]},
+    "slate": {"lum": [80, null], "b-r": [15, null]},
+    "seg": {"lum": [120, null]}
+  },
+  "elements": [
+    {"name": "ILLUMINATOR", "mask": "white", "box": [174, 60, 377, 82]},
+    {"name": "WATER RESIST", "mask": "white", "box": [179, 420, 365, 445]},
+    {"name": "CASIO", "mask": "white", "box": [219, 112, 316, 136]},
+    {"name": "START/STOP", "mask": "slate", "box": [130, 139, 257, 157]},
+    {"name": "ALARM CHRONO", "mask": "slate", "box": [271, 140, 414, 157]},
+    {"name": "MODE", "mask": "slate", "box": [126, 345, 197, 364]},
+    {"name": "LIGHT", "mask": "slate", "box": [341, 346, 413, 365]},
+    {"name": "WR badge", "mask": "slate", "box": [216, 346, 322, 391]},
+    {"name": "WR", "mask": "slate", "box": [235, 355.5, 303, 382]},
+    {"name": "LCD rim", "mask": "white", "box": [145, 158, 400, 345]},
+    {"name": "signal", "mask": "seg", "box": [175, 187, 204, 204]},
+    {"name": "bell", "mask": "seg", "box": [208, 186, 226, 207]},
+    {"name": "PM", "mask": "seg", "box": [167, 221, 204, 238]},
+    {"name": "weekday", "mask": "seg", "box": [250, 183, 314, 228]},
+    {"name": "day", "mask": "seg", "box": [326, 182, 383, 228]},
+    {"name": "HHMM", "mask": "seg", "box": [200, 237, 330, 318]},
+    {"name": "sec", "mask": "seg", "box": [329, 258, 384, 318]}
+  ]
+}

@@ -92,6 +92,17 @@ at hand, the display is named after the watch.
 | `AE1200WHDisplay`, `AE1200WHDialDisplay`, `AE1200WHIndicatorDisplay`, `AE1200WHMapDisplay` | not checked | AE-1200WH | one display per window |
 | `A700WDisplay`, `A700WNegativeDisplay` | not checked | A700W, A700W Negative | one layout (`A700WLayout`) measured on each version's image |
 
+## Related projects
+
+Other recreations of Casio faces, for comparison (how others drew the same watch, what they kept
+and left out). Nothing from them is copied into this package; check the licence before reusing
+anything.
+
+| Project | What | Licence | Use here |
+|---|---|---|---|
+| [alexisphilip/Casio-F-91W](https://github.com/alexisphilip/Casio-F-91W) ([demo](https://www.alexisphilip.fr/demo/Casio-F-91W)) | a working F-91W in the browser: every segment, label and case shape traced as SVG from a close-up photo, driven by JavaScript | MIT | a second, independent tracing of the F-91W to cross-check our measurements |
+| [crotsertech/NeoSam](https://github.com/crotsertech/NeoSam) | a Wear OS watch face for Galaxy Watches inspired by the F-91W (time, date, battery, steps, weather, always-on mode) | GPL-3.0 | ideas for a watch face's extra complications; not a geometry reference |
+
 ## Finding new references
 
 - Wikimedia Commons first (free licences, often front-on): search the model name in the File

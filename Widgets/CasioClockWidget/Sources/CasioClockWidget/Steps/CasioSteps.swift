@@ -9,25 +9,55 @@ import HealthKit
 /// - The containing app asks for read access to steps (Health's permission sheet can't be shown
 ///   from a widget).
 /// - The widget reads today's total when it builds its timeline. Health data is encrypted while
-///   the iPhone is locked, so each good read is also kept (in the widget's own defaults) and used
-///   until a new one succeeds, for the same day only.
+///   the iPhone is locked, so a read can fail; the app also reads today's total whenever it comes
+///   to the foreground and stores it in the shared App Group (`sharedSuite`, the same keys). The
+///   widget shows the highest of its own read and the stored counts from today (a day's steps
+///   only grow).
 /// - Health doesn't tell an app whether read access was denied: a denied read looks like a day
 ///   with no steps.
 enum CasioSteps {
     /// The daily goal a full step bar stands for.
     static let goal = 10_000
 
-    /// Today's steps: a fresh read when Health is readable, else the last read today, else nil.
+    /// The App Group the app and the widget extension share; the app writes its reads here.
+    static let sharedSuite = "group.com.void.smarttube"
+
+    /// Where a step count came from: shown as a three-letter code while the widget is lit
+    /// (a diagnostic: tap the widget to see what it read).
+    enum Source: String {
+        /// Read from Health just now.
+        case health = "HEA"
+        /// Stored today by the app.
+        case app = "APP"
+        /// The widget's own earlier read today.
+        case widget = "WID"
+        /// Nothing known.
+        case none = "NON"
+    }
+
+    struct Reading: Equatable {
+        var steps: Int?
+        var source: Source
+    }
+
+    /// Today's steps: the highest of a fresh read and today's stored counts (the widget's and the
+    /// app's), with where it came from.
     static func current(
-        now: Date = Date(), calendar: Calendar = .current, defaults: UserDefaults = .standard
-    ) async
-        -> Int?
-    {
-        if let fresh = await readToday(now: now, calendar: calendar) {
-            store(fresh, at: now, defaults: defaults)
-            return fresh
+        now: Date = Date(), calendar: Calendar = .current, defaults: UserDefaults = .standard,
+        shared: UserDefaults? = UserDefaults(suiteName: sharedSuite)
+    ) async -> Reading {
+        let fresh = await readToday(now: now, calendar: calendar)
+        let ownCached = cached(now: now, calendar: calendar, defaults: defaults)
+        if let fresh { store(fresh, at: now, defaults: defaults) }
+        let known: [(Int?, Source)] = [
+            (fresh, .health), (shared.flatMap { cached(now: now, calendar: calendar, defaults: $0) }, .app),
+            (ownCached, .widget),
+        ]
+        var best = Reading(steps: nil, source: .none)
+        for case let (steps?, source) in known where best.steps.map({ steps > $0 }) ?? true {
+            best = Reading(steps: steps, source: source)
         }
-        return cached(now: now, calendar: calendar, defaults: defaults)
+        return best
     }
 
     /// The fraction of the goal, 0...1.
@@ -48,6 +78,8 @@ enum CasioSteps {
 
     /// The last stored count, if it was read today.
     static func cached(now: Date, calendar: Calendar = .current, defaults: UserDefaults = .standard) -> Int? {
+        // The app and the widget store under these keys (the app's copy: CasioWidgetSteps in
+        // SmartTubeIOS).
         guard let date = defaults.object(forKey: dateKey) as? Date, calendar.isDate(date, inSameDayAs: now),
             defaults.object(forKey: countKey) != nil
         else { return nil }

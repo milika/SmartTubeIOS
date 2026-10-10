@@ -56,4 +56,6 @@ struct CasioFaceContext {
     var previewSeconds: Int?
     /// Today's steps, for faces that show them (nil: not known).
     var steps: Int?
+    /// Where the steps came from (CasioSteps.Source code); a step face shows it while lit.
+    var stepSource: String?
 }

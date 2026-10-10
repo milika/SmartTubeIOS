@@ -47,6 +47,44 @@ struct StepsTests {
         #expect(CasioSteps.cached(now: tomorrow, calendar: calendar, defaults: defaults) == nil)
     }
 
+    @Test("the widget shows the highest of its own read and today's stored counts (its own, the app's)")
+    func combined() async throws {
+        let own = try freshDefaults(), shared = try freshDefaults()
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .gmt
+        let now = Date(timeIntervalSince1970: 1_782_000_000)
+        // No Health here (tests run on macOS): only stored counts.
+        func read() async -> CasioSteps.Reading {
+            await CasioSteps.current(now: now, calendar: calendar, defaults: own, shared: shared)
+        }
+        #expect(await read() == CasioSteps.Reading(steps: nil, source: .none))
+        CasioSteps.store(3_000, at: now, defaults: shared)
+        #expect(await read() == CasioSteps.Reading(steps: 3_000, source: .app))
+        CasioSteps.store(4_500, at: now, defaults: own)
+        #expect(await read() == CasioSteps.Reading(steps: 4_500, source: .widget))
+        let yesterday = now.addingTimeInterval(-86_400)
+        CasioSteps.store(9_000, at: yesterday, defaults: shared)
+        #expect(await read() == CasioSteps.Reading(steps: 4_500, source: .widget))
+    }
+
+    @Test("tapped (lit), the ABL-100WE shows where its steps came from and the count")
+    func diagnostic() {
+        var context = CasioFaceContext(date: Date(), backlit: true, steps: 6_500, stepSource: "HEA")
+        #expect(ABL100WEDisplay.diagnostic(context)?.source == "HEA")
+        #expect(ABL100WEDisplay.diagnostic(context)?.steps == "6500")
+        context.steps = nil
+        context.stepSource = "NON"
+        #expect(ABL100WEDisplay.diagnostic(context)?.steps == "0")
+        context.backlit = false
+        #expect(ABL100WEDisplay.diagnostic(context) == nil)
+        for code in ["HEA", "APP", "WID", "NON"] {
+            for letter in code {
+                #expect(
+                    DotMatrixText.Glyphs.block5x5.glyph(letter).joined().contains("#"), "no block glyph for \(letter)")
+            }
+        }
+    }
+
     @Test("only the ABL-100WE reads steps")
     func stepModels() {
         #expect(CasioModels.all.filter { $0.usesSteps }.map { $0.kind } == ["CasioABL100WE"])

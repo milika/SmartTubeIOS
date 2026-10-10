@@ -95,8 +95,11 @@ WidgetKit only redraws a widget at its timeline entries, so `LiveClock/` combine
   step count from the Health app in its entries, toward a 10,000-step goal. The app asks for
   read access (Settings > Widgets; a widget can't show Health's sheet) and reloads the widget
   when it comes to the foreground. The provider reads Health when it builds the timeline and
-  remakes it every 30 minutes; Health is encrypted while the iPhone is locked, so the last read
-  of the day is kept and used until a new one succeeds.
+  remakes it every 30 minutes; Health is encrypted while the iPhone is locked, so the app also
+  reads today's total whenever it is open and stores it in the App Group, and the widget shows
+  the highest of its own read and today's stored counts. Tapping the widget (the light) shows
+  where the count came from instead of the date: HEA (Health just now), APP (the app's read),
+  WID (the widget's earlier read) or NON, and the count.
 
 ## The catalogue
 

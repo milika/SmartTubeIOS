@@ -12,8 +12,9 @@ enum CasioABL100WE: CasioModel {
     static let summary = "A live digital clock in the style of the Casio ABL-100WE step tracker. Tap it for the light."
 
     static let canvas = CGSize(width: 640, height: 700)
-    /// The plate and a band of the steel case around it.
-    static let widgetArea = CGRect(x: 48, y: 83, width: 520, height: 520)
+    /// Zoomed in on the plate: its top and bottom edges just inside the widget (a hairline of
+    /// steel), its sides cropped by 20 pt (the side labels stay clear of the edge).
+    static let widgetArea = CGRect(x: 82.75, y: 118, width: 450, height: 450)
 
     /// Polished steel (as the A168W).
     static let caseBackground = LinearGradient(

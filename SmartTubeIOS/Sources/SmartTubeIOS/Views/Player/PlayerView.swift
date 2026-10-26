@@ -48,9 +48,8 @@ public struct PlayerView: View {
     @State var downloadAlertItem: DownloadAlertItem?
     #endif
     #if os(iOS)
-    @State var pipController: AVPictureInPictureController?
-    @State var pipDelegate: PiPDelegate?
-    @State var isPiPActive: Bool = false
+    var pipController: AVPictureInPictureController? { playerState.pipController }
+    var isPiPActive: Bool { playerState.isPiPActive }
     @State var isLandscapeLocked = false
     var playerLayer: AVPlayerLayer { playerState.playerHostView.playerLayer }
     @Environment(\.horizontalSizeClass) var horizontalSizeClass

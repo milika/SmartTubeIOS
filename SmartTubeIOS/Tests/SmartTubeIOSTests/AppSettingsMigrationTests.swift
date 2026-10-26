@@ -83,6 +83,7 @@ struct AppSettingsMigrationTests {
         #expect(settings.audioOnlyMode == true)
         #expect(settings.preferH264 == true)
         #expect(settings.iCloudSyncEnabled == true)
+        #expect(settings.iosPlayerMode == .youtube)
 
         // Missing field must decode to 0 (the pre-migration sentinel)
         #expect(
@@ -167,6 +168,7 @@ struct AppSettingsMigrationTests {
         original.sponsorBlockEnabled = false
         original.deArrowEnabled = true
         original.iCloudSyncEnabled = true
+        original.iosPlayerMode = .native
         original.settingsVersion = 1
 
         let encoded = try JSONEncoder().encode(original)
@@ -187,6 +189,7 @@ struct AppSettingsMigrationTests {
         #expect(decoded.sponsorBlockEnabled == original.sponsorBlockEnabled)
         #expect(decoded.deArrowEnabled == original.deArrowEnabled)
         #expect(decoded.iCloudSyncEnabled == original.iCloudSyncEnabled)
+        #expect(decoded.iosPlayerMode == original.iosPlayerMode)
         #expect(decoded.settingsVersion == original.settingsVersion)
     }
 
@@ -203,6 +206,7 @@ struct AppSettingsMigrationTests {
         #expect(settings.preferredQuality == defaults.preferredQuality)
         #expect(settings.playbackSpeed == defaults.playbackSpeed)
         #expect(settings.autoplayEnabled == defaults.autoplayEnabled)
+        #expect(settings.iosPlayerMode == .youtube)
         #expect(settings.seekBackSeconds == defaults.seekBackSeconds)
         #expect(settings.sponsorBlockEnabled == defaults.sponsorBlockEnabled)
         #expect(settings.settingsVersion == 0, "Empty JSON should yield settingsVersion=0 (migration sentinel)")

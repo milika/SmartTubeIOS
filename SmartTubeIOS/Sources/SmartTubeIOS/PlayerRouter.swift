@@ -14,8 +14,8 @@ import SmartTubeIOSCore
 // place instead of duplicated across every view.
 //
 // Routing rules:
-//   - If `settingsStore.useTOSPlayerOnIOS` is true (the default — always on except
-//     for UI tests that opt out) and this video hasn't previously hit a fatal embed
+//   - If `settingsStore.useTOSPlayerOnIOS` is true (the persisted default, unless the
+//     user selects Native Player or a UI test overrides it) and this video hasn't hit a fatal embed
 //     error (TOSPlayerStateStore.fallbackVideoId), present the WKWebView-based
 //     TOS-compliant player.
 //   - Otherwise present the AVPlayer-based pipeline.

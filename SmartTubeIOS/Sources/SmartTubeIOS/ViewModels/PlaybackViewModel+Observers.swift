@@ -4,6 +4,7 @@ import os
 
 #if canImport(UIKit)
 import MediaPlayer
+import UIKit
 #endif
 
 private let playerLog = CrashlyticsLogger(category: "Player")
@@ -68,6 +69,16 @@ extension PlaybackViewModel {
                 if playerWentSilent {
                     self.isPlaying = false
                     playerLog.notice("[rateObserver] player.rate→0 while isPlaying=true — syncing isPlaying=false")
+                    #if canImport(UIKit)
+                    let isBackgroundPause = UIApplication.shared.applicationState != .active
+                    if self.isPictureInPictureActive || isBackgroundPause {
+                        playerLog.notice(
+                            "[rateObserver] respecting external pause — pip=\(self.isPictureInPictureActive) appState=\(UIApplication.shared.applicationState.rawValue)"
+                        )
+                        self.updateNowPlayingPlayback()
+                        return
+                    }
+                    #endif
                     self.stallCount += 1
                     if self.firstRapidStallTime == nil { self.firstRapidStallTime = Date() }
                     let t = Int(self.currentTime)

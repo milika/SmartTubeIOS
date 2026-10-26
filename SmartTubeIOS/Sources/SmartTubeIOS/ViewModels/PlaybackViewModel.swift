@@ -255,6 +255,8 @@ public final class PlaybackViewModel {
     @ObservationIgnored nonisolated(unsafe) var rateObserver: NSKeyValueObservation?
     /// True while the video is being routed to an external display via AirPlay.
     public internal(set) var isAirPlaying: Bool = false
+    /// Used to distinguish user pauses in PiP from playback stalls.
+    var isPictureInPictureActive = false
     @ObservationIgnored nonisolated(unsafe) var airPlayObserver: NSKeyValueObservation?
     /// Counts exhaustive retry cycles (0 = no retry yet). Set by exhaustiveRetry(video:originalError:).
     var retryAttempts: Int = 0

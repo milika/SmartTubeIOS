@@ -1,5 +1,6 @@
 #if os(iOS)
 import AVFoundation
+import AVKit
 import UIKit
 import Observation
 import SmartTubeIOSCore
@@ -97,6 +98,9 @@ public final class PlayerStateStore {
     /// The UIView that owns the AVPlayerLayer. Never deallocated; transplanted
     /// between full-screen and mini-player containers via UIView.addSubview.
     let playerHostView: PersistentPlayerHostView
+    var pipController: AVPictureInPictureController?
+    var pipDelegate: PiPDelegate?
+    private(set) var isPiPActive = false
 
     // MARK: - Init
 
@@ -106,6 +110,39 @@ public final class PlayerStateStore {
         let hostView = PersistentPlayerHostView()
         hostView.playerLayer.player = vm.player
         self.playerHostView = hostView
+    }
+
+    func configurePiPIfNeeded(isEnabled: Bool, allowUnsupported: Bool) {
+        guard vm.isPlaying, pipController == nil,
+            playerHostView.playerLayer.player != nil,
+            isEnabled,
+            allowUnsupported || AVPictureInPictureController.isPictureInPictureSupported()
+        else { return }
+
+        let controller = AVPictureInPictureController(playerLayer: playerHostView.playerLayer)
+        controller?.canStartPictureInPictureAutomaticallyFromInline = true
+        let delegate = PiPDelegate(
+            onActiveChange: { [weak self] active in
+                self?.isPiPActive = active
+                self?.vm.isPictureInPictureActive = active
+            },
+            onDidStart: { [weak vm] in vm?.updateNowPlayingInfo() }
+        )
+        controller?.delegate = delegate
+        pipDelegate = delegate
+        pipController = controller
+    }
+
+    func startPiPIfPossible() {
+        guard let pipController, !pipController.isPictureInPictureActive else { return }
+        pipController.startPictureInPicture()
+    }
+
+    func clearPiP() {
+        pipController = nil
+        pipDelegate = nil
+        isPiPActive = false
+        vm.isPictureInPictureActive = false
     }
 
     // MARK: - Actions
@@ -154,6 +191,7 @@ public final class PlayerStateStore {
     func stop() {
         storeLog.notice("[PlayerStateStore] stop — currentPresentation=\(String(describing: self.presentation))")
         vm.stop()
+        clearPiP()
         currentVideo = nil
         presentation = .hidden
         let action = dismissPlayerAction

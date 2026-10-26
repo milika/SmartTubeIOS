@@ -212,7 +212,26 @@ public struct SettingsView: View {
             Toggle("Shuffle", isOn: $store.settings.shuffleEnabled)
 
             Toggle("Autoplay next video", isOn: $store.settings.autoplayEnabled)
+            #if os(iOS)
+            Picker("Video Player", selection: $store.settings.iosPlayerMode) {
+                Text("YouTube Player").tag(AppSettings.IOSPlayerMode.youtube)
+                Text("Native Player").tag(AppSettings.IOSPlayerMode.native)
+            }
+            .accessibilityIdentifier(AccessibilityID.settingsVideoPlayerPicker)
+            #endif
+            #if os(iOS)
             Toggle("Background Playback", isOn: $store.settings.backgroundPlaybackEnabled)
+                .disabled(store.settings.iosPlayerMode != .native)
+                .accessibilityIdentifier(AccessibilityID.settingsBackgroundPlaybackToggle)
+            if store.settings.iosPlayerMode != .native {
+                Text("Requires Native Player.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier(AccessibilityID.settingsBackgroundPlaybackRequirement)
+            }
+            #else
+            Toggle("Background Playback", isOn: $store.settings.backgroundPlaybackEnabled)
+            #endif
             #if !os(iOS)
             Toggle("Prefer H.264 Codec", isOn: $store.settings.preferH264)
                 .accessibilityIdentifier("settings.preferH264Toggle")

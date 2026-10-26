@@ -627,6 +627,8 @@ extension PlaybackViewModel {
             // If YouTube returns UNPLAYABLE/LOGIN_REQUIRED and the user is signed in,
             // automatically retry with the authenticated TV client before showing an error.
             let info: PlayerInfo
+            var usedVisionOSPrimary = false
+            var usedAndroidFallback = false
             if let cachedInfo = cached.playerInfo {
                 playerLog.notice(
                     "PREFETCH_HIT: playerInfo for \(video.id) — skipping network (hls=\(cachedInfo.hlsURL != nil) dash=\(cachedInfo.dashURL != nil) formats=\(cachedInfo.formats.count))"
@@ -637,6 +639,13 @@ extension PlaybackViewModel {
             {
                 playerLog.notice("PREFETCH_COALESCE: playerInfo for \(video.id) — joined in-flight prefetch task")
                 info = coalescedInfo
+            } else if let visionInfo = try? await api.fetchPlayerInfoVisionOS(videoId: video.id),
+                visionInfo.hlsURL != nil
+            {
+                // Cache playback policy does not preserve VisionOS provenance yet.
+                playerLog.notice("[VisionOS] primary: HLS available — skipping iOS/TV/Android chain")
+                usedVisionOSPrimary = true
+                info = visionInfo
             } else {
                 do {
                     info = try await api.fetchPlayerInfo(videoId: video.id)
@@ -668,6 +677,7 @@ extension PlaybackViewModel {
                                 playerLog.notice(
                                     "⚠️ TV client returned no HLS/adaptive streams — falling through to Android client")
                                 tvInfo = try await api.fetchPlayerInfoAndroid(videoId: video.id)
+                                usedAndroidFallback = true
                             }
                             info = tvInfo
                         } catch {
@@ -676,6 +686,7 @@ extension PlaybackViewModel {
                                 // Fall through to the Android client as a last resort.
                                 playerLog.notice("⚠️ TV client also unavailable — retrying with Android client")
                                 info = try await api.fetchPlayerInfoAndroid(videoId: video.id)
+                                usedAndroidFallback = true
                             } else {
                                 throw error
                             }
@@ -780,6 +791,17 @@ extension PlaybackViewModel {
                         self.selectedFormat = nil
                     }
                 }
+            }
+            if usedVisionOSPrimary {
+                if await tryAllStreams(video: video, info: info, label: "VisionOS", skipMuxed: true) { return }
+                playerLog.notice("[VisionOS] primary HLS failed — retrying exhaustively")
+                await exhaustiveRetry(video: video, originalError: nil, playerInfo: info, cached: cached)
+                return
+            }
+            if usedAndroidFallback,
+                await tryAllStreams(video: video, info: info, label: "Android/fastFallback")
+            {
+                return
             }
             // Build player item — preferredStreamURL is guaranteed non-nil here because
             // parsePlayerInfo throws APIError.unavailable when streamingData is absent.
@@ -1126,6 +1148,12 @@ extension PlaybackViewModel {
             // banner on the next video open.
             guard !(error is CancellationError) else { return }
             playerLog.error("❌ loadAsync error: \(String(describing: error))")
+            if case APIError.unavailable = error,
+                let androidInfo = try? await api.fetchPlayerInfoAndroid(videoId: video.id),
+                await tryAllStreams(video: video, info: androidInfo, label: "Android/fastFallback")
+            {
+                return
+            }
             // signInRequired from the primary iOS client can be a false-positive when
             // the user's auth session is broken (Multilogin INVALID_TOKENS): YouTube
             // returns LOGIN_REQUIRED even for public content. Route to exhaustiveRetry
@@ -1147,6 +1175,9 @@ extension PlaybackViewModel {
                     shouldRetryWithFallback = hasAuthToken
                 case .httpError(403):
                     shouldRetryWithFallback = hasAuthToken
+                case .unavailable:
+                    // Cipher-only responses must continue through native fallbacks.
+                    shouldRetryWithFallback = true
                 default:
                     shouldRetryWithFallback = false
                 }

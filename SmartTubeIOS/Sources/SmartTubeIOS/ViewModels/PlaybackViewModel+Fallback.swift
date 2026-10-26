@@ -95,11 +95,12 @@ extension PlaybackViewModel {
             await probeStreamMethod(method, video: video)
             return
         }
-        #if os(tvOS)
-        // tvOS cannot use the WKWebView/BotGuard recovery available on iOS/macOS.
         // Current yt-dlp uses VISIONOS as its primary JS-less Apple client. After
         // seeding a normal YouTube webpage session it returns token-free HLS with
-        // H.264 through 1080p, which AVPlayer handles natively on Apple TV.
+        // H.264 through 1080p, which AVPlayer handles natively.
+        // Runs on iOS/macOS too, before the WKWebView/AndroidVR race. Since 2026-08-17
+        // AndroidVR 403s every format without a GVS PO token (yt-dlp #17461), so that race
+        // burns ~85 s (2 × 40 s WKWebView timeouts) before landing on 360p muxed.
         do {
             let visionInfo = try await api.fetchPlayerInfoVisionOS(videoId: video.id)
             if await tryAllStreams(
@@ -115,7 +116,6 @@ extension PlaybackViewModel {
         } catch {
             playerLog.notice("[VisionOS] player request failed: \(error) — continuing legacy fallbacks")
         }
-        #endif
         #if canImport(WebKit)
         // Phase -1a: Cached WKWebView HLS URL shortcut — skip 5–9 s extraction when the
         // master manifest URL for this video was stored by a prior session or neighbour

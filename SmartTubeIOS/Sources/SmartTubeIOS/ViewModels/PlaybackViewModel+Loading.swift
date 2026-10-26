@@ -627,6 +627,8 @@ extension PlaybackViewModel {
             // If YouTube returns UNPLAYABLE/LOGIN_REQUIRED and the user is signed in,
             // automatically retry with the authenticated TV client before showing an error.
             let info: PlayerInfo
+            // Set when token-free VisionOS HLS is the primary source (see below).
+            var usedVisionOSPrimary = false
             if let cachedInfo = cached.playerInfo {
                 playerLog.notice(
                     "PREFETCH_HIT: playerInfo for \(video.id) — skipping network (hls=\(cachedInfo.hlsURL != nil) dash=\(cachedInfo.dashURL != nil) formats=\(cachedInfo.formats.count))"
@@ -637,6 +639,17 @@ extension PlaybackViewModel {
             {
                 playerLog.notice("PREFETCH_COALESCE: playerInfo for \(video.id) — joined in-flight prefetch task")
                 info = coalescedInfo
+            } else if let visionInfo = try? await api.fetchPlayerInfoVisionOS(videoId: video.id),
+                visionInfo.hlsURL != nil
+            {
+                // VisionOS first. It returns token-free HLS for most videos, while the iOS
+                // client often returns cipher-only formats and then walks a serial
+                // TV → Android chain (~1.5 s) before exhaustiveRetry reaches VisionOS anyway.
+                // Not stored in VideoPreloadCache: a cache hit replays through the iOS HLS
+                // policy, which lacks VisionOS's H.264 filtering and Safari UA.
+                playerLog.notice("[VisionOS] primary: HLS available — skipping iOS/TV/Android chain")
+                usedVisionOSPrimary = true
+                info = visionInfo
             } else {
                 do {
                     info = try await api.fetchPlayerInfo(videoId: video.id)
@@ -780,6 +793,14 @@ extension PlaybackViewModel {
                         self.selectedFormat = nil
                     }
                 }
+            }
+            // VisionOS HLS needs its own policy (Safari UA, H.264-filtered master),
+            // which tryAllStreams applies from the "VisionOS" label.
+            if usedVisionOSPrimary {
+                if await tryAllStreams(video: video, info: info, label: "VisionOS", skipMuxed: true) { return }
+                playerLog.notice("[VisionOS] primary HLS failed — retrying exhaustively")
+                await exhaustiveRetry(video: video, originalError: nil, playerInfo: info, cached: cached)
+                return
             }
             // Build player item — preferredStreamURL is guaranteed non-nil here because
             // parsePlayerInfo throws APIError.unavailable when streamingData is absent.

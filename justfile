@@ -3,6 +3,7 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 
 root      := justfile_directory()
 workspace := root + "/SmartTube.xcworkspace"
+project   := root + "/SmartTubeApp/SmartTubeApp.xcodeproj"
 package   := root + "/SmartTubeIOS"
 derived   := env_var_or_default("SMARTTUBE_DERIVED_DATA", env_var("HOME") + "/DevTemp/smarttube/derived-data/xcode")
 # Single source of truth for the target simulator. Override: `just sim="iPhone 17" test-ui`.
@@ -14,11 +15,12 @@ default:
     @just --list
 
 # --- quality gates ---------------------------------------------------------
+# Extension sources live outside SmartTubeApp/Sources, so every Swift folder is listed.
 format:
-    xcrun swift-format format --in-place --recursive --configuration {{root}}/.swift-format {{package}}/Sources {{package}}/Tests {{root}}/SmartTubeApp/Sources {{root}}/SmartTubeApp/UITests "{{root}}/SmartTubeApp/Smart Tube"
+    xcrun swift-format format --in-place --recursive --configuration {{root}}/.swift-format {{package}}/Sources {{package}}/Tests {{root}}/SmartTubeApp/Sources {{root}}/SmartTubeApp/UITests "{{root}}/SmartTubeApp/Smart Tube" {{root}}/SmartTubeApp/ShareExtension {{root}}/SmartTubeApp/SafariExtension {{root}}/SmartTubeApp/DownloadWidget
 
 format-check:
-    xcrun swift-format lint --strict --recursive --configuration {{root}}/.swift-format {{package}}/Sources {{package}}/Tests {{root}}/SmartTubeApp/Sources {{root}}/SmartTubeApp/UITests "{{root}}/SmartTubeApp/Smart Tube"
+    xcrun swift-format lint --strict --recursive --configuration {{root}}/.swift-format {{package}}/Sources {{package}}/Tests {{root}}/SmartTubeApp/Sources {{root}}/SmartTubeApp/UITests "{{root}}/SmartTubeApp/Smart Tube" {{root}}/SmartTubeApp/ShareExtension {{root}}/SmartTubeApp/SafariExtension {{root}}/SmartTubeApp/DownloadWidget
 
 lint:
     cd {{root}} && swiftlint lint --strict --baseline .swiftlint.baseline --config .swiftlint.yml
@@ -28,6 +30,20 @@ lint-baseline:
 
 secrets-check:
     cd {{root}} && scripts/check-no-secrets.sh
+
+# Fails if signing/bundle identity was duplicated outside Config/Base.xcconfig
+# (Xcode's Signing pane writes DEVELOPMENT_TEAM into project.pbxproj behind your back).
+identity-check:
+    cd {{root}} && scripts/check-identity.sh
+
+# Print the team, bundle IDs, App Group and version every target will actually build with.
+# Use this to confirm a Config/Secrets.xcconfig override took effect.
+identity:
+    @for t in SmartTube "Smart Tube" SmartTubeDownloadWidget SmartTubeShareExtension; do \
+        echo "== $t"; \
+        xcodebuild -project {{project}} -target "$t" -configuration Debug -showBuildSettings 2>/dev/null \
+            | grep -E "^ *(PRODUCT_BUNDLE_IDENTIFIER|DEVELOPMENT_TEAM|SMARTTUBE_APP_GROUP_ID|SMARTTUBE_UBIQUITY_KVSTORE_ID|MARKETING_VERSION|CURRENT_PROJECT_VERSION) = "; \
+    done
 
 doc-links:
     cd {{root}} && scripts/check-doc-links.sh
@@ -63,7 +79,7 @@ test-ui:
 test-ui-one id:
     xcodebuild test -workspace {{workspace}} -scheme SmartTube -destination "platform=iOS Simulator,name={{sim}}" -derivedDataPath {{derived}} -only-testing:{{id}} 2>&1 | grep -E "Test Case|TEST SUCCEEDED|TEST FAILED|error:" | tail -20
 
-ci: secrets-check doc-links format-check lint test-unit
+ci: secrets-check identity-check doc-links format-check lint test-unit
     @echo "CI gate passed"
 
 # regenerate the Unreleased section of CHANGELOG.md from Conventional Commits since the last tag

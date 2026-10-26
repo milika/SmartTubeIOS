@@ -126,7 +126,8 @@ struct WatchLaterRemovalTests {
 
     @Test("addToWatchLater returns the new entry's setVideoId from the response (#157)")
     func addToWatchLaterReturnsSetVideoId() async throws {
-        let response = #"{"status":"STATUS_SUCCEEDED","playlistEditResults":[{"playlistEditVideoAddedResultData":{"videoId":"vid1","setVideoId":"NEW_ENTRY_TOKEN"}}]}"#
+        let response =
+            #"{"status":"STATUS_SUCCEEDED","playlistEditResults":[{"playlistEditVideoAddedResultData":{"videoId":"vid1","setVideoId":"NEW_ENTRY_TOKEN"}}]}"#
         StubURLProtocol.responses = ["browse/edit_playlist": (200, Data(response.utf8))]
         StubURLProtocol.capturedBodies = [:]
         let token = try await makeAPI().addToWatchLater(videoId: "vid1")

@@ -9,12 +9,13 @@ import os
 public struct CrashlyticsLogger: Sendable {
 
     /// #92: set once from AppEntry.swift's init() (a different module, hence `public`),
-    /// before any logging can happen, from `AppSettings.disableAnalytics`. When `false`,
-    /// AppEntry skips `FirebaseApp.configure()` entirely (so the SDK makes no network calls
-    /// at all, fixing the startup delay some users saw when analytics domains are
-    /// DNS-blocked) — which means every method below must skip touching
-    /// `Crashlytics.crashlytics()` too, since calling it without a configured FirebaseApp
-    /// is a fatal error, not a silent no-op.
+    /// before any logging can happen, from `AppSettings.disableAnalytics` AND whether the
+    /// bundled `GoogleService-Info.plist` is usable (`FirebaseConfiguration.isValid`).
+    /// When `false`, the entry points skip `FirebaseApp.configure()` entirely (so the SDK
+    /// makes no network calls at all, fixing the startup delay some users saw when
+    /// analytics domains are DNS-blocked) — which means every method below must skip
+    /// touching `Crashlytics.crashlytics()` too, since calling it without a configured
+    /// FirebaseApp is a fatal error, not a silent no-op.
     public nonisolated(unsafe) static var isEnabled = true
 
     /// Short identifier (8 hex chars) generated once per app session, independent of

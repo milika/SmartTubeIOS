@@ -1,11 +1,39 @@
-// Shared settings for all targets. Secrets are optional so forks/CI build without them.
+// Shared build settings for every target. Included by Debug.xcconfig and Release.xcconfig,
+// which are the project-level base configurations.
+//
+// Identity is defined HERE and nowhere else:
+//   SMARTTUBE_TEAM_ID          Apple Developer team used for signing
+//   SMARTTUBE_BUNDLE_PREFIX    reverse-DNS prefix, e.g. com.yourdomain
+//
+// To build under a different team/identity, override those two inputs in
+// Config/Secrets.xcconfig (gitignored, never commit). Everything below the include is
+// derived from them — do not override the derived block, and do not add these settings
+// to project.pbxproj: `scripts/check-identity.sh` (run by `just ci`) fails if they
+// reappear there, because project-level build settings shadow this file.
+
+SMARTTUBE_TEAM_ID = 5A4JA438MW
+SMARTTUBE_BUNDLE_PREFIX = com.void
+// Name of the manual tvOS distribution profile (Code Signing Style = Manual for that SDK).
+SMARTTUBE_TV_PROVISIONING_PROFILE = Smart Tube TV
+
 #include? "Secrets.xcconfig"
-SWIFT_VERSION = 6.0
+
+// --- derived from the inputs above; override the inputs instead ---
+SMARTTUBE_TV_TEAM_ID = $(SMARTTUBE_TEAM_ID)
+SMARTTUBE_BUNDLE_BASE = $(SMARTTUBE_BUNDLE_PREFIX).smarttube
+SMARTTUBE_APP_GROUP_ID = group.$(SMARTTUBE_BUNDLE_BASE)
+SMARTTUBE_UBIQUITY_KVSTORE_ID = $(TeamIdentifierPrefix)$(SMARTTUBE_BUNDLE_BASE)
+
+// --- shared settings (must not be duplicated in project.pbxproj) ---
+// Swift 6 language mode is a separate migration; the app targets build in 5.9 today.
+SWIFT_VERSION = 5.9
 SWIFT_STRICT_CONCURRENCY = complete
+MARKETING_VERSION = 5.6
+CURRENT_PROJECT_VERSION = 24
 IPHONEOS_DEPLOYMENT_TARGET = 17.0
 MACOSX_DEPLOYMENT_TARGET = 14.0
-TVOS_DEPLOYMENT_TARGET = 17.0
-MARKETING_VERSION = 5.1
-CURRENT_PROJECT_VERSION = 3
+TVOS_DEPLOYMENT_TARGET = 17.6
+// YES everywhere except the two app targets that run the Crashlytics dSYM phase.
 ENABLE_USER_SCRIPT_SANDBOXING = YES
 DEVELOPMENT_TEAM = $(SMARTTUBE_TEAM_ID)
+DEVELOPMENT_TEAM[sdk=appletvos*] = $(SMARTTUBE_TV_TEAM_ID)

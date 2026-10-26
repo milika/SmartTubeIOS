@@ -8,6 +8,10 @@ CLAUDE.local.md
 .LSOverride
 ._*
 
+# Editor / build-server artifacts (machine-specific)
+.vscode/
+buildServer.json
+
 # Xcode
 *.xcuserstate
 xcuserdata/

@@ -1,7 +1,7 @@
 import ActivityKit
+import SmartTubeIOSCore
 import SwiftUI
 import WidgetKit
-import SmartTubeIOSCore
 
 // Downloading is compiled out (App Store guideline 5.2.3). Define ENABLE_DOWNLOADS to build it.
 #if ENABLE_DOWNLOADS
@@ -34,8 +34,11 @@ struct DownloadLiveActivityWidget: Widget {
                         Circle()
                             .stroke(Color.white.opacity(0.25), lineWidth: 4)
                         Circle()
-                            .trim(from: 0, to: context.state.phase == .downloading
-                                  ? context.state.progress : 1)
+                            .trim(
+                                from: 0,
+                                to: context.state.phase == .downloading
+                                    ? context.state.progress : 1
+                            )
                             .stroke(Color.white, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                             .rotationEffect(.degrees(-90))
                     }
@@ -64,8 +67,11 @@ struct DownloadLiveActivityWidget: Widget {
                     Circle()
                         .stroke(Color.white.opacity(0.3), lineWidth: 2.5)
                     Circle()
-                        .trim(from: 0, to: context.state.phase == .downloading
-                              ? context.state.progress : 1)
+                        .trim(
+                            from: 0,
+                            to: context.state.phase == .downloading
+                                ? context.state.progress : 1
+                        )
                         .stroke(Color.white, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                 }
@@ -118,11 +124,11 @@ private struct LockScreenView: View {
 private extension DownloadActivityAttributes.DownloadContentState.Phase {
     var displayLabel: String {
         switch self {
-        case .fetching:    return "Preparing download…"
+        case .fetching: return "Preparing download…"
         case .downloading: return "Downloading…"
-        case .saving:      return "Saving to Photos…"
-        case .done:        return "Saved to Photos"
-        case .failed:      return "Download failed"
+        case .saving: return "Saving to Photos…"
+        case .done: return "Saved to Photos"
+        case .failed: return "Download failed"
         }
     }
 }

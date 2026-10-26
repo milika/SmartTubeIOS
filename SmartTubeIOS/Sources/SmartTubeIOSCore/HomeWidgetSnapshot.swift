@@ -49,7 +49,6 @@ public struct HomeWidgetSnapshot: Codable, Equatable, Sendable {
 }
 
 public struct HomeWidgetStore: Sendable {
-    public static let appGroup = "group.com.void.smarttube"
     /// The widget's `kind`, used by the app to ask WidgetKit for a reload.
     public static let widgetKind = "SmartTubeHomeWidget"
     /// Large widget shows a 2×3 grid.
@@ -65,6 +64,7 @@ public struct HomeWidgetStore: Sendable {
     /// The store in the shared App Group container, or nil when the entitlement is missing.
     public static var shared: HomeWidgetStore? {
         guard
+            let appGroup = AppGroup.identifier,
             let container = FileManager.default.containerURL(
                 forSecurityApplicationGroupIdentifier: appGroup)
         else { return nil }

@@ -1,5 +1,4 @@
 import XCTest
-import UITestHelpers
 
 // MARK: - HomeShortsUITests
 //

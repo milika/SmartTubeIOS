@@ -18,7 +18,8 @@ public enum SmartTubeURLScheme {
         case "video":
             videoID = url.pathComponents.filter { $0 != "/" }.first
         case "watch":
-            videoID = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+            videoID =
+                URLComponents(url: url, resolvingAgainstBaseURL: false)?
                 .queryItems?.first(where: { $0.name == "v" })?.value
         default:
             videoID = nil

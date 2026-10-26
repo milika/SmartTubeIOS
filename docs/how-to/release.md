@@ -7,9 +7,10 @@
 ## What's actually automated today
 
 1. Bump the version in `SmartTubeApp/Config/Base.xcconfig` — `MARKETING_VERSION` (user-facing,
-   e.g. `5.1`) and `CURRENT_PROJECT_VERSION` (build number, monotonic integer). These are single
-   source of truth once WS1-T1.4's pbxproj wiring lands (see `docs/adr/0001-maintainability-baseline.md`
-   for status); until then also check `project.pbxproj` doesn't have a stale hardcoded value.
+   e.g. `5.6`) and `CURRENT_PROJECT_VERSION` (build number, monotonic integer). That file is
+   the only place these live (`just identity-check` fails if they reappear in
+   `project.pbxproj`). For a one-off build number, `scripts/testflight_upload.sh <build>`
+   passes it on the `xcodebuild` command line instead of editing any file.
 2. `just changelog` regenerates the `Unreleased` section of `CHANGELOG.md` from Conventional
    Commits since the last tag (`cliff.toml`, WS1-T1.7). Review and edit before committing — it's a
    draft, not a final copy-paste.

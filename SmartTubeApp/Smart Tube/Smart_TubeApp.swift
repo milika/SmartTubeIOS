@@ -25,9 +25,12 @@ struct SmartTubeTVApp: App {
 
     init() {
         // #92: see AppEntry.swift's init() for why order matters here — settingsStore
-        // must exist before deciding whether to configure Firebase at all.
+        // must exist before deciding whether to configure Firebase at all, and
+        // CrashlyticsLogger.isEnabled also covers a missing/mismatched
+        // GoogleService-Info.plist so the logger never calls an unconfigured Firebase.
         let settingsStore = SettingsStore()
-        CrashlyticsLogger.isEnabled = !settingsStore.settings.disableAnalytics
+        CrashlyticsLogger.isEnabled =
+            !settingsStore.settings.disableAnalytics && FirebaseConfiguration.isValid()
         if CrashlyticsLogger.isEnabled {
             FirebaseApp.configure()
         }
@@ -55,7 +58,7 @@ struct SmartTubeTVApp: App {
                 .environment(settingsStore)
                 .environment(\.innerTubeAPI, api)
                 #if ENABLE_DOWNLOADS
-                .environment(cardDownloadService)
+            .environment(cardDownloadService)
                 #endif
                 .onChange(of: authService.accessToken, initial: true) { _, newToken in
                     Task {

@@ -46,25 +46,25 @@ struct SmartTubeApp: App {
                 .environment(settingsStore)
                 .environment(\.innerTubeAPI, api)
                 #if ENABLE_DOWNLOADS
-                .environment(cardDownloadService)
+            .environment(cardDownloadService)
                 #endif
                 #if ENABLE_DOWNLOADS
-                .environment(DownloadStore.shared)
-                #endif
-                .onChange(of: authService.accessToken, initial: true) { _, newToken in
-                    Task {
-                        await api.setAuthToken(newToken)
-                        await browseViewModel.updateAuthToken(newToken)
-                    }
+            .environment(DownloadStore.shared)
+            #endif
+            .onChange(of: authService.accessToken, initial: true) { _, newToken in
+                Task {
+                    await api.setAuthToken(newToken)
+                    await browseViewModel.updateAuthToken(newToken)
                 }
-                .onChange(of: settingsStore.settings.enabledSections) { _, newSections in
-                    browseViewModel.configureSections(newSections)
-                }
-                .task {
-                    // Sync enablement state on launch, then start the iCloud KV listener.
-                    iCloudSyncManager.shared.syncEnabled = settingsStore.settings.iCloudSyncEnabled
-                    await iCloudSyncManager.shared.start()
-                }
+            }
+            .onChange(of: settingsStore.settings.enabledSections) { _, newSections in
+                browseViewModel.configureSections(newSections)
+            }
+            .task {
+                // Sync enablement state on launch, then start the iCloud KV listener.
+                iCloudSyncManager.shared.syncEnabled = settingsStore.settings.iCloudSyncEnabled
+                await iCloudSyncManager.shared.start()
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {

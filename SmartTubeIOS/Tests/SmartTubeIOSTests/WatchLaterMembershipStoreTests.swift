@@ -69,7 +69,8 @@ struct WatchLaterMembershipStoreTests {
     func savedVideoKeepsToken() {
         let (store, _) = freshStore()
         store.markSaved(Video(id: "VID_A", title: "A", channelTitle: "C"), setVideoId: "TOKEN_A")
-        store.markSaved(Video(id: "VID_B", title: "B", channelTitle: "C"), setVideoId: nil, at: Date(timeIntervalSinceNow: 1))
+        store.markSaved(
+            Video(id: "VID_B", title: "B", channelTitle: "C"), setVideoId: nil, at: Date(timeIntervalSinceNow: 1))
         #expect(store.setVideoId(for: "VID_A") == "TOKEN_A")
         #expect(store.savedVideo("VID_A")?.playlistId == "WL")
         #expect(store.recentlySavedVideos(within: 60).map(\.id) == ["VID_B", "VID_A"])

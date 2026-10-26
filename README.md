@@ -100,15 +100,28 @@ cd SmartTubeIOS
 open SmartTube.xcworkspace
 ```
 
-### Signing
+### Signing and bundle identity
 
-The project requires an Apple Developer Team ID and a Firebase `GoogleService-Info.plist` to build.  
-Copy `SmartTubeApp/Config/Secrets.xcconfig.example` to `SmartTubeApp/Config/Secrets.xcconfig` and fill in your Team ID:
+Signing and identity are defined **once**, in [`SmartTubeApp/Config/Base.xcconfig`](SmartTubeApp/Config/Base.xcconfig):
+`SMARTTUBE_TEAM_ID` and `SMARTTUBE_BUNDLE_PREFIX`. Every bundle ID, the App Group, the
+ubiquity KV store and the tvOS team are derived from those two, and the entitlements and
+Info.plists reference them — so nothing else in the project should contain a team or bundle
+ID. `just identity` prints what each target will actually build with, and `just ci`
+(`scripts/check-identity.sh`) fails if any of it is hardcoded back into `project.pbxproj`.
+
+To build under your own team, or under a fork's identity, copy
+`SmartTubeApp/Config/Secrets.xcconfig.example` to `SmartTubeApp/Config/Secrets.xcconfig`
+(gitignored) and uncomment the two inputs you need:
 
 ```
-DEVELOPMENT_TEAM = YOUR_TEAM_ID
-SMARTTUBE_TV_TEAM = YOUR_TEAM_ID
+SMARTTUBE_TEAM_ID = YOUR_TEAM_ID
+SMARTTUBE_BUNDLE_PREFIX = com.yourdomain
 ```
+
+Changing the prefix changes the app's identity: it needs its own App Group registered in the
+developer portal, its own App Store Connect record, and a `GoogleService-Info.plist` whose
+`BUNDLE_ID` matches the new bundle identifier (otherwise Firebase and the Crashlytics dSYM
+upload are skipped, with a build warning).
 
 Add your own `GoogleService-Info.plist` to both `SmartTubeApp/SmartTubeApp/` (iOS) and `SmartTubeApp/Smart Tube/` (tvOS) (create a free Firebase project at [console.firebase.google.com](https://console.firebase.google.com) — only Analytics and Crashlytics are used).  
 All of these files are gitignored (via glob rules matching any `GoogleService-Info.plist` or `Secrets.xcconfig`) and will never be committed; `setup.sh` installs them for you if you have access to the private config repo.

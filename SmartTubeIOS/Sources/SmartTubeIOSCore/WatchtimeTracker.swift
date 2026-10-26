@@ -238,7 +238,9 @@ public final class WatchtimeTracker {
 
     /// Flushes the segment before a seek and starts the next segment at the target.
     /// This mirrors Android SmartTube's onSeekPositionChanged history update.
-    public func recordSeek(to targetPosition: TimeInterval, from currentPosition: TimeInterval, duration: TimeInterval) async {
+    public func recordSeek(
+        to targetPosition: TimeInterval, from currentPosition: TimeInterval, duration: TimeInterval
+    ) async {
         guard !videoId.isEmpty, duration > 0 else { return }
         if didReportFinal {
             // Rewatching after the final ping (Loop replays via seekTo(0), or a seek back out of

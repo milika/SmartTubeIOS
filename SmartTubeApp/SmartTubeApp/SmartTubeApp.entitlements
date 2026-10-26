@@ -8,9 +8,9 @@
 	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.void.smarttube</string>
+		<string>$(SMARTTUBE_APP_GROUP_ID)</string>
 	</array>
 	<key>com.apple.developer.ubiquity-kvstore-identifier</key>
-	<string>$(TeamIdentifierPrefix)com.void.smarttube</string>
+	<string>$(SMARTTUBE_UBIQUITY_KVSTORE_ID)</string>
 </dict>
 </plist>

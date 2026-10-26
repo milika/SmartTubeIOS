@@ -88,7 +88,11 @@ struct HomeWidgetSnapshotTests {
         let png = makePNG(width: 64, height: 36)
         try await store.save([video("a")], fetch: { _ in png })
         let changed = try await store.save(
-            [video("a")], fetch: { _ in Issue.record("unexpected download"); return png })
+            [video("a")],
+            fetch: { _ in
+                Issue.record("unexpected download")
+                return png
+            })
         #expect(!changed)
     }
 

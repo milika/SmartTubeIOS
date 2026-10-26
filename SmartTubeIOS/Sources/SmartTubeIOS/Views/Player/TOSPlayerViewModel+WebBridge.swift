@@ -4,6 +4,11 @@ import CoreFoundation
 import WebKit
 import os
 import SmartTubeIOSCore
+#if os(macOS)
+import AppKit
+#else
+import UIKit
+#endif
 
 private let tosLog = Logger(subsystem: "com.void.smarttube.app", category: "TOSPlayer")
 
@@ -69,9 +74,11 @@ extension TOSPlayerViewModel {
                 )
             }
             isReady = true
+            isLive = (json["live"] as? Bool) ?? false
             let readyDuration = (json["duration"] as? Double) ?? 0
             if readyDuration > 0 { setDurationIfNewlyKnown(readyDuration) }
-            tosLog.notice("[ytCallback] ready — duration=\(self.duration, format: .fixed(precision: 1))s")
+            tosLog.notice(
+                "[ytCallback] ready — duration=\(self.duration, format: .fixed(precision: 1))s live=\(self.isLive)")
             CFNotificationCenterPostNotification(
                 CFNotificationCenterGetDarwinNotifyCenter(),
                 CFNotificationName("com.void.smarttube.tosplayer.ready" as CFString),
@@ -95,6 +102,32 @@ extension TOSPlayerViewModel {
                 tosLog.notice(
                     "[ytCallback] applied saved playback speed \(self.settings.playbackSpeed, format: .fixed(precision: 2))×"
                 )
+            }
+            // Media options (quality / captions / audio tracks). The captions
+            // module and quality ladder load asynchronously after `ready`, so
+            // retry a few times over the first ~20s. The helper is defensive
+            // and returns empty lists when the TV-UA embed does not expose the
+            // corresponding API; the overlay then keeps the rows visible with
+            // an explanatory empty state.
+            Task { @MainActor [weak self] in
+                let delays: [Int] = [600, 1500, 3000, 6000, 10000]
+                for delay in delays {
+                    try? await Task.sleep(for: .milliseconds(delay))
+                    guard let self, !Task.isCancelled, self.isReady else { return }
+                    await self.refreshMediaOptions()
+                    if self.hasCaptionOptions && self.hasMultipleAudioTracks { return }
+                }
+            }
+            // Keep the playlist-gated previous/next transport buttons in sync
+            // with the live Current Queue (it can change while the embed loads).
+            Task { @MainActor [weak self] in
+                await self?.refreshPlaylistVideoCount()
+            }
+            // Native captions: fetch InnerTube captionTracks independently of
+            // the embed's captions module, which the TV-UA player does not
+            // expose reliably. Selecting a track renders via CaptionCueView.
+            Task { @MainActor [weak self] in
+                await self?.fetchNativeCaptionTracks()
             }
             #if os(iOS)
             // #283: duration is known now — Now Playing info (lock screen, Control
@@ -184,7 +217,15 @@ extension TOSPlayerViewModel {
         case "tick":
             let t = (json["t"] as? Double) ?? 0
             let s = (json["state"] as? Int) ?? 999
-            currentTime = t
+            let tickLive = (json["live"] as? Bool) ?? false
+            let tickAd = (json["ad"] as? Bool) ?? false
+            applyTickCurrentTime(t)
+            updatePlaybackWindow(
+                buffered: parseRanges(json["buffered"]),
+                seekable: parseRanges(json["seekable"]),
+                live: tickLive,
+                ad: tickAd
+            )
             // "ready" fires on the very first poll, before video.duration has
             // necessarily loaded (the video starts muted for autoplay-policy
             // reasons, so metadata can lag a poll or two) — confirmed live:
@@ -196,6 +237,9 @@ extension TOSPlayerViewModel {
                 setDurationIfNewlyKnown(tickDuration)
             }
             let newState = YTPlayerState(raw: s)
+            if newState != playerState {
+                tosLog.debug("[ytCallback] tick state \(self.playerState.rawValue) → \(s) live=\(tickLive)")
+            }
             if newState == .playing { checkpointIfDue() }
             if !hasReceivedFirstTick {
                 hasReceivedFirstTick = true
@@ -255,6 +299,24 @@ extension TOSPlayerViewModel {
             // none is pending — see PendingSkipLog for why this must happen here, on
             // the next observed tick, rather than synchronously after seekTo()).
             logSkipLanding(at: t)
+
+        case "playability":
+            let status = (json["status"] as? String) ?? ""
+            let reason = (json["reason"] as? String) ?? ""
+            tosLog.notice("[ytCallback] playability status=\(status) reason=\(reason)")
+            // Normal startup states — never surface these.
+            guard status != "OK", status != "LIVE_STREAM_OFFLINE", !status.isEmpty else { return }
+            guard playerError == nil else { return }
+            // Sign-in gates still route to the standard player (see RootView's
+            // onFallback handler); everything else (members-only, region block,
+            // removed) gets an in-player message with YouTube's own reason.
+            let lower = reason.lowercased()
+            let signInKeywords = ["sign in", "not a bot", "age", "18+"]
+            if status == "LOGIN_REQUIRED" || signInKeywords.contains(where: { lower.contains($0) }) {
+                playerError = .signInRequired
+            } else {
+                playerError = .unavailable(reason.isEmpty ? status : reason)
+            }
 
         case "error":
             let code = (json["code"] as? Int) ?? -1
@@ -355,7 +417,7 @@ extension TOSPlayerViewModel {
                 )
                 return
             }
-            guard let image = image, let data = image.pngData() else {
+            guard let image = image, let data = tosPNGData(from: image) else {
                 tosLog.error("[snapshot] no image/PNG data returned")
                 completion?(false)
                 CFNotificationCenterPostNotification(
@@ -381,4 +443,21 @@ extension TOSPlayerViewModel {
         }
     }
 }
+
+/// `NSImage` has no `pngData()` equivalent to UIKit's. Used by
+/// `takeSnapshot(to:)`, which is primarily an iOS UI-test helper but must
+/// compile on macOS for the SwiftPM test target (the package builds the UI
+/// target for native macOS too).
+#if os(macOS)
+private func tosPNGData(from image: NSImage) -> Data? {
+    guard let tiff = image.tiffRepresentation,
+        let bitmap = NSBitmapImageRep(data: tiff)
+    else { return nil }
+    return bitmap.representation(using: .png, properties: [:])
+}
+#else
+private func tosPNGData(from image: UIImage) -> Data? {
+    image.pngData()
+}
+#endif
 #endif  // !os(tvOS)

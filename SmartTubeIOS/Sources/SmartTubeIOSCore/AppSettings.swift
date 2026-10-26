@@ -41,6 +41,14 @@ public struct AppSettings: Codable {
     /// When `true`, playing from the Current Queue picks a random remaining video instead of the next sequential one.
     /// Independent from `shuffleEnabled` (which shuffles YouTube recommendations after non-queue playback).
     public var queueShuffleEnabled: Bool
+    /// When `true` (default), vertical swipes in the iOS TOS player adjust screen
+    /// brightness (outer-left) or system volume (outer-right). Set `false` to disable
+    /// both swipe gestures entirely. iOS-only — other platforms have no such gesture.
+    public var swipeBrightnessVolumeEnabled: Bool
+    /// When `true` (default), a downward swipe in the *middle* of the iOS TOS player
+    /// minimizes it to a floating corner window (playback continues while browsing).
+    /// The outer brightness/volume edge zones are unaffected. iOS-only.
+    public var swipeDownToMiniPlayerEnabled: Bool
 
     // MARK: UI
     public var defaultSection: String
@@ -271,6 +279,8 @@ public struct AppSettings: Codable {
         loopEnabled = false
         shuffleEnabled = false
         queueShuffleEnabled = false
+        swipeBrightnessVolumeEnabled = true
+        swipeDownToMiniPlayerEnabled = true
         defaultSection = BrowseSection.SectionType.home.rawValue
         compactThumbnails = false
         highResThumbnails = false
@@ -360,6 +370,8 @@ extension AppSettings {
         case loopEnabled
         case shuffleEnabled
         case queueShuffleEnabled
+        case swipeBrightnessVolumeEnabled
+        case swipeDownToMiniPlayerEnabled
         case defaultSection
         case compactThumbnails
         case highResThumbnails
@@ -413,6 +425,10 @@ extension AppSettings {
         loopEnabled = c.safeDecode(Bool.self, forKey: .loopEnabled, default: d.loopEnabled)
         shuffleEnabled = c.safeDecode(Bool.self, forKey: .shuffleEnabled, default: d.shuffleEnabled)
         queueShuffleEnabled = c.safeDecode(Bool.self, forKey: .queueShuffleEnabled, default: d.queueShuffleEnabled)
+        swipeBrightnessVolumeEnabled = c.safeDecode(
+            Bool.self, forKey: .swipeBrightnessVolumeEnabled, default: d.swipeBrightnessVolumeEnabled)
+        swipeDownToMiniPlayerEnabled = c.safeDecode(
+            Bool.self, forKey: .swipeDownToMiniPlayerEnabled, default: d.swipeDownToMiniPlayerEnabled)
         defaultSection = c.safeDecode(String.self, forKey: .defaultSection, default: d.defaultSection)
         compactThumbnails = c.safeDecode(Bool.self, forKey: .compactThumbnails, default: d.compactThumbnails)
         highResThumbnails = c.safeDecode(Bool.self, forKey: .highResThumbnails, default: d.highResThumbnails)
@@ -431,10 +447,14 @@ extension AppSettings {
         accentColor = c.safeDecode(AccentColorChoice.self, forKey: .accentColor, default: d.accentColor)
         let columns = Self.availableGridColumnCounts
         gridColumnsPortrait = min(
-            max(c.safeDecode(Int.self, forKey: .gridColumnsPortrait, default: d.gridColumnsPortrait), columns.lowerBound),
+            max(
+                c.safeDecode(Int.self, forKey: .gridColumnsPortrait, default: d.gridColumnsPortrait), columns.lowerBound
+            ),
             columns.upperBound)
         gridColumnsLandscape = min(
-            max(c.safeDecode(Int.self, forKey: .gridColumnsLandscape, default: d.gridColumnsLandscape), columns.lowerBound),
+            max(
+                c.safeDecode(Int.self, forKey: .gridColumnsLandscape, default: d.gridColumnsLandscape),
+                columns.lowerBound),
             columns.upperBound)
         enabledSections = c.safeDecode(
             [BrowseSection.SectionType].self, forKey: .enabledSections, default: d.enabledSections)

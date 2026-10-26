@@ -615,7 +615,9 @@ empirical test — if `autoUnmuted` log line fires, the autoplay dance works.
 the embed in-page. If YouTube's own controls include a fullscreen button that launches
 native UIKit fullscreen, the player UI disappears and we lose control. This is an existing
 known limitation of `controls:1` on iOS WebKit — no fix exists short of switching to
-`controls:0` and building our own control layer (out of scope here).
+`controls:0` and building our own control layer. (Implemented 2026-10 — see ADR-0010:
+`controls:0` + `TOSPlayerChromeJS` + `TOSPlayerTransportOverlay` composed from the shared
+`PlayerControls` subviews.)
 
 ### 5c. Background audio
 WKWebView audio on iOS is subject to `AVAudioSession` category. The existing app's session

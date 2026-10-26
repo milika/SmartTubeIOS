@@ -178,4 +178,75 @@ struct ShortsVerticalThumbnailTests {
             "A 95-minute tile with portrait thumbnail must NOT be tagged isShort"
         )
     }
+
+    /// A live broadcast with a portrait thumbnail and unknown duration must NOT be
+    /// classified as a Short — `duration` is nil for live, so the ≤180 s guards would
+    /// otherwise trust the vertical-thumbnail signal unconditionally.
+    @Test("videoRenderer: live broadcast + portrait thumbnail → isShort = false, isLive = true")
+    func videoRendererLiveIsNotShort() async throws {
+        let renderer: [String: Any] = [
+            "videoId": "liveBroadcast",
+            "title": ["runs": [["text": "Vertical Live Stream"]]],
+            "longBylineText": ["runs": [["text": "Live Channel"]]],
+            // No lengthText → duration = nil for a live broadcast.
+            "badges": [
+                ["metadataBadgeRenderer": ["style": "BADGE_STYLE_TYPE_LIVE_NOW", "label": "LIVE"]]
+            ],
+            "thumbnail": [
+                "thumbnails": [
+                    ["url": "https://example.com/thumb.jpg", "width": 180, "height": 320]  // portrait
+                ]
+            ],
+            "navigationEndpoint": [
+                "watchEndpoint": ["videoId": "liveBroadcast"]
+            ],
+        ]
+        let api = InnerTubeAPI()
+        let group = try await api.parseVideoGroupForTesting(
+            makeVideoRendererResponse(renderer), title: "History"
+        )
+        let video = try #require(group.videos.first)
+        #expect(video.isLive == true)
+        #expect(video.isShort == false, "A live broadcast must never be classified as a Short")
+    }
+
+    /// TVHTML5 history tile for a live broadcast: LIVE overlay + portrait thumbnail +
+    /// no duration must stay a video, not a Short.
+    @Test("tileRenderer: live overlay + portrait thumbnail → isShort = false, isLive = true")
+    func tileRendererLiveIsNotShort() async throws {
+        let tile: [String: Any] = [
+            "contentType": "TILE_CONTENT_TYPE_VIDEO",
+            "contentId": "tileLive",
+            "onSelectCommand": [
+                "watchEndpoint": ["videoId": "tileLive"]
+            ],
+            "header": [
+                "tileHeaderRenderer": [
+                    "thumbnailOverlays": [
+                        ["thumbnailOverlayTimeStatusRenderer": ["style": "LIVE"]]
+                    ],
+                    "thumbnail": [
+                        "thumbnails": [
+                            ["url": "https://example.com/thumb.jpg", "width": 180, "height": 320]
+                        ]
+                    ],
+                ]
+            ],
+            "metadata": [
+                "tileMetadataRenderer": [
+                    "title": ["simpleText": "Vertical Live Stream"],
+                    "lines": [
+                        ["lineRenderer": ["items": [["lineItemRenderer": ["text": ["simpleText": "Live Channel"]]]]]]
+                    ],
+                ]
+            ],
+        ]
+        let api = InnerTubeAPI()
+        let group = try await api.parseVideoGroupForTesting(
+            makeTileRendererResponse(tile), title: "History"
+        )
+        let video = try #require(group.videos.first)
+        #expect(video.isLive == true)
+        #expect(video.isShort == false, "A live history tile must never be classified as a Short")
+    }
 }

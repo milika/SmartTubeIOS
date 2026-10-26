@@ -167,7 +167,7 @@ final class ShortsEmbedPlayerViewModel: NSObject {
         // CRITICAL on iOS: without this, YouTube's embed hijacks the native system
         // video player when the user taps play — mirrors TOSPlayerViewModel.swift:206-209.
         config.allowsInlineMediaPlayback = true
-        config.allowsAirPlayForMediaPlayback = true
+        config.allowsAirPlayForMediaPlayback = false
         #endif
 
         let contentController = WKUserContentController()

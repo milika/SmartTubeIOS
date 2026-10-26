@@ -93,5 +93,60 @@ struct TOSPlayerChaptersTests {
         let vm = TOSPlayerViewModel(videoId: "test_chapters_default", api: InnerTubeAPI())
         #expect(vm.chapters.isEmpty)
     }
+
+    @Test("hasNextChapter / hasPreviousChapter mirror the playhead")
+    func chapterFlags() {
+        let vm = TOSPlayerViewModel(videoId: "test_chapter_flags", api: InnerTubeAPI())
+        vm.chapters = [
+            Chapter(title: "Intro", startTime: 0),
+            Chapter(title: "Main", startTime: 90),
+        ]
+
+        vm.currentTime = 0
+        #expect(vm.hasNextChapter)
+        #expect(vm.hasPreviousChapter == false)  // first chapter, at its start
+
+        vm.currentTime = 10
+        #expect(vm.hasPreviousChapter)  // >3s into the first chapter → restart it
+
+        vm.currentTime = 91
+        #expect(vm.hasNextChapter == false)  // last chapter
+        #expect(vm.hasPreviousChapter)  // 1s into "Main" → jump back to "Intro"
+
+        vm.currentTime = 200
+        #expect(vm.hasNextChapter == false)
+        #expect(vm.hasPreviousChapter)
+    }
+
+    @Test("both chapter flags are false without chapters")
+    func chapterFlagsWithoutChapters() {
+        let vm = TOSPlayerViewModel(videoId: "test_no_chapters", api: InnerTubeAPI())
+        vm.currentTime = 42
+        #expect(vm.hasNextChapter == false)
+        #expect(vm.hasPreviousChapter == false)
+    }
+
+    @Test("video prev/next buttons are gated on playlist membership")
+    func playlistButtonGating() {
+        let plain = TOSPlayerViewModel(videoId: "test_plain", api: InnerTubeAPI())
+        plain.playlistVideoCount = 5
+        #expect(plain.isInPlaylist == false)
+        #expect(plain.canPlayPreviousVideo == false)
+        #expect(plain.canPlayNextVideo == false)
+
+        let inQueue = TOSPlayerViewModel(
+            videoId: "test_queue",
+            playlistId: CurrentQueueStore.playlistID,
+            playlistIndex: 0,
+            api: InnerTubeAPI()
+        )
+        inQueue.playlistVideoCount = 1
+        #expect(inQueue.isInPlaylist)
+        #expect(inQueue.canPlayPreviousVideo == false)  // nothing to navigate
+
+        inQueue.playlistVideoCount = 3
+        #expect(inQueue.canPlayPreviousVideo)
+        #expect(inQueue.canPlayNextVideo)
+    }
 }
 #endif

@@ -39,8 +39,8 @@ struct MembersOnlyPlaylistVideoRendererTests {
         ]
     }
 
-    @Test("Signal 1: thumbnailOverlayMembershipBadgeRenderer drops the video")
-    func membershipOverlayDrops() async throws {
+    @Test("Signal 1: thumbnailOverlayMembershipBadgeRenderer flags the video as members-only")
+    func membershipOverlayFlags() async throws {
         let json: [String: Any] = [
             "items": [
                 makeRendererJSON(
@@ -50,11 +50,13 @@ struct MembersOnlyPlaylistVideoRendererTests {
             ]
         ]
         let group = try await api.parseVideoGroupForTesting(json, title: nil)
-        #expect(group.videos.isEmpty)
+        #expect(group.videos.count == 1)
+        #expect(group.videos.first?.id == "MEMBERS_1")
+        #expect(group.videos.first?.isMembersOnly == true)
     }
 
-    @Test("Signal 2: metadataBadgeRenderer with MEMBERS_ONLY icon type drops the video")
-    func memberBadgeDrops() async throws {
+    @Test("Signal 2: metadataBadgeRenderer with MEMBERS_ONLY icon type flags the video as members-only")
+    func memberBadgeFlags() async throws {
         let json: [String: Any] = [
             "items": [
                 makeRendererJSON(
@@ -70,7 +72,9 @@ struct MembersOnlyPlaylistVideoRendererTests {
             ]
         ]
         let group = try await api.parseVideoGroupForTesting(json, title: nil)
-        #expect(group.videos.isEmpty)
+        #expect(group.videos.count == 1)
+        #expect(group.videos.first?.id == "MEMBERS_2")
+        #expect(group.videos.first?.isMembersOnly == true)
     }
 
     @Test("a regular video (no membership signal) is included in the feed")

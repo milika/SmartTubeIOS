@@ -490,6 +490,64 @@ final class TOSPlayerIOSUITests: XCTestCase {
         print("[TOS-iOS] ✓ stateLabel absent — no unexpected re-presentation after stop")
     }
 
+    /// Regression test for swipe-down-to-minimize: a downward drag that begins in
+    /// the middle of the full-screen TOS player minimizes it to the floating corner
+    /// window (`tosPlayer.miniPlayerBar`), and tapping that window re-expands the
+    /// full-screen player. Backed by `AppSettings.swipeDownToMiniPlayerEnabled`
+    /// (default on) → `TOSSwipeNavigationOverlay.onSwipeDown`.
+    func testTOSPlayerIOSSwipeDownMinimizes() throws {
+        launchApp()
+
+        guard let cards = waitForVideoCards() else {
+            throw XCTSkip("No video cards found — network unavailable or home feed empty")
+        }
+        guard let card = firstNonShortCard(from: cards) else {
+            throw XCTSkip("No non-short video card found in first 20 cards")
+        }
+
+        let readyNote = XCTDarwinNotificationExpectation(notificationName: "com.void.smarttube.tosplayer.ready")
+        guard let stateLabel = openTOSPlayer(from: card) else {
+            throw XCTSkip("tosPlayer.stateLabel did not appear — TOS player was not opened")
+        }
+        guard XCTWaiter().wait(for: [readyNote], timeout: 30) == .completed else {
+            throw XCTSkip("onPlayerReady never fired — IFrame embed failed to load (network/YouTube availability)")
+        }
+        print("[TOS-iOS] ✓ player ready, swiping down to minimize")
+
+        // ── 1. Swipe down in the middle of the player → floating corner window ──
+        // Starts at dx 0.5 (the middle 60% zone, so edge brightness/volume is not
+        // triggered) and above dy 0.75 (TOSSwipeNavigationOverlay only accepts pan
+        // touches in the top 75% of the screen).
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
+        start.press(forDuration: 0.05, thenDragTo: end)
+
+        let miniBar = app.descendants(matching: .any)
+            .matching(identifier: "tosPlayer.miniPlayerBar").firstMatch
+        XCTAssertTrue(
+            miniBar.waitForExistence(timeout: 5),
+            "tosPlayer.miniPlayerBar did not appear after a middle swipe-down — "
+                + "swipe-down-to-minimize (AppSettings.swipeDownToMiniPlayerEnabled) is wired off or broken")
+        print("[TOS-iOS] ✓ floating mini-player appeared after swipe-down")
+
+        // The full-screen cover should have dismissed on minimize.
+        let stateLabelGone = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"),
+            object: stateLabel
+        )
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [stateLabelGone], timeout: 5), .completed,
+            "tosPlayer.stateLabel still visible — full-screen cover did not dismiss on minimize")
+        print("[TOS-iOS] ✓ full-screen player dismissed")
+
+        // ── 2. Tap the floating window → full-screen player returns ─────────────
+        miniBar.tap()
+        XCTAssertTrue(
+            stateLabel.waitForExistence(timeout: 5),
+            "tosPlayer.stateLabel did not reappear after tapping the floating mini-player — expand() broke")
+        print("[TOS-iOS] ✓ tapping the mini-player re-expanded the full-screen player")
+    }
+
     /// Regression test for the landscape lock button — ported from
     /// PlayerView+ControlElements.swift to TOSPlayerView when it was discovered
     /// missing after TOS became the iOS default (it was never carried over).

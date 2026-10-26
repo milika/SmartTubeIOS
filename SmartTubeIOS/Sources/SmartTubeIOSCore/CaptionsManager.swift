@@ -1,4 +1,7 @@
 import Foundation
+import os
+
+private let captionLog = Logger(subsystem: appSubsystem, category: "Captions")
 
 // MARK: - CaptionsManager
 
@@ -55,9 +58,17 @@ public final class CaptionsManager {
                 let cues = try await parser.fetchCues(from: track.baseURL)
                 guard !Task.isCancelled else { return }
                 self.captionCues = cues
+                captionLog.notice(
+                    "loaded \(cues.count, privacy: .public) cues for \(track.languageCode, privacy: .public)"
+                )
                 self.updateCaptionCue(for: timeToApply)
             } catch {
-                // Caption fetch failed — leave cues empty
+                // Caption fetch failed — leave cues empty, but make the failure
+                // visible in the device log (this is the only way to tell a
+                // missing track apart from a blocked timedtext request).
+                captionLog.error(
+                    "fetch/parse failed for \(track.languageCode, privacy: .public): \(error.localizedDescription, privacy: .public)"
+                )
             }
         }
     }

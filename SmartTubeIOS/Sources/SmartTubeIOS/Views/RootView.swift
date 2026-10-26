@@ -43,7 +43,11 @@ public struct RootView: View {
             #endif
         }
         .environment(\.isLandscapeLayout, isLandscapeLayout)
-        .onGeometryChange(for: Bool.self) { $0.size.width > $0.size.height } action: { isLandscapeLayout = $0 }
+        .onGeometryChange(for: Bool.self) {
+            $0.size.width > $0.size.height
+        } action: {
+            isLandscapeLayout = $0
+        }
         .tint(store.settings.accentColor.color)
         .preferredColorScheme(store.settings.themeName.colorScheme)
         #if !os(tvOS) && ENABLE_DOWNLOADS
@@ -178,7 +182,7 @@ struct MainTabView: View {
         // TOS full-screen cover binding — mirrors the AVPlayer binding above.
         // When the user swipes down or the system dismisses the cover while TOS is
         // still in .fullScreen, this setter calls minimize() so audio continues in
-        // TOSMiniPlayerView. If tosState.stop() already moved us to .hidden the
+        // the TOS floating corner window. If tosState.stop() already moved us to .hidden the
         // setter is a no-op (guard prevents spurious minimize).
         let tosFullScreenVideo: Video? = tosState.presentation == .fullScreen ? tosState.currentVideo : nil
         let tosFullScreenBinding = Binding<Video?>(
@@ -234,23 +238,19 @@ struct MainTabView: View {
             selectedTab = .home
         }
         // Reserve vertical space so scrollable tab content is not hidden under the
-        // mini player. Uses a transparent placeholder rather than the real MiniPlayerView
-        // to avoid duplicating the PersistentPlayerHostView UIKit layer across tabs.
+        // AVPlayer mini bar. The TOS floating player overlays content (YouTube style)
+        // so it does not reserve space.
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            // Reserve vertical space for whichever mini-player is visible so
-            // scrollable content is not obscured (only one can be active at a time).
-            if playerState.presentation == .miniPlayer || tosState.presentation == .miniPlayer {
+            if playerState.presentation == .miniPlayer {
                 Color.clear.frame(height: 62)
             }
         }
-        // Render the single visible MiniPlayerView above the tab bar.
+        // AVPlayer mini bar, rendered above the tab bar.
         // tabBarBottomInset = tab-bar height + home-indicator (e.g. 83 pt on Face ID
         // iPhones), read from inside the NavigationStack where UITabBarController has
         // already baked it into the safe area. The transparent passthrough spacer below
         // the mini player ensures tab-bar items remain tappable.
         .overlay(alignment: .bottom) {
-            // Only one mini-player can be active at a time: AVPlayer and TOS are
-            // mutually exclusive (onChange stops the other before starting the new one).
             if playerState.presentation == .miniPlayer {
                 VStack(spacing: 0) {
                     MiniPlayerView()
@@ -260,14 +260,15 @@ struct MainTabView: View {
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .animation(.easeInOut(duration: 0.2), value: playerState.presentation)
-            } else if tosState.presentation == .miniPlayer {
-                VStack(spacing: 0) {
-                    TOSMiniPlayerView()
-                    Color.clear
-                    .frame(height: tabBarBottomInset)
-                    .allowsHitTesting(false)
-                }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        // TOS floating corner window (snaps to any corner, drag to move). Only one
+        // mini-player can be active at a time — AVPlayer and TOS are mutually
+        // exclusive (onChange stops the other before starting the new one).
+        .overlay {
+            if tosState.presentation == .miniPlayer {
+                TOSFloatingPlayerView(bottomBarInset: tabBarBottomInset)
+                .transition(.opacity)
                 .animation(.easeInOut(duration: 0.2), value: tosState.presentation)
             }
         }

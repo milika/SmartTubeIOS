@@ -20,7 +20,7 @@ private func makeNonisolatedArtworkProvider(image: UIImage) -> (CGSize) -> UIIma
 // screen widget showed stale info from a previous AVPlayer session, with
 // non-functional controls. This gives TOS player correct metadata and working
 // play/pause/skip/seek/next/previous while the app is foregrounded or
-// minimized to TOSMiniPlayerView. It does NOT add background audio or system
+// minimized to TOSFloatingPlayerView. It does NOT add background audio or system
 // PiP — both were investigated and found not feasible without a hybrid
 // AVPlayer-handoff approach the user explicitly rejected (see task-283).
 
@@ -42,16 +42,15 @@ extension TOSPlayerViewModel {
         center.previousTrackCommand.removeTarget(nil)
 
         center.playCommand.addTarget { [weak self] _ in
-            self?.play()
+            self?.playInline()
             return .success
         }
         center.pauseCommand.addTarget { [weak self] _ in
-            self?.pause()
+            self?.pauseInline()
             return .success
         }
         center.togglePlayPauseCommand.addTarget { [weak self] _ in
-            guard let self else { return .success }
-            if self.playerState == .playing { self.pause() } else { self.play() }
+            self?.togglePlayPause()
             return .success
         }
         center.skipForwardCommand.preferredIntervals = [10]

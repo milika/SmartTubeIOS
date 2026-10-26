@@ -4,6 +4,25 @@ All notable changes to SmartTube are documented here.
 
 ---
 
+## [Unreleased]
+
+### Added
+- **TOS player native transport overlay** — the TOS embed now hides YouTube's own chrome (`controls=0` + class-agnostic `TOSPlayerChromeJS`) and draws the same control components as the direct player: play/pause, timeline with buffered ranges, chapter markers and SponsorBlock markers, quick-access row, plus quality/captions/audio-track pickers where the TV-UA embed's player exposes them (ADR-0010)
+- Captions/audio: a quick-access CC pill in both players toggles captions on/off (long-press opens the language picker), and Captions + Audio Track rows in the more menu open pickers for track/language selection. TOS captions are rendered natively from InnerTube caption tracks (the TV-UA embed's captions module is unreliable); audio tracks come from the embed and now show localized language names where the track id exposes one. The TOS rows stay visible with a reload/empty state while tracks load.
+- TOS transport: **previous/next video** buttons are now playlist-only — hidden entirely unless the video was opened from the Current Queue (a YouTube playlist, search "play all", or the Library queue), and within a queue they are enabled only when it holds more than one item (suggestions remain reachable via the swipe gesture). Added always-present **previous/next chapter** jump buttons that seek to chapter boundaries and are disabled when the video has no chapters or the playhead is at the boundary.
+- TOS player: a **volume indicator** now appears when the volume changes while the full-screen player is open (hardware volume keys, Control Center, AirPods/route changes). The player embeds a hidden `MPVolumeView`, which makes iOS suppress its own system volume HUD, so the app draws its own via the shared brightness/volume HUD (`SystemVolumeMonitor`, KVO on `AVAudioSession.outputVolume`).
+
+### Changed
+- TOS playback speed now uses the shared picker sheet instead of a native `Menu`
+- TOS state ticks now carry buffered/seekable ranges, live and ad flags
+
+### Fixed
+- **TOS captions were completely dead on most videos** — `fetchPlayerInfo` throws (`"Stream URLs require decryption"`) for videos whose stream URLs are cipher-protected/SABR *after* it has parsed (and discarded) the already-present caption tracks, so the TOS caption picker stayed empty and neither toggling nor language selection did anything. Captions now come from a new captions-only `InnerTubeAPI.fetchCaptionTracks(videoId:)` that ignores the stream-URL guard, and the embed fallback reads the embed's `getAudioTrack().captionTracks` (the TV embed's `getOption('captions','tracklist')` is empty)
+- TOS audio-track picker now shows localized names ("English", "Deutsch") instead of "Audio 1"/"Audio 2" with a cryptic content id — the injected facade reads the embed's `getLanguageInfo()` (the only place the localized label and `langcode.number` id live) and falls back to the player response's `audioTrack.displayName`
+- TOS captions: an in-flight native-caption load is now coalesced rather than dropped, so tapping CC (or Reload) while tracks are loading still turns captions on once they arrive, and the picker shows a "Loading captions…" row instead of an unexplained empty state
+
+---
+
 ## [4.5] – 2026-06-11
 
 ### Added

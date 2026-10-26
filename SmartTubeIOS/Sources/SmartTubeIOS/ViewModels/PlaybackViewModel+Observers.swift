@@ -30,6 +30,7 @@ extension PlaybackViewModel {
                 // or a stale value. currentTime is restored by qualityItemDidBecomeReady.
                 guard !self.isQualityChangePending else { return }
                 self.currentTime = seconds
+                self.bufferedRanges = Self.loadedTimeRanges(from: self.player.currentItem)
                 self.checkSponsorSkip(at: seconds)
                 self.updateCaptionCue(for: seconds)
                 if self.statsForNerdsVisible { self.updateStatsSnapshot() }
@@ -37,6 +38,19 @@ extension PlaybackViewModel {
                     await self.tracker.checkpointIfDue(position: seconds, duration: self.duration)
                 }
             }
+        }
+    }
+
+    /// Maps `AVPlayerItem.loadedTimeRanges` into the shared progress bar's
+    /// buffered-range representation.
+    static func loadedTimeRanges(from item: AVPlayerItem?) -> [ClosedRange<TimeInterval>] {
+        guard let item else { return [] }
+        return item.loadedTimeRanges.compactMap { value in
+            let range = value.timeRangeValue
+            let start = range.start.seconds
+            let end = (range.start + range.duration).seconds
+            guard start.isFinite, end.isFinite, end >= start else { return nil }
+            return start...end
         }
     }
 

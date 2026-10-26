@@ -20,7 +20,7 @@ struct ShortsEmbedJSTests {
         let dict = Dictionary(uniqueKeysWithValues: items.map { ($0.name, $0.value) })
         #expect(dict["autoplay"] == "1")
         #expect(dict["mute"] == "1")
-        #expect(dict["controls"] == "1")
+        #expect(dict["controls"] == "0")
         #expect(dict["playsinline"] == "1")
         #expect(dict["rel"] == "0")
         #expect(dict["iv_load_policy"] == "3")

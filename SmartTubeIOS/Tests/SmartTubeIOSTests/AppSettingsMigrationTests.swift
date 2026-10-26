@@ -190,6 +190,34 @@ struct AppSettingsMigrationTests {
         #expect(decoded.settingsVersion == original.settingsVersion)
     }
 
+    // MARK: - New swipe-adjustment toggle (#19)
+
+    /// The brightness/volume swipe toggle defaults to `true` when absent from old JSON,
+    /// and a stored `false` survives decoding.
+    @Test("Swipe brightness/volume toggle defaults on and round-trips")
+    func swipeBrightnessVolumeToggleDefaultsOn() throws {
+        let missing = try JSONDecoder().decode(AppSettings.self, from: Data("{}".utf8))
+        #expect(missing.swipeBrightnessVolumeEnabled == true)
+
+        var disabled = AppSettings()
+        disabled.swipeBrightnessVolumeEnabled = false
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(disabled))
+        #expect(decoded.swipeBrightnessVolumeEnabled == false)
+    }
+
+    /// The swipe-down-to-minimize toggle defaults to `true` when absent from old JSON,
+    /// and a stored `false` survives decoding.
+    @Test("Swipe-down-to-minimize toggle defaults on and round-trips")
+    func swipeDownToMiniPlayerDefaultsOn() throws {
+        let missing = try JSONDecoder().decode(AppSettings.self, from: Data("{}".utf8))
+        #expect(missing.swipeDownToMiniPlayerEnabled == true)
+
+        var disabled = AppSettings()
+        disabled.swipeDownToMiniPlayerEnabled = false
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(disabled))
+        #expect(decoded.swipeDownToMiniPlayerEnabled == false)
+    }
+
     // MARK: - Completely empty JSON → all defaults (no crash)
 
     /// Simulates a completely empty JSON object (e.g. corrupted store).

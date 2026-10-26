@@ -30,6 +30,11 @@ Naming a new module after a concept not listed here requires adding the term in 
   TOS, and Shorts players so SponsorBlock/watch-history/Now-Playing wiring isn't tripled.
 - **Player engine** — the underlying playback technology (AVPlayer vs. WKWebView/IFrame) as
   distinct from the view model that drives it.
+- **TOS transport overlay** — the native SwiftUI chrome (`TOSPlayerTransportOverlay`) drawn over the
+  TOS embed after `TOSPlayerChromeJS` hides YouTube's own chrome. Composed from the shared
+  `PlayerControls` subviews also used by the direct player (ADR-0010).
+- **Media-option facade** — `window.__stPlayerAPI`, the injected JS shim exposing the embed player's
+  quality/caption/audio-track methods to Swift with a supported/unsupported contract.
 - **Queue** — the ordered list of upcoming videos (`CurrentQueueStore`), independent of any one
   feed.
 - **Watch state / Watch history / Watchtime reporting** — *watch state* is per-video playback

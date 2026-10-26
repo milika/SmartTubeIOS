@@ -217,6 +217,11 @@ public struct SettingsView: View {
             Toggle("Loop Video", isOn: $store.settings.loopEnabled)
             Toggle("Shuffle", isOn: $store.settings.shuffleEnabled)
 
+            #if os(iOS)
+            Toggle("Adjust brightness & volume with swipe", isOn: $store.settings.swipeBrightnessVolumeEnabled)
+            Toggle("Swipe down to minimize player", isOn: $store.settings.swipeDownToMiniPlayerEnabled)
+            #endif
+
             Toggle("Autoplay next video", isOn: $store.settings.autoplayEnabled)
             Toggle("Background Playback", isOn: $store.settings.backgroundPlaybackEnabled)
             #if !os(iOS)

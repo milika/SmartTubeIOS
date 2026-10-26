@@ -542,11 +542,11 @@ final class TOSPlayerUITests: XCTestCase {
         }
         print("[TOS-speedpicker] ✓ ready — embedFrameInfo should now be captured")
 
-        // ── 4. Open the speed menu and pick a non-default speed ──────────────────
-        // Confirmed via a probe run's "Check for interrupting elements affecting
-        // 'tosPlayer.speedButton' MenuButton" log line: a SwiftUI `Menu` surfaces as
-        // `.menuButtons` on macOS (not `.buttons`/`.popUpButtons`).
-        let speedButton = app.menuButtons["tosPlayer.speedButton"].firstMatch
+        // ── 4. Open the speed picker and pick a non-default speed ────────────────
+        // The speed control is now a quick-access pill (a Button) that opens the
+        // shared PlayerPickerSheet, matching the direct player, instead of a
+        // native SwiftUI Menu.
+        let speedButton = app.buttons["tosPlayer.speedButton"].firstMatch
         XCTAssertTrue(
             speedButton.waitForExistence(timeout: 10),
             "tosPlayer.speedButton did not appear"

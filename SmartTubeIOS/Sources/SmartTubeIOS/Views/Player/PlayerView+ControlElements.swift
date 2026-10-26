@@ -37,12 +37,18 @@ struct PlayerControlsOverlay: View {
     @Binding var showSpeedPicker: Bool
     @Binding var showAudioTrackPicker: Bool
     @Binding var showSleepTimerPicker: Bool
+    /// Captions got a quick-access pill for parity with the TOS overlay; the
+    /// row used to be reachable only from the more menu.
+    @Binding var showCaptionPicker: Bool
     #endif
     #if os(tvOS)
     @Binding var highlightedControl: PlayerView.TVPlayerControl?
     #endif
     @Environment(SettingsStore.self) var store
     @Environment(\.dismiss) var dismiss
+    /// Set by the CC pill's long-press so the button's release action doesn't
+    /// also toggle captions when the user only wanted the language picker.
+    @State private var suppressCaptionTap = false
     var body: some View {
         VStack {
             // Top bar: back + title
@@ -148,10 +154,6 @@ struct PlayerControlsOverlay: View {
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("player.pipButton")
                 }
-                // AirPlay route picker
-                AirPlayRoutePickerView()
-                    .frame(width: 40, height: 40)
-                    .accessibilityIdentifier("player.airPlayButton")
                 #endif
                 // Share / Download menu
                 #if os(tvOS)
@@ -548,103 +550,25 @@ extension PlayerControlsOverlay {
         #endif
     }
 
+    #if !os(tvOS)
     var iosProgressBar: some View {
-        // Wrap in an outer GeometryReader so the highPriorityGesture below can
-        // reference the bar's width.  The gesture is placed on the full-height
-        // VStack (tooltip row + track row = 60 pt) so any touch in that area —
-        // including the 28 pt invisible tooltip strip above the visible bar — will
-        // activate the scrub drag.  Previously the gesture was only on the inner
-        // 28 pt track ZStack, which meant touches on the empty tooltip row were
-        // silently swallowed without triggering the seek.
-        GeometryReader { outerGeo in
-            let hPad: CGFloat = 20
-            let trackW = outerGeo.size.width - hPad * 2
-
-            VStack(spacing: 4) {
-                // Tooltip row — always occupies space so layout doesn't jump
-                GeometryReader { geo in
-                    if vm.isScrubbing && vm.duration > 0 {
-                        let fraction = CGFloat(vm.scrubTime / vm.duration)
-                        let thumbX = hPad + trackW * fraction
-                        let chapterAtScrub = vm.chapters.last(where: { $0.startTime <= vm.scrubTime })
-                        let labelW: CGFloat = chapterAtScrub != nil ? min(outerGeo.size.width * 0.5, 180) : 64
-                        let clampedX = min(max(thumbX, hPad + labelW / 2), outerGeo.size.width - hPad - labelW / 2)
-
-                        VStack(spacing: 2) {
-                            if let chapter = chapterAtScrub {
-                                Text(chapter.title)
-                                    .font(.caption2.weight(.medium))
-                                    .foregroundStyle(.white.opacity(0.85))
-                                    .lineLimit(1)
-                                    .truncationMode(.tail)
-                            }
-                            Text(formatDuration(vm.scrubTime))
-                                .font(.caption.monospacedDigit())
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.white)
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 6))
-                        .frame(width: labelW)
-                        .position(x: clampedX, y: geo.size.height / 2)
-                    }
-                }
-                .frame(height: 28)
-
-                // Track + slider row (custom — fully transparent thumb and track)
-                GeometryReader { geo in
-                    let time = vm.isScrubbing ? vm.scrubTime : vm.currentTime
-                    let progress = vm.duration > 0 ? CGFloat(time / vm.duration) : 0
-                    let thumbX = hPad + trackW * progress
-
-                    ZStack {
-                        // Background track
-                        Capsule()
-                            .fill(Color.white.opacity(0.2))
-                            .frame(height: 4)
-                            .padding(.horizontal, hPad)
-
-                        // Progress fill
-                        HStack(spacing: 0) {
-                            Capsule()
-                                .fill(Color.red.opacity(0.5))
-                                .frame(width: max(thumbX - hPad, 0), height: 4)
-                            Spacer(minLength: 0)
-                        }
-                        .padding(.leading, hPad)
-
-                        // Thumb
-                        Circle()
-                            .fill(Color.white.opacity(0.5))
-                            .frame(width: 16, height: 16)
-                            .position(x: thumbX, y: geo.size.height / 2)
-                    }
-                    .overlay(sponsorBlockMarkers)
-                    .overlay(chapterMarkers)
-                }
-                .frame(height: 28)
-            }
-            .contentShape(Rectangle())
-            #if !os(tvOS)
-            // highPriorityGesture on the full VStack (tooltip + track, 60 pt total)
-            // ensures the seek-bar drag beats any child-view tap gestures (e.g.
-            // chapter-marker hit areas) and activates even when the touch lands on
-            // the invisible tooltip strip above the visible progress bar.
-            .highPriorityGesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        let fraction = min(max((value.location.x - hPad) / trackW, 0), 1)
-                        if !vm.isScrubbing { vm.beginScrubbing() }
-                        vm.updateScrub(to: Double(fraction) * vm.duration)
-                    }
-                    .onEnded { _ in vm.commitScrub() }
-            )
-            #endif
-        }
-        .frame(height: 60)
-        .accessibilityIdentifier("player.progressBar")
+        PlayerProgressBarView(
+            currentTime: vm.currentTime,
+            duration: vm.duration,
+            bufferedRanges: vm.bufferedRanges,
+            isScrubbing: vm.isScrubbing,
+            scrubTime: vm.scrubTime,
+            chapters: vm.chapters,
+            sponsorSegments: vm.sponsorSegments,
+            isLive: false,
+            accessibilityIdentifier: "player.progressBar",
+            onBeginScrub: { vm.beginScrubbing() },
+            onUpdateScrub: { vm.updateScrub(to: $0) },
+            onCommitScrub: { vm.commitScrub() },
+            onSeek: { vm.seek(to: $0) }
+        )
     }
+    #endif
 
     // Chapter tick marks on the progress bar — small white notches at each chapter boundary.
     // Each tick has a 24×44 pt transparent tap area so the user can tap to jump to it.
@@ -823,41 +747,67 @@ extension PlayerView {
 extension PlayerControlsOverlay {
 
     @ViewBuilder var quickAccessButtonRow: some View {
-        HStack(spacing: 8) {
-            quickAccessButton(
-                systemImage: "speedometer",
-                label: speedLabel,
-                accessibilityId: "player.quickAccess.speed"
-            ) { showSpeedPicker = true }
-
-            if !vm.isAudioOnlyMode {
+        // Horizontal scroll so pills keep their full labels instead of
+        // truncating when the row is wider than the screen.
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
                 quickAccessButton(
-                    systemImage: "film.stack",
-                    label: qualityLabel,
-                    accessibilityId: "player.quickAccess.quality"
-                ) { showQualityPicker = true }
-                .disabled(vm.availableFormats.isEmpty)
-                .opacity(vm.availableFormats.isEmpty ? 0.4 : 1)
-            }
+                    systemImage: "speedometer",
+                    label: speedLabel,
+                    accessibilityId: "player.quickAccess.speed"
+                ) { showSpeedPicker = true }
 
-            if vm.availableAudioTracks.count > 1 {
+                if !vm.isAudioOnlyMode {
+                    quickAccessButton(
+                        systemImage: "film.stack",
+                        label: qualityLabel,
+                        accessibilityId: "player.quickAccess.quality"
+                    ) { showQualityPicker = true }
+                    .disabled(vm.availableFormats.isEmpty)
+                    .opacity(vm.availableFormats.isEmpty ? 0.4 : 1)
+                }
+
+                // Always visible: tap toggles captions on/off; long-press opens the
+                // language picker. The more menu's Captions row opens the same
+                // picker. `toggleCaptions()` no-ops when no tracks are loaded.
                 quickAccessButton(
-                    systemImage: "waveform",
-                    label: audioTrackLabel,
-                    accessibilityId: "player.quickAccess.audioTrack"
-                ) { showAudioTrackPicker = true }
-            }
+                    systemImage: vm.selectedCaption == nil ? "captions.bubble" : "captions.bubble.fill",
+                    label: captionLabel,
+                    accessibilityId: "player.quickAccess.captions"
+                ) {
+                    if suppressCaptionTap {
+                        suppressCaptionTap = false
+                        return
+                    }
+                    vm.toggleCaptions()
+                }
+                .simultaneousGesture(
+                    LongPressGesture(minimumDuration: 0.5).onEnded { _ in
+                        suppressCaptionTap = true
+                        showCaptionPicker = true
+                    }
+                )
 
-            quickAccessButton(
-                systemImage: "moon.zzz",
-                label: sleepTimerLabel,
-                accessibilityId: "player.quickAccess.sleepTimer"
-            ) { showSleepTimerPicker = true }
+                if vm.availableAudioTracks.count > 1 {
+                    quickAccessButton(
+                        systemImage: "waveform",
+                        label: audioTrackLabel,
+                        accessibilityId: "player.quickAccess.audioTrack"
+                    ) { showAudioTrackPicker = true }
+                }
+
+                quickAccessButton(
+                    systemImage: "moon.zzz",
+                    label: sleepTimerLabel,
+                    accessibilityId: "player.quickAccess.sleepTimer"
+                ) { showSleepTimerPicker = true }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 4)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("player.quickAccessRow")
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 4)
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("player.quickAccessRow")
+        .scrollBounceBehavior(.basedOnSize)
     }
 
     // MARK: - Quick-access label helpers
@@ -871,6 +821,11 @@ extension PlayerControlsOverlay {
     private var qualityLabel: String {
         vm.selectedFormat?.qualityLabel
             ?? (vm.pendingQualityLabel.isEmpty ? "Auto" : vm.pendingQualityLabel)
+    }
+
+    private var captionLabel: String {
+        guard let track = vm.selectedCaption else { return "CC" }
+        return track.languageCode.isEmpty ? track.name : track.languageCode.uppercased()
     }
 
     private var audioTrackLabel: String {
@@ -890,18 +845,12 @@ extension PlayerControlsOverlay {
         accessibilityId: String,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
-            Label(label, systemImage: systemImage)
-                .lineLimit(1)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(.white.opacity(0.18))
-                .clipShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier(accessibilityId)
+        PlayerQuickAccessPill(
+            systemImage: systemImage,
+            label: label,
+            accessibilityIdentifier: accessibilityId,
+            action: action
+        )
     }
 }
 #endif

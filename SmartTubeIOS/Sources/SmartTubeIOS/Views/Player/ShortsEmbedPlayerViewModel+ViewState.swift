@@ -34,6 +34,8 @@ extension ShortsEmbedPlayerViewModel {
             return "Couldn't load this video."
         case .signInRequired:
             return "YouTube asked to sign in before playing this video."
+        case .unavailable(let reason):
+            return reason
         }
     }
 

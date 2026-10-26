@@ -50,7 +50,8 @@ public final class LocalWatchHistoryStore {
         let slim = Video(
             id: video.id, title: video.title, channelTitle: video.channelTitle,
             channelId: video.channelId, thumbnailURL: video.thumbnailURL,
-            duration: video.duration, isLive: video.isLive, isShort: video.isShort)
+            duration: video.duration, isLive: video.isLive, isShort: video.isShort,
+            isMembersOnly: video.isMembersOnly ?? false)
         entries.removeAll { $0.video.id == video.id }
         entries.insert(LocalWatchHistoryEntry(video: slim, watchedAt: date), at: 0)
         if entries.count > Self.maxEntries { entries.removeLast(entries.count - Self.maxEntries) }

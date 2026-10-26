@@ -439,7 +439,10 @@ public struct VideoCardView: View {
                     if let label = uploadDateLabel { durationBadge(label) }
                 }
                 .overlay(alignment: .topLeading) {
-                    if video.isLive { liveBadge }
+                    HStack(spacing: 4) {
+                        if video.isLive { liveBadge }
+                        if video.isMembersOnly == true { membersBadge }
+                    }
                 }
                 .overlay(alignment: .topTrailing) {
                     if WatchLaterMembershipStore.shared.contains(video.id) { watchLaterSavedBadge }
@@ -498,6 +501,12 @@ public struct VideoCardView: View {
                 }
                 .overlay(alignment: .bottomLeading) {
                     if let label = uploadDateLabel { durationBadge(label) }
+                }
+                .overlay(alignment: .topLeading) {
+                    HStack(spacing: 3) {
+                        if video.isLive { liveBadge }
+                        if video.isMembersOnly == true { membersBadge }
+                    }
                 }
                 .overlay(alignment: .topTrailing) {
                     if WatchLaterMembershipStore.shared.contains(video.id) { watchLaterSavedBadge }
@@ -698,6 +707,20 @@ public struct VideoCardView: View {
             .padding(.horizontal, 5)
             .padding(.vertical, 2)
             .background(.red)
+            .foregroundStyle(.white)
+            .clipShape(RoundedRectangle(cornerRadius: 3))
+            .padding(4)
+    }
+
+    /// Green "Members" tag for channel-membership-gated videos. These can't be
+    /// played in the TOS iframe; the player shows YouTube's reason on tap.
+    private var membersBadge: some View {
+        Text("Members")
+            .font(.caption2)
+            .fontWeight(.bold)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(.green)
             .foregroundStyle(.white)
             .clipShape(RoundedRectangle(cornerRadius: 3))
             .padding(4)

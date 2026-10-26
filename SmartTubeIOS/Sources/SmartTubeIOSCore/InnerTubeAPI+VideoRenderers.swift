@@ -668,13 +668,13 @@ extension InnerTubeAPI {
             return nil
         }()
 
-        // Members-only: drop tiles for membership-gated content before they enter the feed.
-        // YouTube surfaces these in home/subs/history but they are unplayable without a channel
-        // membership. Three detection signals are checked in priority order:
+        // Members-only: keep the tile but flag it so the card can show a green
+        // "Members" tag. Membership-gated content can't be played in the TOS iframe
+        // (no membership session); the player shows YouTube's own reason instead of
+        // hiding the item from the feed. Detection signals, in priority order:
         //  1. thumbnailOverlayMembershipBadgeRenderer present in tileHeader.thumbnailOverlays
         //  2. metadataBadgeRenderer with MEMBERS_ONLY icon or "member" label in tileMetadata.badges
         //  3. "Members only" text in any secondary tileMetadata line item (locale-aware fallback)
-        // Signal 3 is a text fallback for locales that translate the badge label.
         let isMembersOnly: Bool = {
             if isMembersOnlyVideo(overlays: overlays, badges: tileMetadata?["badges"] as? [[String: Any]]) {
                 return true
@@ -695,10 +695,6 @@ extension InnerTubeAPI {
             }
             return false
         }()
-        if isMembersOnly {
-            tubeLog.notice("parseTileRenderer: dropping members-only tile id=\(videoId, privacy: .public)")
-            return nil
-        }
 
         return Video(
             id: videoId,
@@ -728,7 +724,11 @@ extension InnerTubeAPI {
             publishedTimeText: publishedTimeText,
             isLive: isLive,
             isUpcoming: isUpcoming,
-            isShort: isShort,
+            // A live broadcast is a video, never a Short: live tiles have no
+            // duration, so the Shorts duration guards (`?? true`) would otherwise
+            // trust a portrait thumbnail / Shorts-adjacent signal unconditionally.
+            isShort: isShort && !isLive,
+            isMembersOnly: isMembersOnly,
             watchProgress: watchProgress,
             setVideoId: setVideoId,
             badges: []
@@ -838,6 +838,66 @@ extension InnerTubeAPI {
         // the cases that fall through so the next real occurrence gives a concrete renderer
         // shape to fix precisely.
         let isShort = reelEndpoint != nil
+
+        // isLive: live broadcasts carry a thumbnail badge — `badgeStyle ==
+        // THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE` is locale-independent; also accept
+        // the "LIVE" icon resource as a fallback. Drives the card's LIVE tag.
+        let isLive: Bool = {
+            let overlays = thumbVM?["overlays"] as? [[String: Any]] ?? []
+            for overlay in overlays {
+                let badges =
+                    ((overlay["thumbnailBottomOverlayViewModel"] as? [String: Any])?["badges"]
+                        as? [[String: Any]]) ?? []
+                for badge in badges {
+                    guard let badgeVM = badge["thumbnailBadgeViewModel"] as? [String: Any] else { continue }
+                    if (badgeVM["badgeStyle"] as? String) == "THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE" {
+                        return true
+                    }
+                    if let sources = (badgeVM["icon"] as? [String: Any])?["sources"] as? [[String: Any]] {
+                        for source in sources
+                        where (source["clientResource"] as? [String: Any])?["imageName"] as? String == "LIVE" {
+                            return true
+                        }
+                    }
+                }
+            }
+            return false
+        }()
+        // Membership-gated content: green "Members" tag on the card; the player
+        // surfaces YouTube's reason instead of a black screen. Signals: a members
+        // badge in the thumbnail overlay, or "Members only" text in the metadata
+        // rows (locale-aware fallback).
+        let isMembersOnly: Bool = {
+            let overlays = thumbVM?["overlays"] as? [[String: Any]] ?? []
+            for overlay in overlays {
+                let badges =
+                    ((overlay["thumbnailBottomOverlayViewModel"] as? [String: Any])?["badges"]
+                        as? [[String: Any]]) ?? []
+                for badge in badges {
+                    guard let badgeVM = badge["thumbnailBadgeViewModel"] as? [String: Any] else { continue }
+                    if let style = badgeVM["badgeStyle"] as? String, style.contains("MEMBERS") { return true }
+                    if let sources = (badgeVM["icon"] as? [String: Any])?["sources"] as? [[String: Any]] {
+                        for source in sources
+                        where ((source["clientResource"] as? [String: Any])?["imageName"] as? String ?? "")
+                            .contains("MEMBERS")
+                        {
+                            return true
+                        }
+                    }
+                    if let text = badgeVM["text"] as? String, text.lowercased().contains("member") { return true }
+                }
+            }
+            for row in metaRows.dropFirst() {
+                guard let parts = row["metadataParts"] as? [[String: Any]] else { continue }
+                for part in parts {
+                    guard let text = part["text"] as? [String: Any],
+                        let str = text["content"] as? String ?? extractText(text)
+                    else { continue }
+                    if str.lowercased().contains("members only") { return true }
+                }
+            }
+            return false
+        }()
         if isShort {
             tubeLog.debug("lockupViewModel isShort=true id=\(videoId, privacy: .public) signal=reelWatchEndpoint")
         } else {
@@ -888,7 +948,7 @@ extension InnerTubeAPI {
                 return nil
             }(),
             publishedAt: publishedAt,
-            isLive: false, isShort: isShort, badges: []
+            isLive: isLive, isShort: isShort && !isLive, isMembersOnly: isMembersOnly, badges: []
         )
     }
 
@@ -1051,6 +1111,12 @@ extension InnerTubeAPI {
                 ($0["metadataBadgeRenderer"] as? [String: Any])?["label"] as? String
             } ?? []
 
+        // Membership-gated content: the card shows a green "Members" tag and the
+        // player surfaces YouTube's own reason instead of a black screen.
+        let isMembersOnly = isMembersOnlyVideo(
+            overlays: r["thumbnailOverlays"] as? [[String: Any]],
+            badges: r["badges"] as? [[String: Any]])
+
         let watchProgress: Double? = (r["thumbnailOverlays"] as? [[String: Any]])?
             .compactMap {
                 ($0["thumbnailOverlayResumePlaybackRenderer"] as? [String: Any])
@@ -1093,7 +1159,11 @@ extension InnerTubeAPI {
             publishedAt: publishedAt,
             publishedTimeText: publishedTimeText,
             isLive: isLive,
-            isShort: isShort,
+            // A live broadcast is a video, never a Short: live items have no
+            // duration, so the Shorts duration guards (`?? true`) would otherwise
+            // trust a portrait thumbnail / Shorts-adjacent signal unconditionally.
+            isShort: isShort && !isLive,
+            isMembersOnly: isMembersOnly,
             watchProgress: watchProgress,
             badges: badges,
             notInterestedToken: feedbackTokens["NOT_INTERESTED"],
@@ -1107,17 +1177,12 @@ extension InnerTubeAPI {
     // ownerText/viewCountText which parseVideoRenderer expects.
     private func parsePlaylistVideoRenderer(_ r: [String: Any]) -> Video? {
         guard let videoId = r["videoId"] as? String else { return nil }
-        // #63: drop members-only videos here too — this renderer serves the same
-        // Home/Subscriptions/History feeds parseTileRenderer does (see this function's
-        // own BUG-012 doc comment above), just for videos that arrive in the WEB-shaped
-        // renderer instead of the TV tile shape. Without this, a members-only video could
-        // still leak through whichever of the two shapes YouTube happened to use for it.
-        if isMembersOnlyVideo(
+        // #63: membership-gated videos appear in the same Home/Subscriptions/History
+        // feeds as parseTileRenderer. Keep them but flag them, so the card can show
+        // a green "Members" tag and the player can explain why they can't play.
+        let isMembersOnly = isMembersOnlyVideo(
             overlays: r["thumbnailOverlays"] as? [[String: Any]], badges: r["badges"] as? [[String: Any]]
-        ) {
-            tubeLog.notice("parsePlaylistVideoRenderer: dropping members-only video id=\(videoId, privacy: .public)")
-            return nil
-        }
+        )
         // The playlist-entry token needed to remove this exact item via ACTION_REMOVE_VIDEO
         // (see InnerTubeAPI+Social.swift's removeFromWatchLater — #122).
         let setVideoId = r["setVideoId"] as? String
@@ -1212,6 +1277,7 @@ extension InnerTubeAPI {
             publishedTimeText: publishedTimeText,
             isLive: false,
             isShort: isShort,
+            isMembersOnly: isMembersOnly,
             watchProgress: watchProgress,
             setVideoId: setVideoId,
             badges: []

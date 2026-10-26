@@ -78,7 +78,7 @@ final class ShortsEmbedSrcSwapSpikeViewModel: NSObject {
         config.mediaTypesRequiringUserActionForPlayback = []
         #if os(iOS)
         config.allowsInlineMediaPlayback = true
-        config.allowsAirPlayForMediaPlayback = true
+        config.allowsAirPlayForMediaPlayback = false
         #endif
 
         let contentController = WKUserContentController()

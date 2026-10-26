@@ -37,4 +37,30 @@ struct GestureEdgeZoneTests {
         #expect(GestureEdgeZone.zone(forStartX: 90, viewWidth: 400, edgeFraction: 0.25) == .left)
         #expect(GestureEdgeZone.zone(forStartX: 90, viewWidth: 400, edgeFraction: 0.1) == nil)
     }
+
+    // MARK: - swipe-down-to-minimize decision
+
+    @Test("middle downward swipe past threshold minimizes")
+    func middleSwipeDownMinimizes() {
+        #expect(
+            GestureEdgeZone.shouldMinimizeOnSwipeDown(isMiddle: true, translationY: 80, threshold: 60) == true)
+    }
+
+    @Test("middle downward swipe below threshold does not minimize")
+    func middleSwipeDownBelowThreshold() {
+        #expect(
+            GestureEdgeZone.shouldMinimizeOnSwipeDown(isMiddle: true, translationY: 40, threshold: 60) == false)
+    }
+
+    @Test("edge-zone swipe never minimizes, regardless of distance")
+    func edgeSwipeNeverMinimizes() {
+        #expect(
+            GestureEdgeZone.shouldMinimizeOnSwipeDown(isMiddle: false, translationY: 400, threshold: 60) == false)
+    }
+
+    @Test("upward middle swipe does not minimize")
+    func upwardMiddleSwipeDoesNotMinimize() {
+        #expect(
+            GestureEdgeZone.shouldMinimizeOnSwipeDown(isMiddle: true, translationY: -80, threshold: 60) == false)
+    }
 }

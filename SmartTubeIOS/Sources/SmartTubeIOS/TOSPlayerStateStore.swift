@@ -14,7 +14,7 @@ private let tosStoreLog = Logger(subsystem: "com.void.smarttube.app", category: 
 //
 // Presentation state:
 //   .hidden     — no video loaded, WKWebView released
-//   .miniPlayer — audio continues in TOSMiniPlayerView, TOSPlayerView dismissed
+//   .miniPlayer — audio continues in TOSFloatingPlayerView, TOSPlayerView dismissed
 //   .fullScreen — TOSPlayerView presented as a full-screen cover
 //
 // Lifecycle:
@@ -40,6 +40,11 @@ public final class TOSPlayerStateStore {
     /// The video currently loaded or playing. Non-nil when presentation != .hidden.
     public private(set) var currentVideo: Video?
 
+    /// Corner the floating mini-player is snapped to. Owned here (not in the view's
+    /// @State) so the user's chosen corner survives the expand → minimize cycle that
+    /// tears the view down and back up.
+    var miniPlayerCorner: TOSMiniPlayerCorner = .bottomTrailing
+
     // MARK: - Per-video fallback guard
     //
     // When the embed fires a fatal error (embeddingDisabled / notFound), we mark that
@@ -53,7 +58,7 @@ public final class TOSPlayerStateStore {
     // The view model lives here, not in TOSPlayerView's @State, so the WKWebView
     // keeps running after the view is dismissed to mini-player.
     // Internal (not public) because TOSPlayerViewModel is an internal type;
-    // all consumers (TOSPlayerView, TOSMiniPlayerView) are in the same module.
+    // all consumers (TOSPlayerView, TOSFloatingPlayerView) are in the same module.
     private(set) var vm: TOSPlayerViewModel?
 
     // MARK: - Navigation history (swipe-right / "previous")
@@ -190,6 +195,12 @@ public final class TOSPlayerStateStore {
             startTime: 0, isIncognito: incognito, api: api)
         newVM.seenVideoIds = seenVideoIds
         newVM.setNavigationContext(hasPrevious: !history.isEmpty)
+        // Seed the playlist-gated previous/next buttons. The queue is an actor,
+        // so read its length off the main actor; `refreshPlaylistVideoCount()`
+        // is re-run after "ready" in case the queue changed meanwhile.
+        Task { @MainActor [weak newVM] in
+            await newVM?.refreshPlaylistVideoCount()
+        }
         // Wire swipe-navigation callbacks here (not in TOSPlayerView.onAppear) so
         // every vm created by a swipe-driven play() — not just the first — gets
         // working onPlayNext/onPlayPrevious. SwiftUI's .onAppear fires once per
@@ -234,6 +245,10 @@ public final class TOSPlayerStateStore {
         guard presentation == .fullScreen else { return }
         let wasActive = vm?.playerState == .playing || vm?.playerState == .buffering
         presentation = .miniPlayer
+        // Hide YouTube's in-page chrome (title bar, controls, big play button,
+        // paused/related overlay, end-screen cards) in the floating corner window
+        // so only the video shows.
+        vm?.setMiniPlayerChrome(hidden: true)
         let action = dismissPlayerAction
         dismissPlayerAction = nil
         tosStoreLog.notice(
@@ -267,6 +282,8 @@ public final class TOSPlayerStateStore {
             "[TOSPlayerStateStore] expand — currentPresentation=\(String(describing: self.presentation))")
         guard presentation == .miniPlayer else { return }
         presentation = .fullScreen
+        // Restore YouTube's in-page chrome now that we're back full-screen.
+        vm?.setMiniPlayerChrome(hidden: false)
         tosStoreLog.notice("[TOSPlayerStateStore] expand — presentation set to .fullScreen")
     }
 

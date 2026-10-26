@@ -3,6 +3,7 @@ import Foundation
 import CoreFoundation
 import AVFoundation
 import WebKit
+import Observation
 import SmartTubeIOSCore
 import os
 #if os(iOS)
@@ -43,6 +44,10 @@ enum TOSPlayerError: Equatable {
     /// #158). The embed only has the TV session cookies, and Google sign-in can't complete
     /// inside it, so the standard player (authenticated InnerTube) takes over.
     case signInRequired
+    /// The embed's own player response says the video is unplayable here — most commonly
+    /// channel-members-only content (the YouTube iframe has no channel-membership session),
+    /// but also region blocks, removed videos, etc. Carries YouTube's localized reason.
+    case unavailable(String)
 
     var isFatal: Bool {
         switch self {
@@ -78,6 +83,60 @@ final class TOSPlayerViewModel: NSObject {
     /// Last time tracking-URL resolution came back empty; gates retries in
     /// `ensureTrackingSession()` so a failure doesn't re-fire on every tick.
     var lastTrackingResolveFailureAt: Date?
+
+    // MARK: - Native transport
+    //
+    // Mirrors PlaybackViewModel's scrub surface so PlayerProgressBarView can
+    // drive both engines. The JS player remains the source of truth; these
+    // properties only own the drag window and the pending-seek guard.
+    var isScrubbing: Bool = false
+    var scrubTime: Double = 0
+    var bufferedRanges: [ClosedRange<Double>] = []
+    var seekableRanges: [ClosedRange<Double>] = []
+    /// True only while the embedded player reports a live broadcast. Set from the
+    /// embed's player response (`liveBroadcastDetails.isLiveNow` / `videoDetails.isLive`),
+    /// never from `video.duration` — an ended broadcast keeps an Infinity/duration
+    /// signal in the TV embed. Drives the LIVE label and the non-scrubable bar.
+    var isLive: Bool = false
+    var isAd: Bool = false
+    /// Incremented on every play/pause request so a late verification play
+    /// cannot clobber a newer pause (ported from ShortsEmbedPlayerViewModel).
+    @ObservationIgnored var playPauseEpoch: Int = 0
+    /// Target of the last committed scrub. While set, tick-driven
+    /// `currentTime` updates are suppressed until the player lands near it.
+    @ObservationIgnored var pendingSeekTarget: Double?
+    @ObservationIgnored var pendingSeekSetAt: Date?
+
+    // MARK: - Media options (quality / captions / audio track)
+    //
+    // Populated from the embed's own player object (window.__stPlayerAPI).
+    // Empty arrays mean the TV-UA embed did not expose the corresponding API;
+    // the overlay hides/disables that picker rather than showing a no-op.
+    var availableQualities: [TOSQualityOption] = []
+    var selectedQualityID: String?
+    var actualQuality: TOSQualityOption?
+    var availableAudioTracks: [TOSAudioOption] = []
+    var selectedAudioTrack: TOSAudioOption?
+    @ObservationIgnored var hasAppliedMediaPreferences: Bool = false
+    /// Captions come from InnerTube's captionTracks (shared CaptionsManager),
+    /// not the TV embed's captions module — that module is not reliable under
+    /// the TV user agent. Rendering is native (`CaptionCueView`).
+    let captionsManager: CaptionsManager
+    @ObservationIgnored var captionFetchTask: Task<Void, Never>?
+    /// The in-flight native-caption load, if any. Coalesces concurrent callers
+    /// (ready-time fetch, the CC pill, the picker's Reload row) onto one network
+    /// round-trip so a toggle during loading still resolves to a track instead
+    /// of silently no-op'ing against an empty list.
+    @ObservationIgnored var nativeCaptionsTask: Task<Void, Never>?
+    @ObservationIgnored var hasFetchedNativeCaptions = false
+    /// True while a native-caption fetch is in flight — drives the picker's
+    /// "Loading…" row so the empty state is distinguishable from "no tracks".
+    var isLoadingNativeCaptions = false
+    /// User-visible caption load state for the picker's empty row.
+    var captionLoadError: String?
+    /// Last explicitly selected caption track — remembered so the quick-access
+    /// CC toggle can turn captions back on without the picker.
+    @ObservationIgnored var lastSelectedCaption: CaptionTrack?
     /// Non-nil when the player encounters an error that requires falling back.
     var playerError: TOSPlayerError? = nil
     /// A revision lets repeated requests refresh the native controls' hide timer,
@@ -140,6 +199,11 @@ final class TOSPlayerViewModel: NSObject {
     /// Set by `TOSPlayerStateStore.play(video:api:)` via `setNavigationContext(hasPrevious:)`
     /// based on whether a navigation history exists.
     var hasPrevious: Bool = false
+    /// Number of videos in the Current Queue when this video was opened. Drives
+    /// the playlist-gated previous/next buttons (`canPlayPreviousVideo` /
+    /// `canPlayNextVideo`); 0 or 1 keeps them disabled. Refreshed by
+    /// `refreshPlaylistVideoCount()` after "ready".
+    var playlistVideoCount: Int = 0
     /// Wired by TOSPlayerView to `tosState.play(video:api:)` for the next related video.
     var onPlayNext: ((Video) -> Void)?
     /// Wired by TOSPlayerView to pop `TOSPlayerStateStore.history` and re-play it.
@@ -227,6 +291,12 @@ final class TOSPlayerViewModel: NSObject {
     var hasReceivedTimeAdvanced = false
     /// Prevents loadEmbed from firing in instances SwiftUI creates-then-discards during init.
     private var hasStartedLoading = false
+    /// True once TOSPlayerView's restore-position `.task` has run for this view model.
+    /// The vm outlives the view across minimize→expand (TOSPlayerStateStore keeps it
+    /// alive), and TOSPlayerView is re-created — and its `.task` re-runs — on every
+    /// re-present. Without this one-shot guard, expanding re-seeks to the last periodic
+    /// watch-history checkpoint and visibly rewinds the video that was already playing.
+    var hasRestoredInitialPosition = false
     /// Stored handle for the in-flight fetchSponsorSegments Task. Cancelled on full dismiss
     /// to prevent a late @Observable mutation after TOSPlayerView teardown.
     var sponsorTask: Task<Void, Never>?
@@ -288,6 +358,7 @@ final class TOSPlayerViewModel: NSObject {
         self.isIncognito = isIncognito
         self.api = api
         self.tracker = WatchtimeTracker(api: api)
+        self.captionsManager = CaptionsManager()
         self.likeDislike = LikeDislikeController(
             api: api,
             logError: { msg in tosLog.error("[likeDislike] \(msg)") }
@@ -303,7 +374,9 @@ final class TOSPlayerViewModel: NSObject {
         // CRITICAL on iOS: without this, YouTube's embed hijacks the native system
         // video player when the user taps play, taking control away from the WKWebView.
         config.allowsInlineMediaPlayback = true
-        config.allowsAirPlayForMediaPlayback = true
+        // AirPlay is deliberately disabled app-wide: routing the TOS embed to an
+        // AirPlay receiver left the video off-screen and capped quality.
+        config.allowsAirPlayForMediaPlayback = false
         // Explicit (default may vary across iOS versions) — required for the native
         // PiP button to appear in the embedded <video>'s controls. Investigated as
         // part of #283 (background play/PiP support); does not by itself enable PiP
@@ -348,6 +421,56 @@ final class TOSPlayerViewModel: NSObject {
             in: .page
         )
         contentController.addUserScript(detectionScript)
+
+        // Hide YouTube's in-page chrome so the native transport overlay is the
+        // only visible UI. Injected at document-start so the first paint is
+        // already chrome-free; the script itself defers its work to
+        // DOMContentLoaded when the document is still loading.
+        let chromeScript = WKUserScript(
+            source: TOSPlayerChromeJS.hiderJS,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false,
+            in: .page
+        )
+        contentController.addUserScript(chromeScript)
+
+        // Media-option facade over the embed's own player object (quality,
+        // captions, audio tracks). Defines window.__stPlayerAPI; no work until
+        // Swift calls it.
+        let mediaOptionsScript = WKUserScript(
+            source: TOSPlayerMediaOptionsJS.helperJS,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false,
+            in: .page
+        )
+        contentController.addUserScript(mediaOptionsScript)
+
+        #if os(iOS)
+        // iOS-only mini-player chrome helper (see iosMiniChromeJS). Installs
+        // window.__stMiniChrome(), used to hide YouTube's in-page chrome while the
+        // player is minimized to the floating corner window. SmartTube deliberately
+        // does NOT touch YouTube's control bar in full-screen: YouTube's own tap
+        // handling shows/hides it (and auto-hides it), and both suppressing that tap
+        // and CSS-hiding the bar left it stuck hidden with no way to bring it back.
+        let miniChromeScript = WKUserScript(
+            source: Self.iosMiniChromeJS,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false,
+            in: .page
+        )
+        contentController.addUserScript(miniChromeScript)
+
+        // iOS-only tap-to-show-controls helper (see iosTapNoPauseJS). Lets YouTube's
+        // own tap reveal its control bar, but immediately resumes the video so a
+        // tap on the video body never leaves playback paused.
+        let tapNoPauseScript = WKUserScript(
+            source: Self.iosTapNoPauseJS,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false,
+            in: .page
+        )
+        contentController.addUserScript(tapNoPauseScript)
+        #endif
 
         config.userContentController = contentController
 
@@ -603,6 +726,19 @@ final class TOSPlayerViewModel: NSObject {
         )
     }
 
+    #if os(iOS)
+    /// Hides (`hidden == true`) or restores YouTube's in-page chrome — title bar,
+    /// control bar, big centre play button, paused/related overlay, end-screen cards
+    /// — while the player is minimized to the floating corner window, so only the
+    /// video shows. The CSS rules live in the injected `iosMiniChromeJS`.
+    func setMiniPlayerChrome(hidden: Bool) {
+        eval(
+            "setMiniPlayerChrome(\(hidden))",
+            "(function(){ if (window.__stMiniChrome) { window.__stMiniChrome(\(hidden)); } })();"
+        )
+    }
+    #endif
+
     // MARK: - Private helpers
 
     // FRAME-TARGETED EVAL (the fix for the cross-origin-iframe defect described on
@@ -723,10 +859,19 @@ final class TOSPlayerViewModel: NSObject {
         comps.queryItems = [
             URLQueryItem(name: "autoplay", value: "1"),
             URLQueryItem(name: "mute", value: "1"),
-            URLQueryItem(name: "controls", value: "1"),
+            URLQueryItem(name: "controls", value: "0"),
             URLQueryItem(name: "playsinline", value: "1"),
             URLQueryItem(name: "rel", value: "0"),
             URLQueryItem(name: "iv_load_policy", value: "3"),
+            // Force the captions module to load so `getOption('captions',
+            // 'tracklist')` has tracks to enumerate. The player is turned back
+            // off after the track list is read unless the user has a saved
+            // caption-language preference (see refreshMediaOptions).
+            URLQueryItem(name: "cc_load_policy", value: "1"),
+            URLQueryItem(
+                name: "cc_lang_pref",
+                value: settings.preferredCaptionLanguage
+                    ?? Locale.current.language.languageCode?.identifier ?? "en"),
             URLQueryItem(name: "start", value: "\(Int(startTime))"),
             URLQueryItem(name: "origin", value: "https://www.example.com"),
         ]
@@ -896,9 +1041,54 @@ final class TOSPlayerViewModel: NSObject {
             });
             _observer.observe(document.documentElement, {childList: true, subtree: true});
 
+            // Re-attach lightweight media-event listeners whenever YouTube
+            // replaces the <video> element (quality/audio switches can do this).
+            // They only shorten the latency between an event and the next tick;
+            // the 250ms poll remains the source of truth.
+            var _hookedVideo = null;
+            function hookVideo(v) {
+                if (!v || v === _hookedVideo) return;
+                _hookedVideo = v;
+                ['timeupdate', 'seeked', 'durationchange', 'ratechange', 'volumechange', 'ended'].forEach(function(ev) {
+                    v.addEventListener(ev, function() { setTimeout(pollVideo, 0); });
+                });
+            }
+
+            // Serialise TimeRanges into [[start, end], ...]. Non-finite values
+            // (live streams) are dropped — JSON.stringify turns Infinity into
+            // null, which Swift would otherwise decode as 0.
+            function ranges(list) {
+                var out = [];
+                try {
+                    for (var i = 0; i < list.length; i++) {
+                        var s = list.start(i), e = list.end(i);
+                        if (isFinite(s) && isFinite(e) && e >= s) { out.push([s, e]); }
+                    }
+                } catch (e) {}
+                return out;
+            }
+
+            // Report the embed's own playability verdict once, so Swift can show
+            // YouTube's localized reason (e.g. "available to channel members only")
+            // instead of a silent black screen. Only posted once per page.
+            var _playabilityPosted = false;
+            function reportPlayability() {
+                if (_playabilityPosted) return;
+                var p = document.getElementById('movie_player');
+                if (!p || typeof p.getPlayerResponse !== 'function') return;
+                var pr = null;
+                try { pr = p.getPlayerResponse(); } catch (e) { return; }
+                var ps = pr && pr.playabilityStatus;
+                if (!ps || !ps.status) return;
+                _playabilityPosted = true;
+                postMsg({type: 'playability', status: ps.status, reason: ps.reason || ''});
+            }
+
             function pollVideo() {
+                reportPlayability();
                 var video = document.querySelector('video');
                 if (!video) return;
+                hookVideo(video);
 
                 // video.paused can flicker true→false within a single poll interval right
                 // after a resume (confirmed via live device log on the Shorts copy of this
@@ -927,10 +1117,25 @@ final class TOSPlayerViewModel: NSObject {
 
                 var t = video.currentTime || 0;
 
+                // Live state for the native LIVE affordance. Prefer the player
+                // response (reliable for ended broadcasts: isLiveNow=false) and
+                // fall back to the Infinity-duration heuristic only when the embed
+                // exposes neither signal. `video.duration` is Infinity for an
+                // ongoing broadcast; JSON.stringify would turn that into null, so
+                // clamp it to 0.
+                var _live = null;
+                try {
+                    if (window.__stPlayerAPI && typeof window.__stPlayerAPI.getLive === 'function') {
+                        _live = window.__stPlayerAPI.getLive();
+                    }
+                } catch (e) { _live = null; }
+                if (_live !== true && _live !== false) { _live = !isFinite(video.duration); }
+                var _dur = isFinite(video.duration) ? (video.duration || 0) : 0;
                 if (_prevState === -2) {
                     _prevState = s;
-                    postMsg({type: 'ready', duration: video.duration || 0,
-                             readyState: video.readyState, buffered: video.buffered.length});
+                    postMsg({type: 'ready', duration: _dur,
+                             readyState: video.readyState, buffered: video.buffered.length,
+                             live: _live});
                 }
 
                 // Kick off playback if YouTube's own autoplay didn't fire (common in WKWebView).
@@ -998,7 +1203,11 @@ final class TOSPlayerViewModel: NSObject {
                     postMsg({type: 'pollUnmuted', t: t, retriesLeft: _bgRemutePollRetries, muted: video.muted});
                 }
 
-                postMsg({type: 'tick', t: t, state: s, duration: video.duration || 0});
+                var _mp = document.getElementById('movie_player');
+                var _ad = !!(_mp && _mp.classList.contains('ad-showing'));
+                postMsg({type: 'tick', t: t, state: s, duration: _dur,
+                         buffered: ranges(video.buffered), seekable: ranges(video.seekable),
+                         live: _live, ad: _ad, rate: video.playbackRate || 1, muted: !!video.muted});
 
                 if (s !== _prevState) {
                     _prevState = s;
@@ -1007,6 +1216,115 @@ final class TOSPlayerViewModel: NSObject {
             }
 
             setInterval(pollVideo, 250);
+        })();
+        """
+
+    // MARK: - iOS mini-player chrome
+    //
+    // A single injected helper — `window.__stMiniChrome(hidden)` — that hides
+    // YouTube's in-page chrome (title bar, control bar, big play button, paused/
+    // related overlay, end-screen cards) while the player is minimized to the
+    // floating corner window, so only the video shows.
+    //
+    // NOTE: SmartTube formerly forced/hid YouTube's full-screen control bar via CSS,
+    // but that left the bar stuck hidden — YouTube's own state never received the
+    // "show" signal, so clearing the CSS didn't bring it back. YouTube's own tap
+    // handling (show on tap, auto-hide on inactivity) is therefore left fully intact;
+    // see iosTapNoPauseJS for how the tap's *pause* side-effect is neutralised instead.
+    //
+    // Injected with forMainFrameOnly: false, so it also runs in the non-player
+    // wrapper frame — the handler no-ops there because there is no #movie_player.
+    private static let iosMiniChromeJS: String = """
+        (function() {
+            function ensureStyle(id) {
+                var el = document.getElementById(id);
+                if (!el) {
+                    el = document.createElement('style');
+                    el.id = id;
+                    (document.head || document.documentElement).appendChild(el);
+                }
+                return el;
+            }
+
+            window.__stMiniChrome = function(hidden) {
+                ensureStyle('st-mini-chrome-style').textContent = hidden
+                    ? '.ytp-chrome-top,.ytp-chrome-bottom,.ytp-gradient-top,.ytp-gradient-bottom,' +
+                      '.ytp-large-play-button,.ytp-pause-overlay,.ytp-ce-element,.ytp-endscreen-content,' +
+                      '.ytp-endscreen-paginate,.ytp-cards-teaser,.ytp-cards-button,' +
+                      '.ytp-paid-content-overlay,.ytp-ad-overlay-container,.ytp-ad-player-overlay,' +
+                      '.ytp-ad-player-overlay-layout,.ytp-ad-text-overlay,.ytp-ad-image-overlay,' +
+                      '.ytp-ad-module,.ytp-featured-product,.ytp-suggested-action,.ytp-shopping-button,' +
+                      '.ytp-ce-covering-overlay,.ytp-ce-video,.ytp-ce-playlist' +
+                      '{display:none!important;visibility:hidden!important;}'
+                    : '';
+            };
+        })();
+        """
+
+    // MARK: - iOS tap-to-show-controls without pausing
+    //
+    // In the embedded player a tap on the video surface does double duty: it
+    // reveals YouTube's own controls AND toggles play/pause. Users found "tapping
+    // to see the controls pauses the video" surprising (YouTube's native app
+    // separates the two). Rather than suppressing YouTube's tap — which the
+    // previous CSS attempt showed breaks its control-bar state machine — we let
+    // the tap through so YouTube shows its bar, then immediately undo only its
+    // pause side-effect by resuming inside the `pause` event handler.
+    //
+    // Scope is limited to taps that are NOT on YouTube's own chrome: a tap on the
+    // control bar (play/pause button, scrubber, settings) is a deliberate pause/play
+    // and is left alone. `noPauseUntil` is armed on touch-down in the video area and
+    // consumed by the next `pause` event.
+    //
+    // Injected with forMainFrameOnly: false; the wrapper frame simply finds no
+    // <video> and no-ops.
+    private static let iosTapNoPauseJS: String = """
+        (function() {
+            var NO_PAUSE_WINDOW_MS = 700;
+
+            function inChrome(node) {
+                for (var n = node; n && n.classList; n = n.parentElement) {
+                    var c = n.classList;
+                    if (c.contains('ytp-chrome-top') || c.contains('ytp-chrome-bottom') ||
+                        c.contains('ytp-chrome-control') || c.contains('ytp-popup') ||
+                        c.contains('ytp-settings-menu') || c.contains('ytp-progress-bar-container')) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            var noPauseUntil = 0;
+
+            function armFromTouch(e) {
+                if (!inChrome(e.target)) { noPauseUntil = performance.now() + NO_PAUSE_WINDOW_MS; }
+            }
+            document.addEventListener('touchstart', armFromTouch, true);
+            document.addEventListener('mousedown', armFromTouch, true);
+
+            function resume(v) {
+                var player = document.getElementById('movie_player');
+                if (player && typeof player.playVideo === 'function') { player.playVideo(); return; }
+                var p = v.play();
+                if (p && p['catch']) { p['catch'](function () {}); }
+            }
+
+            function onVideoPause(e) {
+                if (performance.now() < noPauseUntil) {
+                    noPauseUntil = 0;
+                    resume(e.target);
+                }
+            }
+
+            function hook() {
+                var v = document.querySelector('video');
+                if (!v || v.__stTapNoPauseHooked) { return; }
+                v.__stTapNoPauseHooked = true;
+                v.addEventListener('pause', onVideoPause);
+            }
+
+            hook();
+            setInterval(hook, 1000);
         })();
         """
 }

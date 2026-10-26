@@ -53,7 +53,8 @@ struct AppSettingsAppearanceTests {
 
     @Test("High-res fallback chain starts at hq720 and ends at mqdefault")
     func highResFallbackChain() {
-        let names = Video(id: "abc", title: "t", channelTitle: "c").highResThumbnailFallbackURLs.map(\.lastPathComponent)
+        let names = Video(id: "abc", title: "t", channelTitle: "c").highResThumbnailFallbackURLs.map(
+            \.lastPathComponent)
         #expect(names == ["hq720.jpg", "sddefault.jpg", "hqdefault.jpg", "mqdefault.jpg"])
     }
 }

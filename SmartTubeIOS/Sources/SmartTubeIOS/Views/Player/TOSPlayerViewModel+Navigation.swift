@@ -27,6 +27,44 @@ extension TOSPlayerViewModel {
         return !relatedVideos.isEmpty
     }
 
+    /// True when this video was opened from the Current Queue — i.e. a YouTube
+    /// playlist, search "play all", or the Library queue. Only those videos get
+    /// the synthetic queue `playlistId` (`CurrentQueueStore.videoAt(index:)`).
+    var isInPlaylist: Bool {
+        playlistId == CurrentQueueStore.playlistID
+    }
+
+    /// Enables the "previous video" transport button. Playlist-only: a
+    /// non-playlist video (suggestions are reachable via swipe) or a one-item
+    /// queue keeps it disabled.
+    var canPlayPreviousVideo: Bool {
+        TOSPlayerTransportSupport.canNavigatePlaylist(
+            playlistId: playlistId,
+            queuePlaylistID: CurrentQueueStore.playlistID,
+            queueCount: playlistVideoCount
+        )
+    }
+
+    /// Enables the "next video" transport button. See `canPlayPreviousVideo`.
+    var canPlayNextVideo: Bool {
+        TOSPlayerTransportSupport.canNavigatePlaylist(
+            playlistId: playlistId,
+            queuePlaylistID: CurrentQueueStore.playlistID,
+            queueCount: playlistVideoCount
+        )
+    }
+
+    /// Re-reads the Current Queue length so the playlist buttons reflect the
+    /// live queue (it can change while a video is playing). No-op when the
+    /// video is not part of the queue.
+    func refreshPlaylistVideoCount() async {
+        guard isInPlaylist else {
+            playlistVideoCount = 0
+            return
+        }
+        playlistVideoCount = await CurrentQueueStore.shared.videos.count
+    }
+
     /// Called by `TOSPlayerStateStore.play(video:api:)` after creating this vm.
     func setNavigationContext(hasPrevious: Bool) {
         self.hasPrevious = hasPrevious

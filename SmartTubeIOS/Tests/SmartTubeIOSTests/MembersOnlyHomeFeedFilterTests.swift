@@ -5,10 +5,11 @@ import Testing
 
 // MARK: - MembersOnlyHomeFeedFilterTests
 //
-// Regression tests for task #227: members-only videos must be dropped from the
-// home/subs/history feed by the `parseTileRenderer` function before they reach
-// the UI. Without the fix, users would see a "Join this channel" error when
-// tapping a video that should never have appeared in the feed.
+// Members-only videos are kept in the home/subs/history feed but flagged
+// `isMembersOnly` so the card can show a green "Members" tag and the player can
+// explain why they can't play (the TOS iframe has no membership session). This
+// supersedes task #227's original "drop the tile" behaviour now that the player
+// surfaces a message instead of a black screen.
 //
 // `parseTileRenderer` is private, so these tests validate the three detection
 // signals via the public `parseVideoGroup` entry point, using minimal synthetic
@@ -147,8 +148,8 @@ struct MembersOnlyHomeFeedFilterTests {
         let response = makeBrowseResponse(tiles: [tile])
         let group = try await api.parseVideoGroup(from: response, title: "Home")
         #expect(
-            !group.videos.contains(where: { $0.id == "membersVideo1" }),
-            "Signal 1: tile with thumbnailOverlayMembershipBadgeRenderer must be dropped")
+            group.videos.contains(where: { $0.id == "membersVideo1" && $0.isMembersOnly == true }),
+            "Members-only tile membersVideo1 must be kept and flagged isMembersOnly")
     }
 
     // MARK: - Signal 2: metadataBadgeRenderer MEMBERS_ONLY icon type
@@ -166,8 +167,8 @@ struct MembersOnlyHomeFeedFilterTests {
         let response = makeBrowseResponse(tiles: [tile])
         let group = try await api.parseVideoGroup(from: response, title: "Home")
         #expect(
-            !group.videos.contains(where: { $0.id == "membersVideo2" }),
-            "Signal 2: tile with MEMBERS_ONLY badge icon type must be dropped")
+            group.videos.contains(where: { $0.id == "membersVideo2" && $0.isMembersOnly == true }),
+            "Members-only tile membersVideo2 must be kept and flagged isMembersOnly")
     }
 
     @Test("Signal 2: metadataBadgeRenderer with MEMBERS_ONLY_BADGE icon prefix drops the tile")
@@ -182,8 +183,8 @@ struct MembersOnlyHomeFeedFilterTests {
         let response = makeBrowseResponse(tiles: [tile])
         let group = try await api.parseVideoGroup(from: response, title: "Home")
         #expect(
-            !group.videos.contains(where: { $0.id == "membersVideo3" }),
-            "Signal 2: icon type starting with MEMBERS must drop the tile")
+            group.videos.contains(where: { $0.id == "membersVideo3" && $0.isMembersOnly == true }),
+            "Members-only tile membersVideo3 must be kept and flagged isMembersOnly")
     }
 
     @Test("Signal 2: metadataBadgeRenderer with 'member' label (case-insensitive) drops the tile")
@@ -198,8 +199,8 @@ struct MembersOnlyHomeFeedFilterTests {
         let response = makeBrowseResponse(tiles: [tile])
         let group = try await api.parseVideoGroup(from: response, title: "Home")
         #expect(
-            !group.videos.contains(where: { $0.id == "membersVideo4" }),
-            "Signal 2: badge label containing 'member' must drop the tile")
+            group.videos.contains(where: { $0.id == "membersVideo4" && $0.isMembersOnly == true }),
+            "Members-only tile membersVideo4 must be kept and flagged isMembersOnly")
     }
 
     // MARK: - Signal 3: "Members only" text in secondary metadata line
@@ -210,8 +211,8 @@ struct MembersOnlyHomeFeedFilterTests {
         let response = makeBrowseResponse(tiles: [tile])
         let group = try await api.parseVideoGroup(from: response, title: "Home")
         #expect(
-            !group.videos.contains(where: { $0.id == "membersVideo5" }),
-            "Signal 3: 'Members only' text in secondary line must drop the tile")
+            group.videos.contains(where: { $0.id == "membersVideo5" && $0.isMembersOnly == true }),
+            "Members-only tile membersVideo5 must be kept and flagged isMembersOnly")
     }
 
     @Test("Signal 3: 'members only' lowercase text in secondary line drops the tile")
@@ -220,8 +221,8 @@ struct MembersOnlyHomeFeedFilterTests {
         let response = makeBrowseResponse(tiles: [tile])
         let group = try await api.parseVideoGroup(from: response, title: "Home")
         #expect(
-            !group.videos.contains(where: { $0.id == "membersVideo6" }),
-            "Signal 3: lowercased 'members only' text must drop the tile")
+            group.videos.contains(where: { $0.id == "membersVideo6" && $0.isMembersOnly == true }),
+            "Members-only tile membersVideo6 must be kept and flagged isMembersOnly")
     }
 
     // MARK: - Non-member badge does not drop the tile

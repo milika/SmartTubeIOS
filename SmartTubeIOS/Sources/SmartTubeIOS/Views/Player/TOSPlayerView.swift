@@ -22,7 +22,7 @@ private let tosViewLog = Logger(subsystem: "com.void.smarttube.app", category: "
 //            z-order — SwiftUI layout cannot steer clear of it from inside.
 //   iOS   — Back button (top-left). Safe on iOS: full-screen modal has no
 //            OS chrome above it. Back → TOSPlayerStateStore.minimize() so
-//            audio continues in TOSMiniPlayerView.
+//            audio continues in TOSFloatingPlayerView.
 //
 // Entry path (macOS):
 //   MainSidebarView (RootView.swift)
@@ -71,6 +71,11 @@ public struct TOSPlayerView: View {
     /// Drives `chaptersOverlay` (see moreButton's Chapters row) — same rationale as
     /// showCommentsSheet above (#10).
     @State private var showChaptersSheet = false
+    /// Drives the TOS caption picker. Owned here (not in the overlay) so the
+    /// more menu's Captions row and the quick-access CC pill share one picker.
+    @State private var showCaptionsPicker = false
+    /// Same ownership idea for the audio-track picker.
+    @State private var showAudioTrackPicker = false
     /// Feedback alert for "Report Incorrect Segment" (#67) on either SponsorBlock toast.
     @State private var reportSegmentAlert: DownloadAlertItem?
 
@@ -88,6 +93,9 @@ public struct TOSPlayerView: View {
     /// rather than immediately, so the final value is visible for a moment.
     @State private var gestureHUD: GestureAdjustmentInfo?
     @State private var hudDismissTask: Task<Void, Never>?
+    /// Shows the volume HUD for hardware volume-key presses (iOS suppresses its
+    /// own system HUD while `SystemVolumeControl`'s MPVolumeView is mounted).
+    @State private var volumeMonitor = SystemVolumeMonitor()
     #endif
 
     #if os(iOS)
@@ -111,6 +119,19 @@ public struct TOSPlayerView: View {
         }
     }
 
+    private func hideControls() {
+        controlsHideTask?.cancel()
+        controlsHideTask = nil
+        withAnimation(.easeInOut(duration: 0.2)) { controlsVisible = false }
+    }
+
+    /// Toggles SmartTube's native overlay cluster. A tap in the top bar or the
+    /// bottom control strip is ignored while the overlay is visible, because those
+    /// areas have their own buttons and the progress bar.
+    private func toggleControls() {
+        if controlsVisible { hideControls() } else { showControls() }
+    }
+
     // MARK: - Brightness/volume gesture (#19)
     //
     // Left half of the screen adjusts brightness (UIScreen.main.brightness — a
@@ -121,6 +142,7 @@ public struct TOSPlayerView: View {
     // wherever the value currently is, rather than snapping to an absolute
     // position derived from touch coordinates.
     private func handleVerticalDrag(isLeftHalf: Bool, translationY: CGFloat, viewHeight: CGFloat) {
+        guard store.settings.swipeBrightnessVolumeEnabled else { return }
         if isLeftHalf {
             let start = brightnessDragStart ?? Float(UIScreen.main.brightness)
             if brightnessDragStart == nil { brightnessDragStart = start }
@@ -150,6 +172,27 @@ public struct TOSPlayerView: View {
         }
     }
     #endif
+
+    /// Bottom clearance for the native caption cue: above the progress bar and
+    /// quick-access row when controls are visible, a small margin otherwise.
+    private var captionBottomPadding: CGFloat {
+        #if os(iOS)
+        controlsVisible ? 130 : 24
+        #else
+        90
+        #endif
+    }
+
+    /// Bridges the iOS-only `isLandscapeLocked` state to the transport
+    /// overlay's binding. macOS has no landscape-lock control, so it receives
+    /// a constant binding and the overlay omits the button.
+    private var landscapeLockBinding: Binding<Bool> {
+        #if os(iOS)
+        Binding(get: { isLandscapeLocked }, set: { isLandscapeLocked = $0 })
+        #else
+        .constant(false)
+        #endif
+    }
 
     public init(video: Video, api: InnerTubeAPI, onFallback: @escaping () -> Void = {}) {
         self.video = video
@@ -259,16 +302,6 @@ public struct TOSPlayerView: View {
                     }
                     #endif
 
-                    #if os(macOS)
-                    // MARK: Top-right control cluster — more menu (like/dislike, sleep
-                    // timer, share) + playback speed picker. See topRightControls for why
-                    // these are native Menus rather than ports of the standard player's
-                    // custom overlay views. On iOS both live in the back-button row
-                    // instead (see backButton()) — there's no on-screen back button here
-                    // to anchor them to on macOS.
-                    topRightControls(topInset: geo.safeAreaInsets.top, vm: vm)
-                    #endif
-
                     #if os(iOS)
                     // MARK: Swipe-left/right navigation overlay (iOS only)
                     // Mirrors PlayerSwipeGestureOverlay's left/right behaviour for the
@@ -277,6 +310,23 @@ public struct TOSPlayerView: View {
                     TOSSwipeNavigationOverlay(
                         onSwipeLeft: { vm.playNext() },
                         onSwipeRight: { vm.playPrevious() },
+                        onTap: { point in
+                            // The tap recognizer is attached to the window with
+                            // cancelsTouchesInView=false, so it fires alongside —
+                            // not instead of — YouTube's own touch handling. Only
+                            // SmartTube's native overlay is toggled here; playback
+                            // is left untouched.
+                            let height = geo.size.height
+                            if controlsVisible, height > 0 {
+                                // Ignore taps on the native top bar and bottom
+                                // control strip — those have their own buttons
+                                // and the progress bar. A tap in the middle of
+                                // the video still toggles the overlay.
+                                let topGuard = geo.safeAreaInsets.top + 80
+                                if point.y <= topGuard || point.y >= height * 0.78 { return }
+                            }
+                            toggleControls()
+                        },
                         onVerticalDragChanged: { isLeftHalf, translationY, viewHeight in
                             handleVerticalDrag(
                                 isLeftHalf: isLeftHalf, translationY: translationY, viewHeight: viewHeight)
@@ -285,17 +335,32 @@ public struct TOSPlayerView: View {
                             endVerticalDrag()
                         },
                         onEdgeSwipeExit: {
-                            // #328: distinct from the back button's minimize() — this
-                            // matches the mini-player's ✕ (tosState.stop()), fully
-                            // ending playback rather than continuing it in the background.
-                            tosState.stop()
-                        }
+                            // #328: a left-edge rightward swipe mirrors iOS's
+                            // edge-swipe-back affordance, so it does what the back
+                            // button does — minimize() to the floating mini-player
+                            // with audio still playing (rather than stop(), which
+                            // fully ends playback).
+                            tosState.minimize()
+                        },
+                        verticalAdjustmentEnabled: store.settings.swipeBrightnessVolumeEnabled,
+                        onSwipeDown: {
+                            guard store.settings.swipeDownToMiniPlayerEnabled else { return }
+                            tosState.minimize()
+                        },
+                        swipeDownMinimizeEnabled: store.settings.swipeDownToMiniPlayerEnabled
                     )
                     .ignoresSafeArea()
                     .accessibilityHidden(true)
 
                     // MARK: Brightness/volume adjustment HUD (#19)
-                    if let gestureHUD {
+                    // The volume monitor (hardware keys) takes priority while it
+                    // is visible; otherwise show the drag-driven gesture HUD.
+                    if let volumeLevel = volumeMonitor.level {
+                        GestureAdjustmentHUD(
+                            info: GestureAdjustmentInfo(kind: .volume, value: volumeLevel)
+                        )
+                        .transition(.opacity)
+                    } else if let gestureHUD {
                         GestureAdjustmentHUD(info: gestureHUD)
                             .transition(.opacity)
                     }
@@ -307,16 +372,60 @@ public struct TOSPlayerView: View {
                         .frame(width: 0, height: 0)
                         .accessibilityHidden(true)
 
-                    // MARK: Back button (iOS only)
-                    // Safe here — full-screen modal has no OS chrome above it. Tapping
-                    // minimizes to the mini-player so audio continues (unlike macOS where
-                    // Esc fully dismisses). A small fixed padding is enough to clear the
-                    // status bar — see backButton's doc comment for why `topInset` must
-                    // NOT be added here too.
-                    backButton(vm: vm)
-                        .opacity(controlsVisible ? 1 : 0)
-                        .allowsHitTesting(controlsVisible)
                     #endif
+
+                    // MARK: Native transport overlay
+                    //
+                    // Replaces YouTube's own chrome (hidden by TOSPlayerChromeJS)
+                    // with the same control components used by the direct player.
+                    // On iOS the back button minimizes to the mini-player so audio
+                    // continues; on macOS there is no back button (Esc dismisses).
+                    #if os(iOS)
+                    TOSPlayerTransportOverlay(
+                        vm: vm,
+                        video: video,
+                        safeAreaInsets: geo.safeAreaInsets,
+                        controlsVisible: controlsVisible,
+                        isLandscapeLocked: landscapeLockBinding,
+                        moreMenu: { moreButton(vm: vm) },
+                        onBack: { tosState.minimize() },
+                        onInteraction: { showControls() },
+                        showCaptionsPicker: $showCaptionsPicker,
+                        showAudioTrackPicker: $showAudioTrackPicker
+                    )
+                    #else
+                    // macOS keeps the overlay visible; the window's titlebar
+                    // chrome floats above the content view, so there is no
+                    // auto-hide timer and no on-screen back button (Esc closes).
+                    TOSPlayerTransportOverlay(
+                        vm: vm,
+                        video: video,
+                        safeAreaInsets: geo.safeAreaInsets,
+                        controlsVisible: true,
+                        isLandscapeLocked: .constant(false),
+                        moreMenu: { moreButton(vm: vm) },
+                        onBack: nil,
+                        onInteraction: {},
+                        showCaptionsPicker: $showCaptionsPicker,
+                        showAudioTrackPicker: $showAudioTrackPicker
+                    )
+                    #endif
+
+                    // MARK: Native captions
+                    //
+                    // TOS captions come from InnerTube's captionTracks and are
+                    // rendered here (the TV embed's captions module is not
+                    // reliable). Mirrors PlayerView's caption cue placement.
+                    if let cue = vm.currentCaptionCue {
+                        VStack(spacing: 0) {
+                            Spacer()
+                            CaptionCueView(text: cue.text)
+                                .padding(.bottom, captionBottomPadding)
+                                .animation(.easeInOut(duration: 0.2), value: captionBottomPadding)
+                        }
+                        .ignoresSafeArea()
+                        .allowsHitTesting(false)
+                    }
 
                     // MARK: SponsorBlock skip toast (bottom-centre)
                     if let seg = vm.currentToastSegment {
@@ -340,6 +449,20 @@ public struct TOSPlayerView: View {
                         chaptersOverlay(vm: vm)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                             .animation(.easeOut(duration: 0.2), value: showChaptersSheet)
+                    }
+
+                    // MARK: Playability error (members-only / region / removed)
+                    // The embedded player renders no playable video for these; the
+                    // chrome hider would otherwise leave a silent black screen.
+                    if case .unavailable(let message) = vm.playerError {
+                        unavailableOverlay(message: message) {
+                            #if os(iOS)
+                            tosState.stop()
+                            #else
+                            browseVM.deepLinkedVideo = nil
+                            dismiss()
+                            #endif
+                        }
                     }
                 }
             }
@@ -395,6 +518,9 @@ public struct TOSPlayerView: View {
                 let physicallyLandscape = UIDevice.current.orientation.isLandscape
                 OrientationManager.shared.playerIsActive =
                     isLandscapeLocked || store.settings.landscapeAlwaysPlay || physicallyLandscape
+                // Hardware-key volume changes have no notification — KVO on
+                // outputVolume is the only signal (see SystemVolumeMonitor).
+                volumeMonitor.start()
                 #endif
             }
             // Pause the embedded <video> element when this view leaves the hierarchy.
@@ -415,6 +541,7 @@ public struct TOSPlayerView: View {
             .onDisappear {
                 #if os(iOS)
                 controlsHideTask?.cancel()
+                volumeMonitor.stop()
                 UIDevice.current.endGeneratingDeviceOrientationNotifications()
                 OrientationManager.shared.playerIsActive = false
                 // On iOS, only pause when fully stopped — not when minimizing to mini-player.
@@ -455,10 +582,17 @@ public struct TOSPlayerView: View {
                 dismiss()
             }
             #endif
-            // Restore saved watch position asynchronously.
+            // Restore saved watch position asynchronously — ONCE per view model.
             // We seek once the player reports .playing or .paused (i.e. after onReady fires)
             // so the IFrame API is ready to accept seekTo() calls.
+            //
+            // The vm survives minimize→expand (TOSPlayerStateStore owns it), but this
+            // view is re-created — and `.task` re-runs — on every re-present. Without the
+            // one-shot guard, expanding re-seeks to the last periodic watch-history
+            // checkpoint and rewinds an already-playing video.
             .task {
+                guard !vm.hasRestoredInitialPosition else { return }
+                vm.hasRestoredInitialPosition = true
                 let saved = await VideoStateStore.shared.state(for: video.id)?.position ?? 0
                 guard saved > 1 else { return }
                 // Poll briefly for player readiness before seeking.
@@ -481,14 +615,6 @@ public struct TOSPlayerView: View {
                 onFallback()
             }
             #if os(iOS)
-            .onChange(of: vm.surfaceTapRevision) { _, _ in
-                if vm.surfaceTapControlsVisible {
-                    showControls()
-                } else {
-                    controlsHideTask?.cancel()
-                    withAnimation(.easeInOut(duration: 0.2)) { controlsVisible = false }
-                }
-            }
             // Show controls briefly whenever a new video loads via swipe navigation
             // (tosState.vm is replaced by TOSPlayerStateStore.play). Without this the
             // controls stay hidden if the user swiped while they were already hidden.
@@ -522,7 +648,7 @@ public struct TOSPlayerView: View {
     #if os(iOS)
     // MARK: - Back button (iOS only)
     //
-    // Calls tosState.minimize() so audio continues in TOSMiniPlayerView —
+    // Calls tosState.minimize() so audio continues in TOSFloatingPlayerView —
     // unlike macOS's Esc which fully stops.
     //
     // Positioning: this view is placed inside the GeometryReader/ZStack in
@@ -770,6 +896,36 @@ public struct TOSPlayerView: View {
             }
 
             Button {
+                showCaptionsPicker = true
+            } label: {
+                HStack {
+                    Label(
+                        "Captions",
+                        systemImage: vm.selectedCaption == nil ? "captions.bubble" : "captions.bubble.fill")
+                    Spacer()
+                    Text(
+                        vm.selectedCaption.map {
+                            $0.isAutoGenerated ? "\($0.name) (auto)" : $0.name
+                        } ?? "Off"
+                    )
+                    .foregroundStyle(.secondary)
+                }
+            }
+            .accessibilityIdentifier("tosPlayer.moreMenu.captionsRow")
+
+            Button {
+                showAudioTrackPicker = true
+            } label: {
+                HStack {
+                    Label("Audio Track", systemImage: "waveform")
+                    Spacer()
+                    Text(vm.selectedAudioTrack?.name ?? "Auto")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .accessibilityIdentifier("tosPlayer.moreMenu.audioTrackRow")
+
+            Button {
                 showCommentsSheet = true
                 vm.loadComments()
             } label: {
@@ -845,6 +1001,44 @@ public struct TOSPlayerView: View {
             onDismiss: { showChaptersSheet = false },
             accessibilityId: "tosPlayer.chaptersOverlay"
         )
+    }
+
+    // MARK: - Playability error
+
+    /// Shown when the embedded player reports a non-OK playability status — most
+    /// commonly channel-members-only content (the iframe has no membership session),
+    /// but also region blocks / removed videos. Displays YouTube's own localized
+    /// reason and lets the user close the player.
+    private func unavailableOverlay(message: String, onClose: @escaping () -> Void) -> some View {
+        ZStack {
+            Color.black.opacity(0.85).ignoresSafeArea()
+            VStack(spacing: 16) {
+                Image(systemName: AppSymbol.warning)
+                    .font(.system(size: 44))
+                    .foregroundStyle(.white)
+                Text("This video can't be played here")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                Text(message)
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button {
+                    onClose()
+                } label: {
+                    Text("Close")
+                        .fontWeight(.semibold)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 10)
+                        .background(.white.opacity(0.15), in: Capsule())
+                        .foregroundStyle(.white)
+                }
+                .accessibilityIdentifier("tosPlayer.unavailableCloseButton")
+            }
+            .padding(32)
+        }
+        .accessibilityIdentifier("tosPlayer.unavailableOverlay")
     }
 
     // MARK: - SponsorBlock toast
@@ -976,9 +1170,18 @@ public struct TOSPlayerView: View {
 #if os(macOS)
 private struct YouTubeWebPlayerView: NSViewRepresentable {
     let webView: WKWebView
+    /// Fires once the NSView is about to be displayed. Mirrors the iOS
+    /// container's window-ready callback so `TOSPlayerView.body` can pass the
+    /// same closure on both platforms. On macOS the player is a full-window
+    /// overlay presented after the browse content, so the view is already in
+    /// a visible window when `makeNSView` runs.
+    let onWindowReady: (() -> Void)?
 
     func makeNSView(context: Context) -> WKWebView {
         webView.autoresizingMask = [.width, .height]
+        if let onWindowReady {
+            DispatchQueue.main.async { onWindowReady() }
+        }
         return webView
     }
 

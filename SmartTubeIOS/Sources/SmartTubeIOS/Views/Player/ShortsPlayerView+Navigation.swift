@@ -255,6 +255,7 @@ extension ShortsPlayerView {
         case .iframeError(let code): reason = "iframeError(\(code))"
         case .webViewLoadFailed: reason = "readyTimeout"
         case .signInRequired: reason = "signInRequired"
+        case .unavailable(let message): reason = "unavailable(\(message))"
         }
         let nsError = NSError(
             domain: "SmartTube.ShortsEmbedLoadFailure",

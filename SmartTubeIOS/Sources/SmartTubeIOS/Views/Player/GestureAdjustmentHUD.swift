@@ -26,6 +26,14 @@ enum GestureEdgeZone: Equatable {
         if startX >= viewWidth - edge { return .right }
         return nil
     }
+
+    /// Pure decision for the swipe-down-to-minimize gesture: only a drag that began in
+    /// the middle region (`isMiddle`) and moved down by at least `threshold` points
+    /// minimizes the player. Edge-zone drags (brightness/volume) and upward drags
+    /// never do. Kept here so the math is unit-testable under `swift test`.
+    static func shouldMinimizeOnSwipeDown(isMiddle: Bool, translationY: CGFloat, threshold: CGFloat) -> Bool {
+        isMiddle && translationY >= threshold
+    }
 }
 
 struct GestureAdjustmentInfo: Equatable {
@@ -48,7 +56,8 @@ struct GestureAdjustmentInfo: Equatable {
     var systemImage: String {
         switch kind {
         case .brightness: return value < 0.3 ? "sun.min.fill" : "sun.max.fill"
-        case .volume: return value == 0 ? "speaker.slash.fill" : value < 0.5 ? "speaker.wave.1.fill" : "speaker.wave.2.fill"
+        case .volume:
+            return value == 0 ? "speaker.slash.fill" : value < 0.5 ? "speaker.wave.1.fill" : "speaker.wave.2.fill"
         }
     }
 }

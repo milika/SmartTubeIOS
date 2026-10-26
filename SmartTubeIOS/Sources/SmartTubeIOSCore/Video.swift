@@ -20,6 +20,12 @@ public struct Video: Identifiable, Hashable, Codable, Sendable {
     public var isLive: Bool
     public var isUpcoming: Bool
     public var isShort: Bool
+    /// True when the video is gated behind a channel membership (the "Join"/"Members only"
+    /// badge). These can't be played in the TOS iframe (no membership session); the card
+    /// shows a green "Members" tag and the player shows YouTube's reason.
+    /// Optional so persisted `Video` JSON written before this field existed still decodes
+    /// (synthesized decoding uses `decodeIfPresent` only for optionals); `nil` means unknown.
+    public var isMembersOnly: Bool?
     /// True only when the API response explicitly provided a portrait thumbnail
     /// (i.e. from reelItemRenderer). False for Shorts detected via other signals
     /// (ustreamerConfig, reelWatchEndpoint, etc.) whose portrait thumbnail slot
@@ -52,6 +58,7 @@ public struct Video: Identifiable, Hashable, Codable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case id, title, channelTitle, channelId, description, thumbnailURL, duration
         case viewCount, publishedAt, publishedTimeText, isLive, isUpcoming, isShort, hasPortraitThumbnail
+        case isMembersOnly
         case watchProgress, playlistId, playlistIndex, setVideoId, badges
         case notInterestedToken, dontLikeToken, hideChannelToken
         case deArrowTitle, deArrowThumbnailTimestamp
@@ -72,6 +79,7 @@ public struct Video: Identifiable, Hashable, Codable, Sendable {
         isLive: Bool = false,
         isUpcoming: Bool = false,
         isShort: Bool = false,
+        isMembersOnly: Bool = false,
         hasPortraitThumbnail: Bool = false,
         watchProgress: Double? = nil,
         playlistId: String? = nil,
@@ -95,6 +103,7 @@ public struct Video: Identifiable, Hashable, Codable, Sendable {
         self.isLive = isLive
         self.isUpcoming = isUpcoming
         self.isShort = isShort
+        self.isMembersOnly = isMembersOnly
         self.hasPortraitThumbnail = hasPortraitThumbnail
         self.watchProgress = watchProgress
         self.playlistId = playlistId

@@ -114,10 +114,10 @@ enum AppSection: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     /// Sections shown as tabs / sidebar rows. Shorts is a touch-first vertical feed,
-    /// so it is iOS/iPadOS/Catalyst only.
-    static var tabs: [AppSection] {
+    /// so it is iOS/iPadOS/Catalyst only, and the user can hide it (Settings › Interface).
+    static func tabs(hidingShorts hideShorts: Bool = false) -> [AppSection] {
         #if os(iOS)
-        allCases
+        hideShorts ? allCases.filter { $0 != .shorts } : allCases
         #else
         allCases.filter { $0 != .shorts }
         #endif
@@ -207,7 +207,7 @@ struct MainTabView: View {
         )
         #endif
         TabView(selection: $selectedTab) {
-            ForEach(AppSection.tabs) { section in
+            ForEach(AppSection.tabs(hidingShorts: store.settings.hideShortsTab)) { section in
                 NavigationStack { section.destination(api: api) }
                     // Capture the bottom safe-area inset as seen from inside the tab
                     // (UITabBarController sets this to tab-bar height + home-indicator).
@@ -237,6 +237,9 @@ struct MainTabView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .activeChannelDidChange)) { _ in
             selectedTab = .home
+        }
+        .onChange(of: store.settings.hideShortsTab) { _, hidden in
+            if hidden, selectedTab == .shorts { selectedTab = .home }
         }
         #if os(iOS)
         // Like the official app, opening Shorts closes the mini player.
@@ -384,7 +387,7 @@ struct MainTVTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            ForEach(AppSection.tabs) { section in
+            ForEach(AppSection.tabs()) { section in
                 NavigationStack { section.destination(api: api) }
                     .tabItem {
                         Label(section.rawValue, systemImage: section.icon)
@@ -415,11 +418,13 @@ struct MainSidebarView: View {
     /// video changes.
     @State private var tosPlayerFallbackVideoId: String? = nil
 
+    private var sections: [AppSection] { AppSection.tabs(hidingShorts: store.settings.hideShortsTab) }
+
     var body: some View {
         @Bindable var browseVM = browseVM
         ZStack {
             NavigationSplitView {
-                List(AppSection.tabs, selection: $selectedSection) { section in
+                List(sections, selection: $selectedSection) { section in
                     Label(section.rawValue, systemImage: section.icon)
                         .tag(section)
                 }
@@ -446,6 +451,9 @@ struct MainSidebarView: View {
             .environment(searchVM)
             .onReceive(NotificationCenter.default.publisher(for: .activeChannelDidChange)) { _ in
                 selectedSection = .home
+            }
+            .onChange(of: store.settings.hideShortsTab) { _, hidden in
+                if hidden, selectedSection == .shorts { selectedSection = .home }
             }
 
             // Full-window player overlay — avoids macOS sheet coordinate issues that

@@ -55,4 +55,16 @@ struct ShortsEndOfVideoDecisionTests {
         let legacy = try JSONDecoder().decode(AppSettings.self, from: Data("{}".utf8))
         #expect(legacy.shortsAutoScroll == false)
     }
+
+    @Test("shortsSponsorBlock defaults to on (also for old JSON) and survives a round-trip when off")
+    func sponsorBlockPersistence() throws {
+        #expect(AppSettings().shortsSponsorBlock == true)
+        let legacy = try JSONDecoder().decode(AppSettings.self, from: Data("{}".utf8))
+        #expect(legacy.shortsSponsorBlock == true)
+
+        var settings = AppSettings()
+        settings.shortsSponsorBlock = false
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
+        #expect(decoded.shortsSponsorBlock == false)
+    }
 }

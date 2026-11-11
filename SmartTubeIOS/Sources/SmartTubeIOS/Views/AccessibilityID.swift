@@ -24,9 +24,23 @@ enum AccessibilityID {
         static let progressBar = "shorts.progressBar"
         static let commentsSheet = "shorts.commentsSheet"
         static let autoScrollToggle = "shorts.autoScrollToggle"
+        static let searchButton = "shorts.searchButton"
+        static let moreSheet = "shorts.moreSheet"
+        static let descriptionAction = "shorts.action.description"
+        static let saveToPlaylistAction = "shorts.action.saveToPlaylist"
+        static let clearScreenAction = "shorts.action.clearScreen"
+        static let captionsAction = "shorts.action.captions"
+        static let playbackSpeedAction = "shorts.action.playbackSpeed"
+        static let notInterestedAction = "shorts.action.notInterested"
+        static let dontRecommendChannelAction = "shorts.action.dontRecommendChannel"
+        static let reportAction = "shorts.action.report"
+        static let descriptionSheet = "shorts.descriptionSheet"
+        static let toast = "shorts.toast"
     }
 
     enum Settings {
         static let shortsAutoScrollToggle = "settings.shortsAutoScrollToggle"
+        static let shortsSponsorBlockToggle = "settings.shortsSponsorBlockToggle"
+        static let hideShortsTabToggle = "settings.hideShortsTabToggle"
     }
 }

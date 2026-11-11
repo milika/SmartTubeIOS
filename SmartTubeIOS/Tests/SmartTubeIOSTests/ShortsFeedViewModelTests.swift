@@ -34,7 +34,7 @@ private final class FakeShortsProvider: ShortsFeedProviding, @unchecked Sendable
         guard let metadataResult else { throw FakeError() }
         return try metadataResult.get()
     }
-    func fetchShorts() throws -> VideoGroup {
+    func searchShorts() throws -> VideoGroup {
         searchCalls += 1
         return searchGroup
     }
@@ -169,5 +169,27 @@ struct ShortsFeedViewModelTests {
         provider.likeShouldFail = true
         await vm.toggleLike(videoId: "a")
         #expect(vm.metadata["a"]?.likeStatus == LikeStatus.none)
+    }
+
+    @Test("Don't recommend channel drops that channel's upcoming Shorts and filters later pages")
+    func hideChannel() async {
+        func video(_ id: String, _ channel: String) -> Video {
+            Video(id: id, title: "", channelTitle: "", channelId: channel, isShort: true)
+        }
+        let provider = FakeShortsProvider()
+        provider.firstPage = .success(
+            ShortsFeedPage(
+                videos: [video("a", "X"), video("b", "Y"), video("c", "X"), video("d", "Z")],
+                continuation: "C1", isPersonalized: true))
+        provider.morePages["C1"] = ShortsFeedPage(
+            videos: [video("e", "X"), video("f", "Y")], continuation: nil, isPersonalized: true)
+        let vm = ShortsFeedViewModel(source: .algorithm(seed: nil), provider: provider)
+        await vm.start()
+
+        vm.hideChannel("X", after: 0)
+        #expect(vm.videos.map(\.id) == ["a", "b", "d"])  // the current Short ("a") stays
+
+        await vm.loadMoreIfNeeded(currentIndex: 2)
+        #expect(vm.videos.map(\.id) == ["a", "b", "d", "f"])
     }
 }

@@ -47,7 +47,10 @@ public struct ShortsPlayerView: View {
     @Environment(\.scenePhase) var scenePhase
     @Environment(SettingsStore.self) var store
     @Environment(AuthService.self) var authService
+    @Environment(\.openURL) var openURL
+    /// Vertical drag/slide of the pager (0 = at rest). See ShortsPlayerView+Pager.
     @State var slideOffset: CGFloat = 0
+    @State var pageHeight: CGFloat = 0
     @State var isTransitioning = false
     /// True while the app is backgrounded — guards onDisappear from calling stop()
     /// when iOS fires it as a side-effect of backgrounding rather than navigation.
@@ -62,6 +65,14 @@ public struct ShortsPlayerView: View {
     @State var channelDestination: ChannelDestination?
     @State var interactiveFrames: [CGRect] = []
     @State var playerFrame: CGRect = .zero
+    /// "Clear Screen" from the ⋯ menu: overlay hidden until the next tap.
+    @State var isScreenCleared = false
+    @State var showSearch = false
+    /// Short confirmation shown over the player ("Saved to Watch Later").
+    @State var toastMessage: String?
+    #if os(iOS)
+    @State var captions: ShortsCaptionsController
+    #endif
 
     let api: InnerTubeAPI
 
@@ -79,6 +90,7 @@ public struct ShortsPlayerView: View {
         self._currentIndex = State(initialValue: feed.startIndex)
         #if os(iOS)
         self._vm = State(initialValue: ShortsEmbedPlayerViewModel(api: api))
+        self._captions = State(initialValue: ShortsCaptionsController(api: api))
         #else
         self._vm = State(initialValue: PlaybackViewModel(api: api))
         #endif
@@ -100,8 +112,11 @@ public struct ShortsPlayerView: View {
 
     /// Window-level gestures are off while anything is presented over the player.
     private var gesturesEnabled: Bool {
-        activeSheet == nil && !isSharing && !showSignIn && channelDestination == nil
+        activeSheet == nil && !isSharing && !showSignIn && channelDestination == nil && !showSearch
     }
+
+    /// The comments/description sheet is up: the video shrinks into the space above it.
+    var isVideoShrunk: Bool { activeSheet?.shrinksVideo == true }
 
     public var body: some View {
         switch mode {
@@ -124,6 +139,7 @@ public struct ShortsPlayerView: View {
                     Color.clear.allowsHitTesting(false)
                     ShortsTOSWebView(vm: vm)
                         .frame(width: geo.size.width, height: videoH)
+                        .offset(y: slideOffset)
                         .accessibilityHidden(true)
                     // Unreachable since #279 (goTo(_:) never promotes these); kept off-screen
                     // for the day the WKWebView-reparenting bug is revisited.
@@ -141,26 +157,18 @@ public struct ShortsPlayerView: View {
                             .allowsHitTesting(false)
                             .accessibilityHidden(true)
                     }
-                    // Cover the video area while the new embed loads.
-                    if !vm.isReady {
-                        ZStack {
-                            Color.black
-                            if let thumbnail = currentVideo?.thumbnailURL {
-                                AsyncImage(url: thumbnail) { image in
-                                    image.resizable().scaledToFill()
-                                } placeholder: {
-                                    Color.black
-                                }
-                                .opacity(0.6)
-                            }
-                        }
-                        .frame(width: geo.size.width, height: videoH)
-                        .clipped()
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
-                        .accessibilityIdentifier(AccessibilityID.Shorts.loadingCover)
-                    }
+                    // Neighbour pages, and the live page's cover while its embed loads.
+                    pagePosters(size: geo.size, videoHeight: videoH)
+                    captionLayer(videoHeight: videoH)
                 }
+                .scaleEffect(isVideoShrunk ? shrunkScale(height: geo.size.height) : 1, anchor: .top)
+                .offset(y: isVideoShrunk ? shrunkTopInset : 0)
+                .animation(ShortsPaging.shrinkAnimation, value: isVideoShrunk)
+            }
+            .onGeometryChange(for: CGFloat.self) {
+                $0.size.height
+            } action: {
+                pageHeight = $0
             }
             .ignoresSafeArea(.all, edges: ignoredEdges)
             #else
@@ -171,6 +179,7 @@ public struct ShortsPlayerView: View {
                 // A bare AVPlayerLayer (not VideoPlayer) so UIKit accessibility doesn't
                 // hide the overlaid SwiftUI elements.
                 PlayerAVLayerView(player: vm.player, videoGravity: .resizeAspectFill)
+                    .offset(y: slideOffset)
                     .ignoresSafeArea()
                     .accessibilityHidden(true)
                 #else
@@ -184,26 +193,18 @@ public struct ShortsPlayerView: View {
                 onSwipeUp: { swipe(toNext: true) },
                 onSwipeDown: { swipe(toNext: false) },
                 onTap: { _ in
-                    if isTitleExpanded {
+                    if isScreenCleared {
+                        withAnimation(.easeInOut(duration: 0.2)) { isScreenCleared = false }
+                    } else if isTitleExpanded {
                         withAnimation(.easeInOut(duration: 0.2)) { isTitleExpanded = false }
                     } else {
                         vm.togglePlayPause()
                     }
                 },
                 onTwoFingerTap: {},
-                onPanChanged: { dy in
-                    guard !isTransitioning else { return }
-                    let canGoUp = currentIndex + 1 < videos.count
-                    let canGoDown = currentIndex > 0
-                    if (dy < 0 && canGoUp) || (dy > 0 && canGoDown) {
-                        slideOffset = dy
-                    } else {
-                        slideOffset = dy * 0.15  // rubber-band resistance at boundaries
-                    }
-                },
-                onSwipeCancelled: {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { slideOffset = 0 }
-                },
+                onPanChanged: { dy in handlePanChanged(dy) },
+                onSwipeCancelled: { cancelPageDrag() },
+                onPanEnded: { dy, velocity in handlePanEnded(translation: dy, velocity: velocity) },
                 isEnabled: gesturesEnabled,
                 shouldHandleTouch: { point in shouldHandleTouch(at: point) }
             )
@@ -234,7 +235,6 @@ public struct ShortsPlayerView: View {
             }
             #endif
         }
-        .offset(y: slideOffset)
         .background(Color.black.ignoresSafeArea())
         .onGeometryChange(for: CGRect.self) {
             $0.frame(in: .global)
@@ -255,14 +255,23 @@ public struct ShortsPlayerView: View {
         // can't absorb them from the accessibility tree.
         .overlay(alignment: .topTrailing) { indexBadge }
         .overlay {
+            if !isScreenCleared && !isVideoShrunk {
+                neighbourInfoPanels
+            }
+        }
+        .overlay {
             if shouldShowControlsOverlay {
                 shortsOverlay
+                    .offset(y: slideOffset)
                     .ignoresSafeArea(.keyboard)
                     .accessibilityElement(children: .contain)
                     .accessibilityIdentifier(AccessibilityID.Shorts.controlsOverlay)
             }
         }
         .overlay { errorBanner }
+        #if !os(tvOS)
+        .overlay(alignment: .top) { toast }
+        #endif
         .onPreferenceChange(ShortsInteractiveFramesKey.self) { interactiveFrames = $0 }
         #if os(iOS)
         .navigationBarHidden(true)
@@ -272,6 +281,7 @@ public struct ShortsPlayerView: View {
         .navigationDestination(item: $channelDestination) { destination in
             ChannelView(channelId: destination.channelId)
         }
+        .navigationDestination(isPresented: $showSearch) { SearchView() }
         #if !os(tvOS)
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
@@ -283,7 +293,24 @@ public struct ShortsPlayerView: View {
                         api: api)
                 }
             case .more:
-                ShortsMoreSheet(metadata: currentVideo.flatMap { feed.metadata[$0.id] })
+                ShortsMoreSheet(
+                    isSignedIn: authService.isSignedIn, hasChannel: currentMetadata?.channelId != nil
+                ) { action in
+                    handleMenuAction(action)
+                }
+            case .description:
+                if let video = currentVideo {
+                    ShortsDescriptionSheet(videoId: video.id, fallback: currentMetadata, api: api) { channelId in
+                        activeSheet = nil
+                        openChannel(channelId)
+                    }
+                }
+            case .saveToPlaylist:
+                if let video = currentVideo {
+                    PlaylistPickerSheet(
+                        mode: .save, video: video, sourcePlaylistId: nil, api: api,
+                        onFinished: handleSavedToPlaylist)
+                }
             }
         }
         #endif
@@ -326,6 +353,13 @@ public struct ShortsPlayerView: View {
                 advanceAfterError()
             }
         }
+        .onChange(of: vm.currentTime) { _, time in captions.update(time: time) }
+        .onChange(of: currentVideo?.id, initial: true) { applyCaptions() }
+        .onChange(of: store.settings.shortsCaptions) { applyCaptions() }
+        .onChange(of: store.settings.playbackSpeed) { _, speed in
+            vm.updateSettings(store.settings)
+            vm.setPlaybackRate(speed)
+        }
         #endif
     }
 
@@ -333,7 +367,9 @@ public struct ShortsPlayerView: View {
         #if os(tvOS)
         vm.controlsVisible
         #else
-        !videos.isEmpty  // always visible, like the official app
+        // Always visible like the official app, except in Clear Screen mode and while
+        // the video is shrunk above a sheet.
+        !videos.isEmpty && !isScreenCleared && !isVideoShrunk
         #endif
     }
 

@@ -166,4 +166,22 @@ struct FEShortsClientRegressionTests {
             "fetchShortsMore must forward the continuation token in the body"
         )
     }
+
+    /// A `reel:` token (Shorts shelf from the reel sequence) continues the sequence:
+    /// TVHTML5, prefix stripped, sent as `continuation` (not `sequenceParams`, which
+    /// would restart the sequence).
+    @Test("fetchShortsMore routes reel: tokens to the Shorts sequence")
+    func fetchShortsMoreRoutesReelTokens() async throws {
+        BodyCapturingURLProtocol.capturedBody = nil
+        let api = makeTestAPI(authToken: "fake-tv-oauth-token")
+
+        _ = try? await api.fetchShortsMore(continuationToken: ShortsSequenceParams.shelfTokenPrefix + "SEQ-TOKEN")
+
+        let bodyData = try #require(BodyCapturingURLProtocol.capturedBody)
+        let json = try #require(try? JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
+        let client = (json["context"] as? [String: Any])?["client"] as? [String: Any]
+        #expect(client?["clientName"] as? String == "TVHTML5")
+        #expect(json["continuation"] as? String == "SEQ-TOKEN")
+        #expect(json["sequenceParams"] == nil)
+    }
 }

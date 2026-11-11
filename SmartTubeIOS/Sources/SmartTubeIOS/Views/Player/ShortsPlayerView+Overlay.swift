@@ -32,7 +32,12 @@ extension View {
 enum ShortsSheet: String, Identifiable {
     case comments
     case more
+    case description
+    case saveToPlaylist
     var id: String { rawValue }
+
+    /// Half-height sheets the video shrinks above, like the official app.
+    var shrinksVideo: Bool { self == .comments || self == .description }
 }
 
 extension ShortsPlayerView {
@@ -97,7 +102,7 @@ extension ShortsPlayerView {
     #if !os(tvOS)
 
     /// Current Short's metadata, falling back to what the feed already knows.
-    private var currentMetadata: ShortMetadata? {
+    var currentMetadata: ShortMetadata? {
         guard let video = currentVideo else { return nil }
         return feed.metadata[video.id]
             ?? ShortMetadata(
@@ -124,14 +129,17 @@ extension ShortsPlayerView {
             }
 
             VStack(spacing: 0) {
-                if mode == .presented {
-                    HStack {
+                HStack {
+                    if mode == .presented {
                         backButton.shortsInteractiveRegion()
-                        Spacer()
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
+                    Spacer()
+                    if mode == .tab {
+                        searchButton.shortsInteractiveRegion()
+                    }
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
                 Spacer()
                 if let metadata = currentMetadata {
                     HStack(alignment: .bottom, spacing: 12) {
@@ -154,6 +162,22 @@ extension ShortsPlayerView {
         #else
         false
         #endif
+    }
+
+    private var searchButton: some View {
+        Button {
+            showSearch = true
+        } label: {
+            Image(systemName: AppSymbol.search)
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.5), radius: 2)
+                .padding(8)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("Search", bundle: .module))
+        .accessibilityIdentifier(AccessibilityID.Shorts.searchButton)
     }
 
     // MARK: Info panel (bottom-left)
@@ -212,6 +236,11 @@ extension ShortsPlayerView {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier(AccessibilityID.Shorts.title)
+            }
+            if isTitleExpanded, let published = metadata.publishedTimeText {
+                Text(published)
+                    .font(.footnote)
+                    .foregroundStyle(.white.opacity(0.75))
             }
         }
         .foregroundStyle(.white)
@@ -354,7 +383,7 @@ extension ShortsPlayerView {
 
     // MARK: Actions
 
-    private func requireSignIn(_ action: @escaping @MainActor () async -> Void) {
+    func requireSignIn(_ action: @escaping @MainActor () async -> Void) {
         guard authService.isSignedIn else {
             showSignIn = true
             return
@@ -362,7 +391,7 @@ extension ShortsPlayerView {
         Task { await action() }
     }
 
-    private func openChannel(_ channelId: String?) {
+    func openChannel(_ channelId: String?) {
         guard let channelId else { return }
         channelDestination = ChannelDestination(channelId: channelId)
     }
@@ -417,7 +446,7 @@ struct ShortsCommentsSheet: View {
                 if controller.isLoading && controller.comments.isEmpty {
                     ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if controller.comments.isEmpty {
-                    Text("No comments available.")
+                    Text("No comments available.", bundle: .module)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
@@ -433,42 +462,9 @@ struct ShortsCommentsSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .presentationBackgroundInteraction(.enabled(upThrough: .medium))
         .accessibilityIdentifier(AccessibilityID.Shorts.commentsSheet)
         .onAppear { controller.load(videoId: videoId) }
-    }
-}
-
-/// The ⋯ sheet: Shorts playback options, with the auto-scroll toggle up front.
-struct ShortsMoreSheet: View {
-    let metadata: ShortMetadata?
-    @Environment(SettingsStore.self) private var store
-
-    var body: some View {
-        @Bindable var store = store
-        NavigationStack {
-            List {
-                Section {
-                    Toggle(isOn: $store.settings.shortsAutoScroll) {
-                        Label("Auto-scroll", systemImage: AppSymbol.autoScroll)
-                    }
-                    .accessibilityIdentifier(AccessibilityID.Shorts.autoScrollToggle)
-                } footer: {
-                    Text("Automatically scroll to the next Short when one ends. When off, Shorts loop.")
-                }
-                if let metadata, !metadata.title.isEmpty {
-                    Section("Description") {
-                        Text(metadata.title)
-                        if let published = metadata.publishedTimeText {
-                            Text(published).foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
-            .navigationTitle("More")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.visible)
     }
 }
 

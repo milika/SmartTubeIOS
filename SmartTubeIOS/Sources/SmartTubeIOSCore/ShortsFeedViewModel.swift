@@ -12,7 +12,7 @@ public protocol ShortsFeedProviding: AnyObject, Sendable {
     func fetchShortsFeedMore(continuation: String) async throws -> ShortsFeedPage
     func fetchShortMetadata(videoId: String) async throws -> ShortMetadata
     /// Last-resort fallback (`#shorts` search) when the reel endpoints fail.
-    func fetchShorts() async throws -> VideoGroup
+    func searchShorts() async throws -> VideoGroup
     func fetchShortsMore(continuationToken: String) async throws -> VideoGroup
     func like(videoId: String) async throws
     func dislike(videoId: String) async throws
@@ -63,6 +63,7 @@ public final class ShortsFeedViewModel {
     private var exhausted = false
     private var didStart = false
     private var metadataInFlight: Set<String> = []
+    private var hiddenChannelIds: Set<String> = []
 
     public init(source: Source, provider: any ShortsFeedProviding) {
         self.source = source
@@ -166,6 +167,22 @@ public final class ShortsFeedViewModel {
         }
     }
 
+    /// "Don't recommend channel": drops the Shorts after `index` that come from
+    /// `channelId`, and keeps later pages from adding more of them. Shorts at or
+    /// before `index` stay so the current position doesn't move.
+    public func hideChannel(_ channelId: String, after index: Int) {
+        hiddenChannelIds.insert(channelId)
+        var position = 0
+        videos.removeAll { video in
+            defer { position += 1 }
+            return position > index && self.channelId(of: video) == channelId
+        }
+    }
+
+    private func channelId(of video: Video) -> String? {
+        video.channelId ?? metadata[video.id]?.channelId
+    }
+
     // MARK: Private
 
     private func fetchFirstPage(seedVideoId: String?) async {
@@ -209,7 +226,7 @@ public final class ShortsFeedViewModel {
         }
         usingSearchFallback = true
         do {
-            let group = try await provider.fetchShorts()
+            let group = try await provider.searchShorts()
             searchContinuation = group.nextPageToken
             append(group.videos)
             if group.nextPageToken == nil { exhausted = true }
@@ -236,7 +253,10 @@ public final class ShortsFeedViewModel {
     @discardableResult
     private func append(_ newVideos: [Video]) -> Int {
         var seen = Set(videos.map(\.id))
-        let fresh = newVideos.filter { seen.insert($0.id).inserted }
+        let fresh = newVideos.filter { video in
+            if let channelId = video.channelId, hiddenChannelIds.contains(channelId) { return false }
+            return seen.insert(video.id).inserted
+        }
         videos.append(contentsOf: fresh)
         return fresh.count
     }

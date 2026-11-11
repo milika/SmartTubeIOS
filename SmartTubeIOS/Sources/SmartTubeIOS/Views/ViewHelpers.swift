@@ -196,4 +196,12 @@ enum AppSymbol {
     static let ellipsis = "ellipsis"
     static let playFill = "play.fill"
     static let autoScroll = "arrow.down.circle"
+    static let description = "text.alignleft"
+    static let saveToPlaylist = "text.badge.plus"
+    static let clearScreen = "rectangle.dashed"
+    static let captions = "captions.bubble"
+    static let playbackSpeed = "gauge.with.dots.needle.67percent"
+    static let notInterested = "eye.slash"
+    static let dontRecommendChannel = "person.slash"
+    static let report = "flag"
 }

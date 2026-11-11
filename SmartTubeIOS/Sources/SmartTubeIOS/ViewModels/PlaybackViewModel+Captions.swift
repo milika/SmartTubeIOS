@@ -23,11 +23,7 @@ extension PlaybackViewModel {
         guard let code = settings.preferredCaptionLanguage, !code.isEmpty, !tracks.isEmpty else {
             return
         }
-        // Exact match first, then BCP-47 prefix match (e.g. "en" matches "en-US").
-        let base = code.components(separatedBy: "-").first ?? code
-        if let match = tracks.first(where: { $0.languageCode == code })
-            ?? tracks.first(where: { $0.languageCode.hasPrefix(base) })
-        {
+        if let match = CaptionTrack.matching(code, in: tracks) {
             captionsManager.selectCaption(match, currentTime: currentTime)
         }
         // No match: leave captions off rather than forcing a wrong language.

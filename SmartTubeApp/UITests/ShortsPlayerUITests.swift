@@ -263,6 +263,44 @@ final class ShortsPlayerUITests: XCTestCase {
             "shorts.backButton should appear when --uitesting-show-controls is active")
     }
 
+    // ── ⋯ menu ───────────────────────────────────────────────────────────────
+
+    /// The ⋯ sheet lists the official actions, and Clear Screen hides the overlay
+    /// until the next tap.
+    func testMoreMenuClearScreenHidesControlsUntilTap() {
+        launchWithStubs()
+        let more = app.buttons["shorts.moreButton"]
+        XCTAssertTrue(more.waitForExistence(timeout: 5), "⋯ button must be on the overlay")
+
+        more.tap()
+        XCTAssertTrue(
+            app.buttons["shorts.action.description"].waitForExistence(timeout: 5),
+            "⋯ sheet must offer Description")
+        XCTAssertTrue(app.buttons["shorts.action.report"].exists, "⋯ sheet must offer Report")
+        app.buttons["shorts.action.clearScreen"].tap()
+
+        XCTAssertTrue(more.waitForNonExistence(timeout: 5), "Clear Screen must hide the overlay")
+        app.windows.firstMatch.tap()
+        XCTAssertTrue(more.waitForExistence(timeout: 5), "A tap must bring the overlay back")
+    }
+
+    /// Description opens its own sheet, and the overlay steps aside while the video
+    /// is shrunk above it.
+    func testMoreMenuOpensDescriptionSheet() {
+        launchWithStubs()
+        let more = app.buttons["shorts.moreButton"]
+        XCTAssertTrue(more.waitForExistence(timeout: 5))
+
+        more.tap()
+        let description = app.buttons["shorts.action.description"]
+        XCTAssertTrue(description.waitForExistence(timeout: 5))
+        description.tap()
+
+        XCTAssertTrue(
+            app.navigationBars["Description"].waitForExistence(timeout: 5), "Description sheet must open")
+        XCTAssertTrue(more.waitForNonExistence(timeout: 5), "Overlay must hide while the video is shrunk")
+    }
+
     // ── Direct-launch with real video — network required ─────────────────────
 
     /// Verifies no error banner appears when a real Short loads.

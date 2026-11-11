@@ -28,6 +28,10 @@ struct SwipeGestureOverlay: UIViewRepresentable {
     var onTwoFingerTap: () -> Void = {}
     var onPanChanged: ((CGFloat) -> Void)?
     var onSwipeCancelled: (() -> Void)?
+    /// When set, replaces the fixed-distance `onSwipeUp`/`onSwipeDown` decision: called
+    /// on release with the vertical translation and velocity (points/second) so the
+    /// caller can decide by distance *and* flick speed (interactive paging).
+    var onPanEnded: ((_ translation: CGFloat, _ velocity: CGFloat) -> Void)?
     /// When `false` (e.g. while a sheet is up) the window-level recognizers ignore
     /// every touch — they live on the window, so they'd otherwise see touches on
     /// sheets presented above the player too.
@@ -93,6 +97,15 @@ struct SwipeGestureOverlay: UIViewRepresentable {
             case .changed:
                 parent.onPanChanged?(t.y)
             case .ended:
+                if let onPanEnded = parent.onPanEnded {
+                    // A mostly horizontal pan is not a page swipe.
+                    guard abs(t.y) >= abs(t.x) else {
+                        parent.onSwipeCancelled?()
+                        return
+                    }
+                    onPanEnded(t.y, gr.velocity(in: gr.view).y)
+                    return
+                }
                 guard abs(t.y) > minDistance, abs(t.y) > abs(t.x) else {
                     parent.onSwipeCancelled?()
                     return

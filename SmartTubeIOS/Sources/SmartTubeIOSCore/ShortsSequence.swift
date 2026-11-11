@@ -83,6 +83,9 @@ public enum ShortsSequenceParams {
     public static let metadataItemParams = "CAUwAg%3D%3D"
     /// `inputType` for a seedless `reel/reel_item_watch`.
     public static let seedlessInputType = "REEL_WATCH_INPUT_TYPE_SEEDLESS"
+    /// Prefix on Shorts-shelf continuation tokens that come from the reel sequence, so
+    /// `fetchShortsMore(continuationToken:)` routes them to `fetchShortsShelf`.
+    public static let shelfTokenPrefix = "reel:"
 
     /// `sequenceParams` that seeds `reel/reel_watch_sequence` with `videoId` — the
     /// protobuf the official clients put in `reelWatchEndpoint.sequenceParams`:

@@ -59,34 +59,15 @@ extension ShortsPlayerView {
         {
             performVerticalTransition(direction: toNext ? -1 : 1) { goTo(target) }
         } else {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { slideOffset = 0 }
+            cancelPageDrag()
             if toNext { loadMoreIfNeeded() }
         }
     }
 
-    /// Animates the current content off-screen in `direction` (-1 = up, +1 = down),
-    /// runs `action` to switch to the new video, then slides the new content in
-    /// from the opposite side.
+    /// Programmatic page change (auto-scroll, error skip, tvOS remote): the same
+    /// slide as a committed swipe — see `commitPage(direction:velocity:action:)`.
     func performVerticalTransition(direction: CGFloat, action: @escaping () -> Void) {
-        #if os(iOS)
-        let screenHeight = UIScreen.main.bounds.height
-        #else
-        let screenHeight: CGFloat = 800
-        #endif
-        isTransitioning = true
-        withAnimation(.easeIn(duration: 0.2)) {
-            slideOffset = direction * screenHeight
-        }
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(220))
-            action()  // switch video, clears AVPlayer
-            slideOffset = -direction * screenHeight  // snap to opposite side (off-screen)
-            withAnimation(.easeOut(duration: 0.25)) {
-                slideOffset = 0  // slide new content in
-            }
-            try? await Task.sleep(for: .milliseconds(270))
-            isTransitioning = false
-        }
+        commitPage(direction: direction, action: action)
     }
 
     func goTo(_ index: Int) {

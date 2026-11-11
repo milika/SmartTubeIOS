@@ -60,6 +60,46 @@ extension InnerTubeAPI {
         return metadata
     }
 
+    /// The Description sheet's content (title, channel, Likes/Views/date tiles,
+    /// description text). Only the WEB client returns the structured description, so
+    /// this is an anonymous WEB call (the TV Bearer token is rejected there). It asks
+    /// for the device language because the tiles' labels are shown verbatim.
+    public func fetchShortDescription(videoId: String) async throws -> ShortDescription {
+        var context = webClientContext
+        if var client = context["client"] as? [String: Any] {
+            if let language = Locale.current.language.languageCode?.identifier { client["hl"] = language }
+            if let region = Locale.current.region?.identifier { client["gl"] = region }
+            context["client"] = client
+        }
+        var body = makeBody(client: context)
+        body["playerRequest"] = ["videoId": videoId]
+        body["params"] = ShortsSequenceParams.metadataItemParams
+        body["disablePlayerResponse"] = true
+        let json = try await post(endpoint: "reel/reel_item_watch", body: body)
+        guard let description = ShortsDescriptionParser.parse(json, videoId: videoId) else {
+            throw APIError.decodingError("reel_item_watch had no structured description for \(videoId)")
+        }
+        return description
+    }
+
+    /// One page of YouTube's Shorts sequence for a Shorts *shelf* (Home/Browse rows):
+    /// personalised when signed in, with titles and channels filled in, because
+    /// sequence entries carry only the id and thumbnail. `continuation` nil starts a
+    /// seedless sequence. The returned `nextPageToken` carries the `reel:` prefix that
+    /// `fetchShortsMore(continuationToken:)` routes back here.
+    public func fetchShortsShelf(continuation: String?) async throws -> VideoGroup {
+        let page: ShortsFeedPage
+        if let continuation {
+            page = try await fetchShortsFeedMore(continuation: continuation)
+        } else {
+            page = try await fetchShortsFeed()
+        }
+        let videos = await withShortTitles(page.videos)
+        return VideoGroup(
+            title: "Shorts", videos: videos,
+            nextPageToken: page.continuation.map { ShortsSequenceParams.shelfTokenPrefix + $0 })
+    }
+
     /// Subscribes the signed-in account to `channelId` (requires authentication).
     public func subscribe(channelId: String) async throws {
         guard authToken != nil else { throw APIError.notAuthenticated }
@@ -77,6 +117,28 @@ extension InnerTubeAPI {
     }
 
     // MARK: Private
+
+    /// Fills title/channel from each Short's overlay metadata, concurrently. A Short
+    /// whose metadata fails keeps its empty title rather than being dropped.
+    private func withShortTitles(_ videos: [Video]) async -> [Video] {
+        let fetched = await withTaskGroup(of: (Int, ShortMetadata?).self) { group in
+            for (index, video) in videos.enumerated() {
+                group.addTask { (index, try? await self.fetchShortMetadata(videoId: video.id)) }
+            }
+            var results: [Int: ShortMetadata] = [:]
+            for await (index, metadata) in group {
+                if let metadata { results[index] = metadata }
+            }
+            return results
+        }
+        var titled = videos
+        for (index, metadata) in fetched {
+            titled[index].title = metadata.title
+            titled[index].channelTitle = metadata.channelTitle
+            titled[index].channelId = metadata.channelId
+        }
+        return titled
+    }
 
     private func fetchShortsSequencePage(body: [String: Any]) async throws -> ShortsFeedPage {
         let json = try await postReel(endpoint: "reel/reel_watch_sequence", body: body)

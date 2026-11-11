@@ -74,6 +74,15 @@ public struct AppSettings: Codable {
     /// Shorts player: when `true`, advance to the next Short when one ends; when `false`
     /// (default, matching the official app) the Short loops. Independent of `loopEnabled`.
     public var shortsAutoScroll: Bool
+    /// When `true`, the Shorts tab is removed from the tab bar / sidebar (iOS only).
+    public var hideShortsTab: Bool
+    /// Shorts player: show captions (the preferred caption language when the Short has
+    /// it, otherwise the Short's own track). Separate from the main player's choice
+    /// because Shorts come in every language.
+    public var shortsCaptions: Bool
+    /// Shorts player: skip SponsorBlock segments (default on). Only applies while
+    /// `sponsorBlockEnabled` is on, with the same categories as the main player.
+    public var shortsSponsorBlock: Bool
     public var hideVideoPremieres: Bool
     /// When `true` (default), a per-device `visitorData` token is included in home-feed
     /// requests so YouTube tailors recommendations to this device.
@@ -285,6 +294,9 @@ public struct AppSettings: Codable {
         hideShorts = false
         hideLiveShorts = false
         shortsAutoScroll = false
+        hideShortsTab = false
+        shortsCaptions = false
+        shortsSponsorBlock = true
         hideVideoPremieres = false
         perDeviceRecommendationsEnabled = true
         themeName = .system
@@ -375,6 +387,9 @@ extension AppSettings {
         case hideShorts
         case hideLiveShorts
         case shortsAutoScroll
+        case hideShortsTab
+        case shortsCaptions
+        case shortsSponsorBlock
         case hideVideoPremieres
         case perDeviceRecommendationsEnabled
         case themeName
@@ -430,6 +445,9 @@ extension AppSettings {
         hideShorts = c.safeDecode(Bool.self, forKey: .hideShorts, default: d.hideShorts)
         hideLiveShorts = c.safeDecode(Bool.self, forKey: .hideLiveShorts, default: d.hideLiveShorts)
         shortsAutoScroll = c.safeDecode(Bool.self, forKey: .shortsAutoScroll, default: d.shortsAutoScroll)
+        hideShortsTab = c.safeDecode(Bool.self, forKey: .hideShortsTab, default: d.hideShortsTab)
+        shortsCaptions = c.safeDecode(Bool.self, forKey: .shortsCaptions, default: d.shortsCaptions)
+        shortsSponsorBlock = c.safeDecode(Bool.self, forKey: .shortsSponsorBlock, default: d.shortsSponsorBlock)
         hideVideoPremieres = c.safeDecode(Bool.self, forKey: .hideVideoPremieres, default: d.hideVideoPremieres)
         perDeviceRecommendationsEnabled = c.safeDecode(
             Bool.self, forKey: .perDeviceRecommendationsEnabled, default: d.perDeviceRecommendationsEnabled)

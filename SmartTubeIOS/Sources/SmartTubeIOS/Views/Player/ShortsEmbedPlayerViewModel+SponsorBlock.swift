@@ -21,7 +21,7 @@ extension ShortsEmbedPlayerViewModel {
     /// from the "ready" case in ShortsEmbedPlayerViewModel+WebBridge.swift (Step 5
     /// below) for every loaded Short.
     func fetchSponsorSegments() async {
-        guard settings.sponsorBlockEnabled,
+        guard settings.sponsorBlockEnabled, settings.shortsSponsorBlock,
             !settings.activeSponsorCategories.isEmpty
         else { return }
 

@@ -441,7 +441,7 @@ final class ShortsEmbedPlayerViewModel: NSObject {
             guard let self, self.playPauseEpoch == myEpoch else { return }
             self.eval(
                 "play",
-                "(function(){var v=document.querySelector('video');var ifr=document.querySelectorAll('iframe').length;if(v){v.play();}return {found: !!v, iframes: ifr, paused: v ? v.paused : null};})();"
+                "(function(){var p=document.getElementById('movie_player');var api=!!(p&&typeof p.playVideo==='function');if(api){p.playVideo();}var v=document.querySelector('video');if(v){v.play();}return {found: !!v, api: api, paused: v ? v.paused : null};})();"
             )
             // Defense-in-depth: even after awaiting the prior pause, a late-landing
             // pause from some other source (e.g. WebKit's own stall handling) can
@@ -462,6 +462,11 @@ final class ShortsEmbedPlayerViewModel: NSObject {
     /// element lives in. See `TOSPlayerViewModel.pause()`'s doc comment
     /// (TOSPlayerViewModel.swift:296-324) for the cross-origin-iframe root cause this
     /// works around.
+    ///
+    /// Pauses through YouTube's player API (`movie_player.pauseVideo()`) as well as the
+    /// `<video>` element: pausing only the element leaves YouTube's player thinking it
+    /// is still playing, and it resumes the video ~200 ms later — a single tap then
+    /// never pauses (seen in device logs: `pause → paused=1`, then `paused=false`).
     func pause() {
         playPauseEpoch &+= 1
         pauseAllMediaTask = Task { [weak self] in
@@ -475,7 +480,7 @@ final class ShortsEmbedPlayerViewModel: NSObject {
         }
         eval(
             "pause",
-            "(function(){var v=document.querySelector('video');var ifr=document.querySelectorAll('iframe').length;if(v){v.pause();}return {found: !!v, iframes: ifr, paused: v ? v.paused : null};})();"
+            "(function(){var p=document.getElementById('movie_player');var api=!!(p&&typeof p.pauseVideo==='function');if(api){p.pauseVideo();}var v=document.querySelector('video');if(v){v.pause();}return {found: !!v, api: api, paused: v ? v.paused : null};})();"
         )
     }
 

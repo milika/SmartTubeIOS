@@ -31,6 +31,41 @@ struct ShortsEmbedPlayerViewModelTests {
         #expect(vm.settings.loopEnabled == true)
     }
 
+    @Test("syncSettings drops the loaded segments only when SponsorBlock settings change")
+    func syncSettingsReloadsSegmentsOnSponsorBlockChange() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        let segment = SponsorSegment(start: 5, end: 10, category: .sponsor)
+        vm.sponsorSegments = [segment]
+
+        var settings = vm.settings
+        settings.loopEnabled.toggle()
+        vm.syncSettings(settings)
+        #expect(vm.sponsorSegments == [segment])
+
+        settings.shortsSponsorBlock = false
+        vm.syncSettings(settings)
+        #expect(vm.sponsorSegments.isEmpty)
+        #expect(vm.settings.shortsSponsorBlock == false)
+    }
+
+    @Test("updateChannelId applies a channel exclusion to the loaded Short")
+    func updateChannelIdAppliesExclusion() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        var settings = AppSettings()
+        settings.sponsorBlockExcludedChannels = ["UCX": "Excluded"]
+        vm.updateSettings(settings)
+        vm.loadShort(video: Video(id: "a", title: "", channelTitle: "", isShort: true))
+        vm.sponsorSegments = [SponsorSegment(start: 5, end: 10, category: .sponsor)]
+
+        vm.updateChannelId("UCX", for: "other")  // stale: metadata for another Short
+        #expect(vm.channelId == nil)
+        #expect(vm.sponsorSegments.count == 1)
+
+        vm.updateChannelId("UCX", for: "a")
+        #expect(vm.channelId == "UCX")
+        #expect(vm.sponsorSegments.isEmpty)
+    }
+
     @Test("loadShort resets observable state for the new video")
     func loadShortResetsObservableState() {
         let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())

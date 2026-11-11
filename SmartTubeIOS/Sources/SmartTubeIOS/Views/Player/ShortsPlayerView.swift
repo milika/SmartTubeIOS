@@ -354,6 +354,12 @@ public struct ShortsPlayerView: View {
             }
         }
         .onChange(of: vm.currentTime) { _, time in captions.update(time: time) }
+        // Reel entries load before their metadata names the channel; hand it to the
+        // player so SponsorBlock's channel exclusions apply.
+        .onChange(of: currentVideo?.channelId) { _, channelId in
+            guard let video = currentVideo else { return }
+            vm.updateChannelId(channelId, for: video.id)
+        }
         .onChange(of: currentVideo?.id, initial: true) { applyCaptions() }
         .onChange(of: store.settings.shortsCaptions) { applyCaptions() }
         .onChange(of: store.settings.playbackSpeed) { _, speed in

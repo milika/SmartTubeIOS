@@ -172,10 +172,19 @@ public final class ShortsFeedViewModel {
     /// before `index` stay so the current position doesn't move.
     public func hideChannel(_ channelId: String, after index: Int) {
         hiddenChannelIds.insert(channelId)
+        removeHiddenChannels(after: index)
+    }
+
+    /// Drops the Shorts after `index` whose channel is hidden. Reel entries arrive
+    /// without a channel, so a page can slip a hidden channel's Short past `append`;
+    /// call this once metadata has identified more channels.
+    public func removeHiddenChannels(after index: Int) {
+        guard !hiddenChannelIds.isEmpty else { return }
         var position = 0
         videos.removeAll { video in
             defer { position += 1 }
-            return position > index && self.channelId(of: video) == channelId
+            guard position > index, let channelId = self.channelId(of: video) else { return false }
+            return hiddenChannelIds.contains(channelId)
         }
     }
 

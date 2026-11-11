@@ -14,7 +14,36 @@ private let shortsLog = Logger(subsystem: "com.void.smarttube.app", category: "S
 // that file — internal, so visible here within the SmartTubeIOS module) and the
 // same `SponsorBlockDecisionEngine.decide(...)` pure function.
 
+/// The settings that decide which SponsorBlock segments a Short gets.
+struct SponsorBlockConfig: Equatable {
+    let isEnabled: Bool
+    let categories: Set<SponsorSegment.Category>
+    let minSegmentDuration: Double
+    let excludedChannelIds: Set<String>
+
+    init(_ settings: AppSettings) {
+        isEnabled = settings.sponsorBlockEnabled && settings.shortsSponsorBlock
+        categories = settings.activeSponsorCategories
+        minSegmentDuration = settings.sponsorBlockMinSegmentDuration
+        excludedChannelIds = Set(settings.sponsorBlockExcludedChannels.keys)
+    }
+}
+
 extension ShortsEmbedPlayerViewModel {
+
+    /// Drops the current Short's segments and, if it is already playing, loads them
+    /// again under the current settings and channel. Before "ready" there is nothing
+    /// to do — the "ready" message starts the load.
+    func reloadSponsorSegments() {
+        sponsorTask?.cancel()
+        sponsorTask = nil
+        sponsorSegments = []
+        currentToastSegment = nil
+        activeSkipEnd = nil
+        pendingSkipLog = nil
+        guard isReady else { return }
+        sponsorTask = Task { await self.fetchSponsorSegments() }
+    }
 
     /// Cache-first load — see TOSPlayerViewModel+SponsorBlock.swift's
     /// `fetchSponsorSegments()` for the full cache-hit/stale/miss rationale. Called
@@ -76,7 +105,11 @@ extension ShortsEmbedPlayerViewModel {
             minDuration > 0 ? segments.filter { ($0.end - $0.start) >= minDuration } : segments
         }
 
+        // Every `await` below re-checks cancellation: `loadShort(video:)` and
+        // `reloadSponsorSegments()` cancel this task, and its late result must not
+        // overwrite the next Short's (or the new settings') segments.
         let cached = await VideoPreloadCache.shared.consume(videoId: videoId)
+        guard !Task.isCancelled else { return }
         if let cachedSegments = cached.sponsorSegments {
             let isStale = cached.staleFields.contains(.sponsorSegments)
             sponsorSegments = filtered(cachedSegments)
@@ -85,22 +118,18 @@ extension ShortsEmbedPlayerViewModel {
             )
             guard isStale else { return }
             // Revalidate silently — re-apply when it lands.
-            Task(priority: .background) { [weak self] in
-                guard let self else { return }
-                let fresh = await self.sponsorService.fetchSegments(videoId: videoId, categories: categories)
-                await VideoPreloadCache.shared.store(sponsorSegments: fresh, for: videoId)
-                await MainActor.run {
-                    self.sponsorSegments = filtered(fresh)
-                    shortsLog.notice(
-                        "[SponsorBlock] revalidated — \(self.sponsorSegments.count) segment(s) for \(videoId)")
-                }
-            }
+            let fresh = await sponsorService.fetchSegments(videoId: videoId, categories: categories)
+            await VideoPreloadCache.shared.store(sponsorSegments: fresh, for: videoId)
+            guard !Task.isCancelled else { return }
+            sponsorSegments = filtered(fresh)
+            shortsLog.notice("[SponsorBlock] revalidated — \(self.sponsorSegments.count) segment(s) for \(videoId)")
             return
         }
 
         // Full miss — fetch live, store for reuse, then apply.
         let segments = await sponsorService.fetchSegments(videoId: videoId, categories: categories)
         await VideoPreloadCache.shared.store(sponsorSegments: segments, for: videoId)
+        guard !Task.isCancelled else { return }
         sponsorSegments = filtered(segments)
         shortsLog.notice(
             "[SponsorBlock] cache MISS — fetched & applied \(self.sponsorSegments.count) of \(segments.count) loaded segment(s) for \(videoId)"

@@ -15,7 +15,12 @@ extension ShortsPlayerView {
     func handleAppear() {
         if let video = currentVideo {
             if vm.currentVideoId == video.id {
-                // Back from a pushed channel page / another tab.
+                // Back from a pushed channel page / another tab (e.g. Settings).
+                #if os(iOS)
+                vm.syncSettings(store.settings)
+                #else
+                vm.updateSettings(store.settings)
+                #endif
                 if vm.wasPlayingBeforeSuspend || mode == .tab { vm.resume() }
             } else {
                 loadVideo(at: currentIndex)
@@ -188,7 +193,12 @@ extension ShortsPlayerView {
         let ids = videos[index..<min(index + 2, videos.count)].map(\.id)
         let signedIn = authService.isSignedIn
         Task { @MainActor in
-            for id in ids { await feed.loadMetadata(for: id, signedIn: signedIn) }
+            for id in ids {
+                await feed.loadMetadata(for: id, signedIn: signedIn)
+                // Reel entries have no channel until their metadata arrives, so
+                // "Don't recommend channel" can only catch them now.
+                feed.removeHiddenChannels(after: currentIndex)
+            }
         }
     }
 

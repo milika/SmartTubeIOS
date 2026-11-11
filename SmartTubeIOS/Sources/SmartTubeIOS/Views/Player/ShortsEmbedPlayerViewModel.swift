@@ -243,6 +243,22 @@ final class ShortsEmbedPlayerViewModel: NSObject {
         settings = newSettings
     }
 
+    /// `updateSettings(_:)` for a Short that is already loaded (e.g. back from
+    /// Settings): reloads its SponsorBlock segments when the change affects them.
+    func syncSettings(_ newSettings: AppSettings) {
+        let before = SponsorBlockConfig(settings)
+        settings = newSettings
+        if SponsorBlockConfig(newSettings) != before { reloadSponsorSegments() }
+    }
+
+    /// Fills in the current Short's channel once its metadata arrives (reel entries
+    /// load without one), so `sponsorBlockExcludedChannels` applies to it.
+    func updateChannelId(_ newChannelId: String?, for videoId: String) {
+        guard videoId == self.videoId, let newChannelId, newChannelId != channelId else { return }
+        channelId = newChannelId
+        if settings.sponsorBlockExcludedChannels[newChannelId] != nil { reloadSponsorSegments() }
+    }
+
     // MARK: - Loading
 
     /// Loads `video` into the persistent `WKWebView`. The first call loads the HTML

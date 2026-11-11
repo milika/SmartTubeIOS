@@ -192,4 +192,40 @@ struct ShortsFeedViewModelTests {
         await vm.loadMoreIfNeeded(currentIndex: 2)
         #expect(vm.videos.map(\.id) == ["a", "b", "d", "f"])
     }
+
+    @Test("A hidden channel's Short without a channel ID is dropped once metadata identifies it")
+    func hideChannelAfterMetadata() async {
+        let provider = FakeShortsProvider()
+        provider.firstPage = .success(
+            ShortsFeedPage(
+                videos: [Video(id: "a", title: "", channelTitle: "", channelId: "X", isShort: true)],
+                continuation: "C1", isPersonalized: true))
+        // Reel sequence entries carry no channel ID.
+        provider.morePages["C1"] = ShortsFeedPage(
+            videos: [short("b"), short("c")], continuation: nil, isPersonalized: true)
+        let vm = ShortsFeedViewModel(source: .algorithm(seed: nil), provider: provider)
+        await vm.start()
+        vm.hideChannel("X", after: 0)
+        await vm.loadMoreIfNeeded(currentIndex: 0)
+        #expect(vm.videos.map(\.id) == ["a", "b", "c"])
+
+        provider.metadataResult = .success(
+            ShortMetadata(videoId: "c", title: "", channelTitle: "", channelId: "X"))
+        await vm.loadMetadata(for: "c", signedIn: true)
+        vm.removeHiddenChannels(after: 1)
+        #expect(vm.videos.map(\.id) == ["a", "b"])
+    }
+
+    @Test("Removing hidden channels keeps the Short being watched")
+    func hideChannelKeepsCurrentShort() async {
+        let provider = FakeShortsProvider()
+        let vm = ShortsFeedViewModel(source: .list([short("a"), short("b")], startIndex: 0), provider: provider)
+        vm.hideChannel("X", after: 0)
+        provider.metadataResult = .success(
+            ShortMetadata(videoId: "b", title: "", channelTitle: "", channelId: "X"))
+        await vm.loadMetadata(for: "b", signedIn: true)
+
+        vm.removeHiddenChannels(after: 1)  // the user already swiped to "b"
+        #expect(vm.videos.map(\.id) == ["a", "b"])
+    }
 }

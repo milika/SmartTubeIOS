@@ -42,12 +42,25 @@ struct ShortsTabView: View {
         #endif
     }
 
+    /// Like the official app, Shorts and the mini player don't play together. RootView
+    /// does this when the Shorts tab is selected; this covers coming back to the Short
+    /// from a page pushed inside the tab (Search, a channel) after minimizing a video.
+    private func closeMiniPlayer() {
+        #if os(iOS)
+        if tosState.presentation == .miniPlayer { tosState.stop() }
+        if playerState.presentation == .miniPlayer { playerState.stop() }
+        #endif
+    }
+
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
             if hasAppeared, let loadedAccount {
-                ShortsPlayerView(source: .algorithm(seed: nil), api: api, mode: .tab, isSuspended: isSuspended)
-                    .id(loadedAccount)
+                ShortsPlayerView(
+                    source: .algorithm(seed: nil), api: api, mode: .tab, isSuspended: isSuspended,
+                    willResume: closeMiniPlayer
+                )
+                .id(loadedAccount)
             }
         }
         .onAppear { hasAppeared = true }

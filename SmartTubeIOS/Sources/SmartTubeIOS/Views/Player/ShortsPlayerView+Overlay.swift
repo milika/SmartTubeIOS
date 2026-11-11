@@ -458,7 +458,9 @@ struct ShortsCommentsSheet: View {
                 }
             }
             .navigationTitle(commentCountText.map { "Comments \($0)" } ?? "Comments")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)

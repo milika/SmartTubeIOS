@@ -156,9 +156,11 @@ struct ShortsDescriptionSheet: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .navigationTitle(Text("Description", bundle: .module))
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: closePlacement) {
                     Button {
                         dismiss()
                     } label: {
@@ -173,6 +175,15 @@ struct ShortsDescriptionSheet: View {
         .presentationBackgroundInteraction(.enabled(upThrough: .medium))
         .accessibilityIdentifier(AccessibilityID.Shorts.descriptionSheet)
         .task(id: videoId) { await load() }
+    }
+
+    /// `.topBarTrailing` is UIKit-only; native macOS gets the standard dismiss slot.
+    private var closePlacement: ToolbarItemPlacement {
+        #if os(iOS)
+        .topBarTrailing
+        #else
+        .cancellationAction
+        #endif
     }
 
     private var title: String {

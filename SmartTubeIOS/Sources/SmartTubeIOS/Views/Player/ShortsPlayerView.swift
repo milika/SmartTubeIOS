@@ -75,16 +75,21 @@ public struct ShortsPlayerView: View {
     #endif
 
     let api: InnerTubeAPI
+    /// Tab mode: runs right before the Short resumes on reappearing (back from a
+    /// pushed page or another tab), so the tab can close other players first.
+    let willResume: @MainActor () -> Void
 
     public init(
         source: ShortsFeedViewModel.Source,
         api: InnerTubeAPI,
         mode: ShortsPlayerMode = .presented,
-        isSuspended: Bool = false
+        isSuspended: Bool = false,
+        willResume: @escaping @MainActor () -> Void = {}
     ) {
         self.api = api
         self.mode = mode
         self.isSuspended = isSuspended
+        self.willResume = willResume
         let feed = ShortsFeedViewModel(source: source, provider: api)
         self._feed = State(initialValue: feed)
         self._currentIndex = State(initialValue: feed.startIndex)

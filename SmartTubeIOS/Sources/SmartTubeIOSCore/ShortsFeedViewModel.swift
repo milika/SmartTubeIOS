@@ -43,6 +43,10 @@ public final class ShortsFeedViewModel {
 
     /// How close to the end of `videos` the next page is requested.
     public static let prefetchDistance = 3
+    /// How many pages in a row one fetch follows while they add nothing (all
+    /// duplicates or hidden channels). An unchanged count would otherwise leave an
+    /// auto-scroll waiting at the end with nothing to trigger the next request.
+    static let maxPagesPerFetch = 5
 
     public private(set) var videos: [Video]
     public let startIndex: Int
@@ -80,19 +84,25 @@ public final class ShortsFeedViewModel {
 
     // MARK: Feed
 
-    /// Loads the first algorithmic page. No-op for `.list` sources — they fetch
-    /// lazily via `loadMoreIfNeeded(currentIndex:)` when the list runs out.
+    /// Loads the first algorithmic page; again if nothing could be loaded last time
+    /// (e.g. offline), so returning to the feed retries. No-op for `.list` sources —
+    /// they fetch lazily via `loadMoreIfNeeded(currentIndex:)` when the list runs out.
     public func start() async {
-        guard case .algorithm(let seed) = source, !didStart else { return }
+        guard case .algorithm(let seed) = source, !isFetchingMore else { return }
+        guard !didStart || (videos.isEmpty && loadError != nil) else { return }
         didStart = true
+        loadError = nil
         isLoadingInitial = videos.isEmpty
         defer { isLoadingInitial = false }
         await fetchFirstPage(seedVideoId: seed?.id)
     }
 
     /// Requests the next page when `currentIndex` is within `prefetchDistance` of the end.
+    /// An empty feed that failed to load retries through `start()` instead.
     public func loadMoreIfNeeded(currentIndex: Int) async {
-        guard currentIndex >= videos.count - Self.prefetchDistance, !isFetchingMore, !exhausted else { return }
+        guard currentIndex >= videos.count - Self.prefetchDistance, !isFetchingMore, !exhausted,
+            loadError == nil
+        else { return }
         if let continuation {
             await fetchMore(continuation: continuation)
         } else if usingSearchFallback, let searchContinuation {
@@ -199,7 +209,7 @@ public final class ShortsFeedViewModel {
         defer { isFetchingMore = false }
         do {
             let page = try await provider.fetchShortsFeed(seedVideoId: seedVideoId)
-            apply(page)
+            if apply(page) == 0, let next = page.continuation { await followSequence(from: next) }
         } catch {
             feedLog.error(
                 "Shorts sequence failed (\(String(describing: error), privacy: .public)) — falling back to #shorts search"
@@ -211,21 +221,33 @@ public final class ShortsFeedViewModel {
     private func fetchMore(continuation token: String) async {
         isFetchingMore = true
         defer { isFetchingMore = false }
-        do {
-            apply(try await provider.fetchShortsFeedMore(continuation: token))
-        } catch {
-            feedLog.error("Shorts continuation failed: \(String(describing: error), privacy: .public)")
-            continuation = nil
-            await startSearchFallback()
+        await followSequence(from: token)
+    }
+
+    /// Fetches sequence pages from `token` until one adds a Short (see `maxPagesPerFetch`).
+    private func followSequence(from token: String) async {
+        var token = token
+        for _ in 0..<Self.maxPagesPerFetch {
+            do {
+                let page = try await provider.fetchShortsFeedMore(continuation: token)
+                guard apply(page) == 0, let next = page.continuation else { return }
+                token = next
+            } catch {
+                feedLog.error("Shorts continuation failed: \(String(describing: error), privacy: .public)")
+                continuation = nil
+                await startSearchFallback()
+                return
+            }
         }
     }
 
-    private func apply(_ page: ShortsFeedPage) {
+    /// Returns how many Shorts the page added.
+    private func apply(_ page: ShortsFeedPage) -> Int {
         isPersonalized = page.isPersonalized
         continuation = page.continuation
         exhausted = page.continuation == nil
-        append(page.videos)
         loadError = nil
+        return append(page.videos)
     }
 
     private func startSearchFallback() async {
@@ -237,25 +259,53 @@ public final class ShortsFeedViewModel {
         do {
             let group = try await provider.searchShorts()
             searchContinuation = group.nextPageToken
-            append(group.videos)
-            if group.nextPageToken == nil { exhausted = true }
+            let added = append(group.videos)
+            if let next = group.nextPageToken {
+                if added == 0 { await followSearch(from: next) }
+            } else {
+                exhausted = true
+            }
         } catch {
-            exhausted = true
-            if videos.isEmpty { loadError = String(describing: error) }
+            failed(error)
         }
     }
 
     private func fetchMoreFromSearch(token: String) async {
         isFetchingMore = true
         defer { isFetchingMore = false }
-        do {
-            let group = try await provider.fetchShortsMore(continuationToken: token)
-            searchContinuation = group.nextPageToken
-            append(group.videos)
-            if group.nextPageToken == nil { exhausted = true }
-        } catch {
-            exhausted = true
+        await followSearch(from: token)
+    }
+
+    /// Fetches search pages from `token` until one adds a Short (see `maxPagesPerFetch`).
+    private func followSearch(from token: String) async {
+        var token = token
+        for _ in 0..<Self.maxPagesPerFetch {
+            do {
+                let group = try await provider.fetchShortsMore(continuationToken: token)
+                searchContinuation = group.nextPageToken
+                let added = append(group.videos)
+                guard let next = group.nextPageToken else {
+                    exhausted = true
+                    return
+                }
+                guard added == 0 else { return }
+                token = next
+            } catch {
+                failed(error)
+                return
+            }
         }
+    }
+
+    /// The sequence and the search fallback both failed (usually offline). Forgets
+    /// the paging state instead of marking the feed exhausted, so the next
+    /// `start()` / `loadMoreIfNeeded(currentIndex:)` retries from the sequence.
+    private func failed(_ error: Error) {
+        feedLog.error("Shorts feed failed: \(String(describing: error), privacy: .public)")
+        continuation = nil
+        searchContinuation = nil
+        usingSearchFallback = false
+        if videos.isEmpty { loadError = String(describing: error) }
     }
 
     /// Appends Shorts not already in `videos`; returns how many were added.

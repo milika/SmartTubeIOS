@@ -16,6 +16,7 @@ private final class FakeShortsProvider: ShortsFeedProviding, @unchecked Sendable
     var searchGroup = VideoGroup(title: "Shorts", videos: [])
     var metadataResult: Result<ShortMetadata, Error>?
     var likeShouldFail = false
+    var searchShouldFail = false
     private(set) var seeds: [String?] = []
     private(set) var continuations: [String] = []
     private(set) var searchCalls = 0
@@ -36,6 +37,7 @@ private final class FakeShortsProvider: ShortsFeedProviding, @unchecked Sendable
     }
     func searchShorts() throws -> VideoGroup {
         searchCalls += 1
+        if searchShouldFail { throw FakeError() }
         return searchGroup
     }
     func fetchShortsMore(continuationToken: String) throws -> VideoGroup { VideoGroup(title: "", videos: []) }
@@ -136,6 +138,46 @@ struct ShortsFeedViewModelTests {
         #expect(provider.searchCalls == 1)
         #expect(vm.videos.map(\.id) == ["s1"])
         #expect(vm.loadError == nil)
+    }
+
+    @Test("A feed that could not load at all retries on the next start")
+    func retryAfterTotalFailure() async {
+        let provider = FakeShortsProvider()
+        provider.firstPage = .failure(FakeError())
+        provider.searchShouldFail = true
+        let vm = ShortsFeedViewModel(source: .algorithm(seed: nil), provider: provider)
+
+        await vm.start()
+        #expect(vm.videos.isEmpty)
+        #expect(vm.loadError != nil)
+        await vm.loadMoreIfNeeded(currentIndex: 0)  // no extra request while in the error state
+        #expect(provider.seeds == [nil])
+
+        // Connectivity is back and the user returns to the tab.
+        provider.firstPage = .success(ShortsFeedPage(videos: [short("a")], continuation: nil, isPersonalized: false))
+        provider.searchShouldFail = false
+        await vm.start()
+
+        #expect(provider.seeds == [nil, nil])
+        #expect(vm.videos.map(\.id) == ["a"])
+        #expect(vm.loadError == nil)
+    }
+
+    @Test("A page of only duplicates is skipped so the feed still grows")
+    func duplicateOnlyPageIsSkipped() async {
+        let provider = FakeShortsProvider()
+        provider.firstPage = .success(
+            ShortsFeedPage(videos: [short("a"), short("b")], continuation: "C1", isPersonalized: false))
+        provider.morePages["C1"] = ShortsFeedPage(
+            videos: [short("a"), short("b")], continuation: "C2", isPersonalized: false)
+        provider.morePages["C2"] = ShortsFeedPage(videos: [short("c")], continuation: nil, isPersonalized: false)
+        let vm = ShortsFeedViewModel(source: .algorithm(seed: nil), provider: provider)
+        await vm.start()
+
+        await vm.loadMoreIfNeeded(currentIndex: 1)
+
+        #expect(provider.continuations == ["C1", "C2"])
+        #expect(vm.videos.map(\.id) == ["a", "b", "c"])
     }
 
     @Test("Metadata fills in the Short's title and channel")

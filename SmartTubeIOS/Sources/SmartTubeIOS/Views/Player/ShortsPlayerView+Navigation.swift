@@ -21,7 +21,12 @@ extension ShortsPlayerView {
                 #else
                 vm.updateSettings(store.settings)
                 #endif
-                if vm.wasPlayingBeforeSuspend || mode == .tab { vm.resume() }
+                if mode == .tab {
+                    willResume()
+                    vm.resume()
+                } else if vm.wasPlayingBeforeSuspend {
+                    vm.resume()
+                }
             } else {
                 loadVideo(at: currentIndex)
             }

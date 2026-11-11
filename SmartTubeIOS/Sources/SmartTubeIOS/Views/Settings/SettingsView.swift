@@ -42,6 +42,9 @@ public struct SettingsView: View {
         Form {
             accountSection
             playerSection
+            #if os(iOS)
+            ShortsSettingsSection()
+            #endif
             generalSection
             uiSection
             sponsorBlockSection

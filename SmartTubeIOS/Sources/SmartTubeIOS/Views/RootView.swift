@@ -43,7 +43,11 @@ public struct RootView: View {
             #endif
         }
         .environment(\.isLandscapeLayout, isLandscapeLayout)
-        .onGeometryChange(for: Bool.self) { $0.size.width > $0.size.height } action: { isLandscapeLayout = $0 }
+        .onGeometryChange(for: Bool.self) {
+            $0.size.width > $0.size.height
+        } action: {
+            isLandscapeLayout = $0
+        }
         .tint(store.settings.accentColor.color)
         .preferredColorScheme(store.settings.themeName.colorScheme)
         #if !os(tvOS) && ENABLE_DOWNLOADS
@@ -102,15 +106,27 @@ public struct RootView: View {
 
 enum AppSection: String, CaseIterable, Identifiable {
     case home = "Home"
+    case shorts = "Shorts"
     case search = "Search"
     case library = "Library"
     case settings = "Settings"
 
     var id: String { rawValue }
 
+    /// Sections shown as tabs / sidebar rows. Shorts is a touch-first vertical feed,
+    /// so it is iOS/iPadOS/Catalyst only.
+    static var tabs: [AppSection] {
+        #if os(iOS)
+        allCases
+        #else
+        allCases.filter { $0 != .shorts }
+        #endif
+    }
+
     var icon: String {
         switch self {
         case .home: return AppSymbol.home
+        case .shorts: return AppSymbol.shortsTab
         case .search: return AppSymbol.search
         case .library: return AppSymbol.library
         case .settings: return AppSymbol.settings
@@ -121,6 +137,7 @@ enum AppSection: String, CaseIterable, Identifiable {
     func destination(api: InnerTubeAPI) -> some View {
         switch self {
         case .home: HomeView(api: api)
+        case .shorts: ShortsTabView(api: api)
         case .search: SearchView()
         case .library: LibraryView()
         case .settings: SettingsView()
@@ -190,7 +207,7 @@ struct MainTabView: View {
         )
         #endif
         TabView(selection: $selectedTab) {
-            ForEach(AppSection.allCases) { section in
+            ForEach(AppSection.tabs) { section in
                 NavigationStack { section.destination(api: api) }
                     // Capture the bottom safe-area inset as seen from inside the tab
                     // (UITabBarController sets this to tab-bar height + home-indicator).
@@ -222,6 +239,12 @@ struct MainTabView: View {
             selectedTab = .home
         }
         #if os(iOS)
+        // Like the official app, opening Shorts closes the mini player.
+        .onChange(of: selectedTab) { _, tab in
+            guard tab == .shorts else { return }
+            if tosState.presentation == .miniPlayer { tosState.stop() }
+            if playerState.presentation == .miniPlayer { playerState.stop() }
+        }
         // App Intents / Spotlight (see AppEntry.handleOpenURL).
         .onReceive(NotificationCenter.default.publisher(for: .smartTubeOpenSearch)) { note in
             guard let query = note.userInfo?["query"] as? String else { return }
@@ -297,7 +320,8 @@ struct MainTabView: View {
                 // work there. The standard player plays with the app's own sign-in, so
                 // this one error still falls back to it on iOS.
                 if tosState.vm?.playerError == .signInRequired {
-                    rootLog.notice("[RootView] TOS sign-in required for videoId=\(video.id) — opening the standard player")
+                    rootLog.notice(
+                        "[RootView] TOS sign-in required for videoId=\(video.id) — opening the standard player")
                     tosState.markFallback(videoId: video.id)
                     playerRouter.open(video: video, api: api)
                     return
@@ -360,7 +384,7 @@ struct MainTVTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            ForEach(AppSection.allCases) { section in
+            ForEach(AppSection.tabs) { section in
                 NavigationStack { section.destination(api: api) }
                     .tabItem {
                         Label(section.rawValue, systemImage: section.icon)
@@ -395,7 +419,7 @@ struct MainSidebarView: View {
         @Bindable var browseVM = browseVM
         ZStack {
             NavigationSplitView {
-                List(AppSection.allCases, selection: $selectedSection) { section in
+                List(AppSection.tabs, selection: $selectedSection) { section in
                     Label(section.rawValue, systemImage: section.icon)
                         .tag(section)
                 }

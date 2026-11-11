@@ -1,36 +1,29 @@
 import Foundation
 
-/// Pure end-of-video decision for the Shorts TOS embed player — what to do when
-/// the embedded `<iframe>`'s `"stateChange"` message reports `ended`.
+/// Pure end-of-video decision for the Shorts player — what to do when the current
+/// Short reports `ended`.
 ///
-/// Mirrors `PlaybackViewModel.handlePlaybackEnd()`
-/// (`PlaybackViewModel+Navigation.swift:114-163`), simplified for Shorts: no
-/// queue/shuffle/related-videos concepts — just the linear `videos` array
-/// `ShortsPlayerView` already pages through via `ShortsNavigation.targetIndex`.
-/// Testable the same way: a pure function over `(settings, currentIndex, count)`,
-/// no `WKWebView` required.
+/// Driven only by `settings.shortsAutoScroll` (the global `loopEnabled` does not
+/// apply to Shorts):
+/// - auto-scroll off (default, like the official app) → the Short loops;
+/// - auto-scroll on → advance to the next Short, or wait at the end of the list
+///   until the feed delivers more.
 public enum ShortsEndOfVideoDecision: Equatable {
-    /// `settings.loopEnabled` is on — seek the current Short back to 0 and replay
-    /// (`ShortsEmbedPlayerViewModel.seekTo(0)` + `play()`).
+    /// Auto-scroll is off — seek the current Short back to 0 and replay.
     case replay
     /// Advance to `videos[to]` — same path as a swipe-up (`goTo(to)`).
     case advance(to: Int)
-    /// At the end of `videos` with looping off — mirror today's "exhausted"
-    /// behavior (`videoEnded = true`), freeze on the last frame.
+    /// Auto-scroll is on but this is the last loaded Short — hold on the last frame
+    /// (`videoEnded = true`); the player advances once more Shorts are appended.
     case freeze
 
     /// - Parameters:
-    ///   - settings: Only `settings.loopEnabled` is consulted.
+    ///   - settings: Only `settings.shortsAutoScroll` is consulted.
     ///   - currentIndex: Index of the Short that just ended.
     ///   - count: `videos.count`.
     public static func decide(settings: AppSettings, currentIndex: Int, count: Int) -> ShortsEndOfVideoDecision {
-        if settings.loopEnabled {
-            return .replay
-        }
+        guard settings.shortsAutoScroll else { return .replay }
         let next = currentIndex + 1
-        if next < count {
-            return .advance(to: next)
-        }
-        return .freeze
+        return next < count ? .advance(to: next) : .freeze
     }
 }

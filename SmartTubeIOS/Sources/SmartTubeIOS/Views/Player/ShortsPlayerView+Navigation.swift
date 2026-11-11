@@ -10,7 +10,59 @@ private let shortsLog = Logger(subsystem: "com.void.smarttube.app", category: "S
 
 extension ShortsPlayerView {
 
+    // MARK: - Lifecycle
+
+    func handleAppear() {
+        if let video = currentVideo {
+            if vm.currentVideoId == video.id {
+                // Back from a pushed channel page / another tab.
+                if vm.wasPlayingBeforeSuspend || mode == .tab { vm.resume() }
+            } else {
+                loadVideo(at: currentIndex)
+            }
+        }
+        if ProcessInfo.processInfo.arguments.contains("--uitesting-show-controls") {
+            vm.showControls()
+            vm.cancelControlsHide()
+        }
+        guard allowsFeedFetching else { return }
+        Task { @MainActor in
+            await feed.start()
+            await feed.loadMoreIfNeeded(currentIndex: currentIndex)
+        }
+    }
+
+    /// The feed appended Shorts: start playback if this is the first one (seedless
+    /// feed), or continue an auto-scroll that was waiting at the end of the list.
+    func handleFeedGrew(from oldCount: Int, to newCount: Int) {
+        guard newCount > oldCount else { return }
+        if oldCount == 0 {
+            currentIndex = 0
+            loadVideo(at: 0)
+            return
+        }
+        #if os(iOS)
+        if vm.videoEnded, store.settings.shortsAutoScroll, currentIndex + 1 < newCount, !isTransitioning {
+            performVerticalTransition(direction: -1) { goTo(currentIndex + 1) }
+        }
+        #endif
+    }
+
     // MARK: - Navigation
+
+    /// Swipe up (`toNext`) / down. At the top, springs back; at the bottom, springs
+    /// back while the feed fetches more.
+    func swipe(toNext: Bool) {
+        guard !isTransitioning else { return }
+        if let target = ShortsNavigation.targetIndex(
+            vertical: toNext ? -100 : 100, horizontal: 0, current: currentIndex, count: videos.count)
+        {
+            performVerticalTransition(direction: toNext ? -1 : 1) { goTo(target) }
+        } else {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { slideOffset = 0 }
+            if toNext { loadMoreIfNeeded() }
+        }
+    }
 
     /// Animates the current content off-screen in `direction` (-1 = up, +1 = down),
     /// runs `action` to switch to the new video, then slides the new content in
@@ -67,10 +119,8 @@ extension ShortsPlayerView {
         loadVideo(at: index)
         #endif
 
-        // Pre-fetch more Shorts when within 2 of the end.
-        if index >= videos.count - 2 {
-            loadMoreIfNeeded()
-        }
+        isTitleExpanded = false
+        loadMoreIfNeeded()
         // Pre-fetch the next 2 shorts so swiping is instant.
         let lookahead = videos[(index + 1)..<min(index + 3, videos.count)].map(\.id)
         if !lookahead.isEmpty {
@@ -143,52 +193,28 @@ extension ShortsPlayerView {
     }
     #endif
 
-    /// Fetches an additional batch of Shorts and appends them, deduplicating by id.
+    /// Asks the feed for the next page when the current Short is near the end.
     func loadMoreIfNeeded() {
-        guard !ProcessInfo.processInfo.arguments.contains("--uitesting") else { return }
-        guard !isFetchingMore else { return }
-        isFetchingMore = true
-        let existingIDs = Set(videos.map(\.id))
-        Task { @MainActor in
-            defer { isFetchingMore = false }
-            guard let group = try? await api.fetchShorts() else { return }
-            let newVideos = group.videos.filter { !existingIDs.contains($0.id) }
-            guard !newVideos.isEmpty else { return }
-            videos.append(contentsOf: newVideos)
-        }
+        guard allowsFeedFetching else { return }
+        let index = currentIndex
+        Task { @MainActor in await feed.loadMoreIfNeeded(currentIndex: index) }
     }
 
-    /// Fetches a batch of Shorts, prepends them before the current video, adjusts
-    /// `currentIndex` to keep the current video in place, then animates down into
-    /// the last prepended video — giving the user new content above.
-    func loadMoreAtStart() {
-        guard !ProcessInfo.processInfo.arguments.contains("--uitesting") else {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { slideOffset = 0 }
-            return
-        }
-        guard !isFetchingMore else {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { slideOffset = 0 }
-            return
-        }
-        isFetchingMore = true
-        // Spring back to centre while the fetch is in flight.
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { slideOffset = 0 }
-        let existingIDs = Set(videos.map(\.id))
+    /// Overlay metadata for the current Short and the next one (so the rail is
+    /// already filled in after a swipe).
+    func loadMetadata(around index: Int) {
+        guard allowsFeedFetching else { return }
+        let ids = videos[index..<min(index + 2, videos.count)].map(\.id)
+        let signedIn = authService.isSignedIn
         Task { @MainActor in
-            defer { isFetchingMore = false }
-            guard let group = try? await api.fetchShorts() else { return }
-            let newVideos = group.videos.filter { !existingIDs.contains($0.id) }
-            guard !newVideos.isEmpty else { return }
-            // Prepend the new videos; re-anchor currentIndex so the on-screen
-            // video doesn't change, then animate down to the last prepended video.
-            videos.insert(contentsOf: newVideos, at: 0)
-            currentIndex += newVideos.count
-            performVerticalTransition(direction: 1) { goTo(currentIndex - 1) }
+            for id in ids { await feed.loadMetadata(for: id, signedIn: signedIn) }
         }
     }
 
     func loadVideo(at index: Int) {
+        guard videos.indices.contains(index) else { return }
         let video = videos[index]
+        loadMetadata(around: index)
         CrashlyticsLogger.setIntendedVideo(id: video.id, title: video.title)
         #if os(iOS)
         vm.updateSettings(store.settings)
@@ -204,10 +230,8 @@ extension ShortsPlayerView {
 
     // MARK: - End of video / error recovery (iOS)
 
-    /// Replicates `PlaybackViewModel.handlePlaybackEnd()`'s decision tree
-    /// (PlaybackViewModel+Navigation.swift:114-163) for Shorts, via
-    /// `ShortsEndOfVideoDecision` (Task 3) — called from `.onChange(of:
-    /// vm.playerState)` when the TOS embed's `"stateChange"` reports `.ended`.
+    /// Called from `.onChange(of: vm.playerState)` when the embed reports `.ended`:
+    /// loop or auto-scroll per `settings.shortsAutoScroll` (`ShortsEndOfVideoDecision`).
     func handleShortEnded() {
         switch ShortsEndOfVideoDecision.decide(
             settings: store.settings, currentIndex: currentIndex, count: videos.count)
@@ -218,7 +242,10 @@ extension ShortsPlayerView {
         case .advance(let next):
             performVerticalTransition(direction: -1) { goTo(next) }
         case .freeze:
+            // Auto-scroll is on but the feed hasn't delivered the next Short yet —
+            // handleFeedGrew(from:to:) advances as soon as it does.
             vm.videoEnded = true
+            loadMoreIfNeeded()
         }
     }
 

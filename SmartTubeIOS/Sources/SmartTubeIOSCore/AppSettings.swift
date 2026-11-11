@@ -71,6 +71,9 @@ public struct AppSettings: Codable {
     public var settingsPINHash: String?
     public var hideShorts: Bool
     public var hideLiveShorts: Bool
+    /// Shorts player: when `true`, advance to the next Short when one ends; when `false`
+    /// (default, matching the official app) the Short loops. Independent of `loopEnabled`.
+    public var shortsAutoScroll: Bool
     public var hideVideoPremieres: Bool
     /// When `true` (default), a per-device `visitorData` token is included in home-feed
     /// requests so YouTube tailors recommendations to this device.
@@ -281,6 +284,7 @@ public struct AppSettings: Codable {
         settingsPINHash = nil
         hideShorts = false
         hideLiveShorts = false
+        shortsAutoScroll = false
         hideVideoPremieres = false
         perDeviceRecommendationsEnabled = true
         themeName = .system
@@ -370,6 +374,7 @@ extension AppSettings {
         case settingsPINHash
         case hideShorts
         case hideLiveShorts
+        case shortsAutoScroll
         case hideVideoPremieres
         case perDeviceRecommendationsEnabled
         case themeName
@@ -424,6 +429,7 @@ extension AppSettings {
         settingsPINHash = c.safeDecode(String?.self, forKey: .settingsPINHash, default: d.settingsPINHash)
         hideShorts = c.safeDecode(Bool.self, forKey: .hideShorts, default: d.hideShorts)
         hideLiveShorts = c.safeDecode(Bool.self, forKey: .hideLiveShorts, default: d.hideLiveShorts)
+        shortsAutoScroll = c.safeDecode(Bool.self, forKey: .shortsAutoScroll, default: d.shortsAutoScroll)
         hideVideoPremieres = c.safeDecode(Bool.self, forKey: .hideVideoPremieres, default: d.hideVideoPremieres)
         perDeviceRecommendationsEnabled = c.safeDecode(
             Bool.self, forKey: .perDeviceRecommendationsEnabled, default: d.perDeviceRecommendationsEnabled)
@@ -431,10 +437,14 @@ extension AppSettings {
         accentColor = c.safeDecode(AccentColorChoice.self, forKey: .accentColor, default: d.accentColor)
         let columns = Self.availableGridColumnCounts
         gridColumnsPortrait = min(
-            max(c.safeDecode(Int.self, forKey: .gridColumnsPortrait, default: d.gridColumnsPortrait), columns.lowerBound),
+            max(
+                c.safeDecode(Int.self, forKey: .gridColumnsPortrait, default: d.gridColumnsPortrait), columns.lowerBound
+            ),
             columns.upperBound)
         gridColumnsLandscape = min(
-            max(c.safeDecode(Int.self, forKey: .gridColumnsLandscape, default: d.gridColumnsLandscape), columns.lowerBound),
+            max(
+                c.safeDecode(Int.self, forKey: .gridColumnsLandscape, default: d.gridColumnsLandscape),
+                columns.lowerBound),
             columns.upperBound)
         enabledSections = c.safeDecode(
             [BrowseSection.SectionType].self, forKey: .enabledSections, default: d.enabledSections)

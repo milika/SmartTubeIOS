@@ -28,6 +28,14 @@ struct SwipeGestureOverlay: UIViewRepresentable {
     var onTwoFingerTap: () -> Void = {}
     var onPanChanged: ((CGFloat) -> Void)?
     var onSwipeCancelled: (() -> Void)?
+    /// When `false` (e.g. while a sheet is up) the window-level recognizers ignore
+    /// every touch — they live on the window, so they'd otherwise see touches on
+    /// sheets presented above the player too.
+    var isEnabled: Bool = true
+    /// Window-coordinate filter: return `false` for touches that belong to an
+    /// overlay control (action rail, progress bar, tab bar…) so tapping or dragging
+    /// it doesn't also toggle play/pause or swipe to another Short.
+    var shouldHandleTouch: ((CGPoint) -> Bool)?
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -64,6 +72,13 @@ struct SwipeGestureOverlay: UIViewRepresentable {
         private let minDistance: CGFloat = 40
 
         init(_ parent: SwipeGestureOverlay) { self.parent = parent }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            MainActor.assumeIsolated {
+                guard parent.isEnabled else { return false }
+                return parent.shouldHandleTouch?(touch.location(in: nil)) ?? true
+            }
+        }
 
         func gestureRecognizer(
             _ gestureRecognizer: UIGestureRecognizer,

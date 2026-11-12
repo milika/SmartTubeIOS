@@ -147,6 +147,12 @@ public struct AppSettings: Codable {
         Set(sponsorBlockActions.compactMap { $0.value != .nothing ? $0.key : nil })
     }
 
+    /// Whether Shorts skip SponsorBlock segments: needs SponsorBlock itself on. While
+    /// it is off, `shortsSponsorBlock` keeps its value for when it comes back on.
+    public var shortsSponsorBlockActive: Bool {
+        sponsorBlockEnabled && shortsSponsorBlock
+    }
+
     /// Returns the action for a given category (`.nothing` if not configured).
     public func sponsorAction(for category: SponsorSegment.Category) -> SponsorBlockAction {
         sponsorBlockActions[category] ?? .nothing

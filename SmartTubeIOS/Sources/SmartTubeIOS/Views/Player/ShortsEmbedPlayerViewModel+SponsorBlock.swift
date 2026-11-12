@@ -22,7 +22,7 @@ struct SponsorBlockConfig: Equatable {
     let excludedChannelIds: Set<String>
 
     init(_ settings: AppSettings) {
-        isEnabled = settings.sponsorBlockEnabled && settings.shortsSponsorBlock
+        isEnabled = settings.shortsSponsorBlockActive
         categories = settings.activeSponsorCategories
         minSegmentDuration = settings.sponsorBlockMinSegmentDuration
         excludedChannelIds = Set(settings.sponsorBlockExcludedChannels.keys)
@@ -50,8 +50,7 @@ extension ShortsEmbedPlayerViewModel {
     /// from the "ready" case in ShortsEmbedPlayerViewModel+WebBridge.swift (Step 5
     /// below) for every loaded Short.
     func fetchSponsorSegments() async {
-        guard settings.sponsorBlockEnabled, settings.shortsSponsorBlock,
-            !settings.activeSponsorCategories.isEmpty
+        guard settings.shortsSponsorBlockActive, !settings.activeSponsorCategories.isEmpty
         else { return }
 
         // UI-testing deterministic injection — same seam as

@@ -68,6 +68,24 @@ struct ShortsEndOfVideoDecisionTests {
         #expect(decoded.shortsSponsorBlock == false)
     }
 
+    @Test("SponsorBlock for Shorts reads off while SponsorBlock is off and comes back with it")
+    func sponsorBlockFollowsGlobalSwitch() {
+        var settings = AppSettings()
+        settings.sponsorBlockEnabled = true
+        settings.shortsSponsorBlock = true
+        #expect(settings.shortsSponsorBlockActive)
+
+        settings.sponsorBlockEnabled = false
+        #expect(!settings.shortsSponsorBlockActive)
+        #expect(settings.shortsSponsorBlock)
+
+        settings.sponsorBlockEnabled = true
+        #expect(settings.shortsSponsorBlockActive)
+
+        settings.shortsSponsorBlock = false
+        #expect(!settings.shortsSponsorBlockActive)
+    }
+
     @Test("shortsFillScreen defaults to off (also for old JSON) and survives a round-trip when on")
     func fillScreenPersistence() throws {
         #expect(AppSettings().shortsFillScreen == false)

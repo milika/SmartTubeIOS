@@ -70,9 +70,6 @@ struct ShortsMoreSheet: View {
                     }
                 }
                 .accessibilityIdentifier(AccessibilityID.Shorts.autoScrollToggle)
-            } footer: {
-                Text(
-                    "Automatically scroll to the next Short when one ends. When off, Shorts loop.", bundle: .module)
             }
             Section {
                 if isSignedIn {

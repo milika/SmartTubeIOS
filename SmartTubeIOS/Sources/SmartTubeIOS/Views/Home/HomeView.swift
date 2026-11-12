@@ -367,6 +367,8 @@ public struct HomeView: View {
                         #if os(tvOS)
                         .focusSection()
                         #endif
+                    } else if !hideShorts && !homeVM.hasLoadedShortsShelf {
+                        ShortsRowPlaceholder()
                     }
                     ScrollView {
                         VStack(alignment: .leading, spacing: 0) {

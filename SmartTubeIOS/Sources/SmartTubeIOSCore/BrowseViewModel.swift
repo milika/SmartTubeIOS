@@ -400,22 +400,20 @@ public final class BrowseViewModel {
                 break
             }
             let group = try await api.fetchHome()
-            // Fetch Shorts in parallel: dedicated search + subs feed.
-            // FEshorts browseId is deprecated (HTTP 400). The subs TV-browse
-            // (tileRenderer, ustreamerConfig "GgIIBQ==") is the most reliable
-            // source of many Shorts — mirrors HomeViewModel.homeShortsVideos.
-            async let shortsFetch: VideoGroup? = try? api.fetchShorts()
-            async let subsFetch: VideoGroup? = try? api.fetchSubscriptions()
-            let (shortsGroup, subsGroup) = await (shortsFetch, subsFetch)
-            if !Task.isCancelled {
-                let searchShorts = shortsGroup?.videos ?? []
-                let subsShorts = (subsGroup?.videos ?? []).filter { $0.isShort }
-                let homeShorts = group.videos.filter { $0.isShort }
+            // The pinned Shorts row shows YouTube's Shorts shelf only (the algorithm,
+            // personalised when signed in), like Home. Subscription and Recommended-feed
+            // Shorts are a fallback for when the shelf comes back empty.
+            let shelfShorts = (try? await api.fetchShorts())?.videos ?? []
+            var fallbackShorts: [Video] = []
+            if shelfShorts.isEmpty, !Task.isCancelled {
+                let subsShorts = ((try? await api.fetchSubscriptions())?.videos ?? []).filter(\.isShort)
                 var seen = Set<String>()
-                recommendedShortsVideos = (searchShorts + subsShorts + homeShorts)
-                    .filter { seen.insert($0.id).inserted }
+                fallbackShorts = (subsShorts + group.videos.filter(\.isShort)).filter { seen.insert($0.id).inserted }
+            }
+            if !Task.isCancelled {
+                recommendedShortsVideos = shelfShorts.isEmpty ? fallbackShorts : shelfShorts
                 browseLog.notice(
-                    "Recommended: \(recommendedShortsVideos.count) shorts (search=\(searchShorts.count) subs=\(subsShorts.count) home=\(homeShorts.count))"
+                    "Recommended: \(recommendedShortsVideos.count) shorts (shelf=\(shelfShorts.count) fallback=\(fallbackShorts.count))"
                 )
                 if group.videos.isEmpty {
                     isAuthRequired = true

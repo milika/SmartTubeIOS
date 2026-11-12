@@ -28,8 +28,13 @@ public final class HomeViewModel {
     // MARK: - State
 
     public private(set) var sections: [SectionState]
-    /// Shorts fetched explicitly via FEshorts (TV home feed never includes them).
+    /// The Shorts shelf: YouTube's Shorts algorithm (`fetchShorts()`), personalised
+    /// when signed in.
     public private(set) var shortsVideos: [Video] = []
+    /// `false` until `fetchShorts()` has answered for the current load. Until then the
+    /// row stays empty: showing the subscription/Recommended-feed Shorts first made
+    /// non-algorithm Shorts flash before the shelf replaced them.
+    public private(set) var hasLoadedShortsShelf = false
     /// Continuation token from the last FEshorts fetch; used by loadMoreShortsIfNeeded.
     private var shortsNextPageToken: String? = nil
     private var isLoadingMoreShorts: Bool = false
@@ -129,17 +134,27 @@ public final class HomeViewModel {
     /// Used by `homeShelves` to populate the main grid (Shorts are shown separately).
     public var homeRegularVideos: [Video] { mergedVideos.filter { !$0.isShort } }
 
-    /// Short videos for the dedicated Shorts row.
-    /// Sources (in priority order, deduplicated by video ID):
-    ///  1. `shortsVideos` — from the FEshorts browse (when the API works)
-    ///  2. Subscriptions section shorts — pulled directly from the full subs list so
-    ///     they are not lost to the home/subs interleave ratio in `mergedVideos`
-    ///  3. `mergedVideos` shorts — catches any shorts from the home-rec feed
+    /// Short videos for the dedicated Shorts row: the algorithm shelf only, like the
+    /// official app. Only when the shelf (and its `#shorts` search fallback) came
+    /// back empty does the row fall back to the Shorts found in the Subscriptions
+    /// and Recommended feeds.
     public var homeShortsVideos: [Video] {
+        guard hasLoadedShortsShelf else { return [] }
+        guard usesFeedShortsFallback else { return shortsVideos }
         let subsShorts = sections.first { $0.section.type == .subscriptions }?.videos.filter { $0.isShort } ?? []
         var seen = Set<String>()
-        return (shortsVideos + subsShorts + mergedVideos.filter { $0.isShort })
+        return (subsShorts + mergedVideos.filter { $0.isShort })
             .filter { seen.insert($0.id).inserted }
+    }
+
+    /// The shelf answered with nothing, so the row shows feed Shorts instead.
+    private var usesFeedShortsFallback: Bool { hasLoadedShortsShelf && shortsVideos.isEmpty }
+
+    /// Continuation for paging the Subscriptions feed for more Shorts — only while
+    /// the row is in its feed fallback; the shelf's own Shorts never come from there.
+    private var subsShortsToken: String? {
+        guard usesFeedShortsFallback else { return nil }
+        return sections.first { $0.section.type == .subscriptions }?.nextPageToken
     }
 
     // MARK: - Dependencies
@@ -216,6 +231,8 @@ public final class HomeViewModel {
         loadedAt = nil
         isRefreshing = true
         shortsVideos = []
+        shortsNextPageToken = nil
+        hasLoadedShortsShelf = false
         mergedVideos = []
         for i in sections.indices {
             sections[i].videos = []
@@ -226,9 +243,9 @@ public final class HomeViewModel {
         }
 
         loadTask = Task {
-            // Fetch shorts via FEshorts in parallel with the home/subs feed.
-            // The TV home feed (FEwhat_to_watch) never includes a Shorts shelf.
-            async let fetchedShortsResult: ([Video], String?) = HomeViewModel.fetchShortsVideos(api: self.api)
+            // The Shorts shelf loads in parallel with the home/subs feed and shows as
+            // soon as it arrives, independent of the feed sections.
+            async let shortsShelfLoaded: Void = self.loadShortsShelf()
 
             await withTaskGroup(of: (String, [Video], String?).self) { group in
                 for state in sections {
@@ -260,11 +277,8 @@ public final class HomeViewModel {
             // replacing the partial first-arrived list. This is a single atomic swap
             // rather than incremental insertions, so existing card positions don't jump.
             rebuildMergedVideos()
-            shortsVideos = await fetchedShortsResult.0
-            shortsNextPageToken = await fetchedShortsResult.1
-            // Fill the initial threshold (6 iOS / 8 tvOS) quickly.
-            // Further pages are loaded lazily as the user scrolls to the last card.
-            await loadMoreShortsIfNeeded()
+            await shortsShelfLoaded
+            guard !Task.isCancelled else { return }
             isRefreshing = false
             loadedAt = Date()
             let merged = self.mergedVideos
@@ -278,6 +292,17 @@ public final class HomeViewModel {
                 await self?.preloadMoreShorts()
             }
         }
+    }
+
+    /// Fetches the Shorts shelf and publishes it in one step, then fills it to the
+    /// initial threshold (6 iOS / 8 tvOS). Further pages load as the user scrolls.
+    private func loadShortsShelf() async {
+        let (videos, token) = await Self.fetchShortsVideos(api: api)
+        guard !Task.isCancelled else { return }
+        shortsVideos = videos
+        shortsNextPageToken = token
+        hasLoadedShortsShelf = true
+        await loadMoreShortsIfNeeded()
     }
 
     public func updateAuthToken(_ token: String?) async {
@@ -354,7 +379,7 @@ public final class HomeViewModel {
     /// Loads the next page unconditionally — no minimum-count threshold — so the row
     /// grows on demand as the user scrolls past the already-loaded cards.
     public func loadNextShortsPage() {
-        let subsToken = sections.first { $0.section.type == .subscriptions }?.nextPageToken
+        let subsToken = subsShortsToken
         homeLog.notice(
             "loadNextShortsPage: called — count=\(shortsVideos.count) isLoading=\(isLoadingMoreShorts) searchToken=\(shortsNextPageToken != nil) subsToken=\(subsToken != nil)"
         )
@@ -368,21 +393,18 @@ public final class HomeViewModel {
     }
 
     private func fetchAndAppendNextShortsPage() async {
-        let subsToken = sections.first { $0.section.type == .subscriptions }?.nextPageToken
-        guard !isLoadingMoreShorts, shortsNextPageToken != nil || subsToken != nil else { return }
+        guard !isLoadingMoreShorts, shortsNextPageToken != nil || subsShortsToken != nil else { return }
         isLoadingMoreShorts = true
         defer { isLoadingMoreShorts = false }
         _ = await fetchOneShortsPage()
     }
 
-    /// Fetches one increment of Shorts content: a FEshorts search-continuation page
-    /// if available, falling back to one subscriptions-continuation page if the
-    /// search page is exhausted or returned nothing new. Search results land in
-    /// `shortsVideos`; subs results land in `sections[subscriptions].videos` — both
-    /// are surfaced together via `homeShortsVideos`.
+    /// Fetches one increment of Shorts content: the shelf's next page if available.
+    /// In the feed fallback (empty shelf) it pages the Subscriptions feed instead,
+    /// whose Shorts `homeShortsVideos` then shows.
     /// Returns `true` if any new videos were appended.
     private func fetchOneShortsPage() async -> Bool {
-        // Phase 1: one search page (srch: token from fetchShorts).
+        // Phase 1: one shelf page (reel: or srch: token from fetchShorts).
         if let token = shortsNextPageToken {
             homeLog.notice("fetchOneShortsPage search: fetching token=\(String(token.prefix(16)))\u{2026}")
             do {
@@ -403,9 +425,9 @@ public final class HomeViewModel {
                 shortsNextPageToken = nil
             }
         }
-        // Phase 2: one subs page when search is exhausted or returned nothing new.
-        if let idx = sections.firstIndex(where: { $0.section.type == .subscriptions }),
-            let token = sections[idx].nextPageToken
+        // Phase 2: one subs page, only in the feed fallback.
+        if let token = subsShortsToken,
+            let idx = sections.firstIndex(where: { $0.section.type == .subscriptions })
         {
             homeLog.notice("fetchOneShortsPage subs: fetching token=\(String(token.prefix(16)))\u{2026}")
             let more = await Self.fetchMoreVideos(type: .subscriptions, token: token, api: api)
@@ -454,8 +476,8 @@ public final class HomeViewModel {
         }
     }
 
-    /// Continues fetching Shorts pages in the background (search continuation, then
-    /// subscriptions continuation) until `homeShortsVideos.count` reaches
+    /// Continues fetching Shorts pages in the background (shelf continuation, or the
+    /// subscriptions continuation in the feed fallback) until `homeShortsVideos.count` reaches
     /// `preloadHighThreshold` or both sources are exhausted. Started as a
     /// fire-and-forget task after `load()` finishes its fast initial fill
     /// (`loadMoreShortsIfNeeded`), so the Shorts row keeps growing for an
@@ -471,8 +493,7 @@ public final class HomeViewModel {
         defer { isLoadingMoreShorts = false }
         var loopIteration = 0
         while !Task.isCancelled, homeShortsVideos.count < preloadHighThreshold {
-            let subsToken = sections.first { $0.section.type == .subscriptions }?.nextPageToken
-            guard shortsNextPageToken != nil || subsToken != nil else {
+            guard shortsNextPageToken != nil || subsShortsToken != nil else {
                 homeLog.notice(
                     "preloadMoreShorts: stopping — no continuation tokens left, count=\(homeShortsVideos.count)")
                 break
@@ -489,8 +510,8 @@ public final class HomeViewModel {
 
     // MARK: - Private fetch helpers
 
-    /// Fetches the FEshorts feed. Non-isolated so it runs concurrently with
-    /// the home/subs task group.
+    /// Fetches the Shorts shelf (`fetchShorts()`: the reel sequence, falling back to
+    /// the `#shorts` search). Errors yield an empty shelf.
     private static func fetchShortsVideos(api: any InnerTubeAPIProtocol) async -> ([Video], String?) {
         do {
             let group = try await api.fetchShorts()

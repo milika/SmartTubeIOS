@@ -61,6 +61,10 @@ public final class WatchtimeTracker {
     private var resolveTask: Task<Void, Never>?
     /// Last time resolution came back empty; gates retries (`trackingResolveRetryInterval`).
     private var lastResolveFailureAt: Date?
+    /// Bumped by `transition` and `setTrackingURLs`. An in-flight resolution stores its
+    /// result only if this is unchanged, so URLs minted for the previous account (or session)
+    /// never land after an account reset.
+    private var trackingGeneration = 0
 
     // MARK: - Init
 
@@ -105,9 +109,10 @@ public final class WatchtimeTracker {
         lastCheckpointAt = nil
         resolveTask = nil
         lastResolveFailureAt = nil
+        trackingGeneration += 1
 
         trackerLog.notice(
-            "transition: \(oldVideoId, privacy: .public) → \(newVideoId, privacy: .public) cpn=\(newCPN.prefix(8), privacy: .public)…"
+            "transition:\(oldVideoId, privacy: .public) → \(newVideoId, privacy: .public) cpn=\(newCPN.prefix(8), privacy: .public)…"
         )
 
         return {
@@ -145,6 +150,7 @@ public final class WatchtimeTracker {
         trackingURLs = urls
         resolveTask = nil
         lastResolveFailureAt = nil
+        trackingGeneration += 1
         let hasSession = InnerTubeAPI.trackingSession(from: urls) != nil
         trackerLog.notice(
             "setTrackingURLs: \(urls != nil ? "received" : "nil", privacy: .public) accountBound=\(hasSession, privacy: .public)"
@@ -158,7 +164,8 @@ public final class WatchtimeTracker {
 
     /// Resolves the account-bound tracking URLs for the current session if they are missing.
     /// Overlapping callers share one request; a failure backs off for
-    /// `trackingResolveRetryInterval`. A result that arrives after the session changed is dropped.
+    /// `trackingResolveRetryInterval`. A result that arrives after the session or the account
+    /// changed (`trackingGeneration`) is dropped.
     private func ensureTrackingSession() async {
         guard !videoId.isEmpty, !hasTrackingSession else { return }
         if let resolveTask {
@@ -172,10 +179,11 @@ public final class WatchtimeTracker {
         }
         let vid = videoId
         let sessionCPN = cpn
+        let generation = trackingGeneration
         let api = self.api
         let task = Task { @MainActor in
             let urls = await api.fetchHistoryTrackingURLs(videoId: vid, cpn: sessionCPN)
-            guard self.videoId == vid, self.cpn == sessionCPN else { return }
+            guard self.trackingGeneration == generation else { return }
             self.trackingURLs = urls
             self.lastResolveFailureAt = urls == nil ? Date() : nil
             trackerLog.notice(
@@ -218,20 +226,23 @@ public final class WatchtimeTracker {
     /// report the interval [segmentStart, position]. Once less than 5% of the
     /// video remains, the final=1 pings mark it fully watched.
     public func checkpoint(position: TimeInterval, duration: TimeInterval) async {
-        let sessionVideoId = videoId
+        guard !videoId.isEmpty, duration > 0, !didReportFinal else {
+            return
+        }
+        let vid = videoId
+        let localCPN = cpn
+
+        // The local resume position never waits for the network: the first checkpoint's
+        // tracking resolution can be slow or fail offline, and the app may exit meanwhile.
+        await VideoStateStore.shared.save(videoId: vid, position: position, duration: duration)
+
         await ensureTrackingSession()
-        guard !videoId.isEmpty, videoId == sessionVideoId else {
-            return
-        }
-        guard duration > 0 else {
-            return
-        }
-        guard !didReportFinal else {
+        // The session may have changed during the awaits; reopening the same video starts a
+        // new session with a new cpn, which this checkpoint must not report into or finish.
+        guard videoId == vid, cpn == localCPN, !didReportFinal else {
             return
         }
 
-        let vid = videoId
-        let localCPN = cpn
         let localURLs = trackingURLs
         let isFinal = Self.isNearEnd(position: position, duration: duration)
         let needsNewRecord =
@@ -264,8 +275,6 @@ public final class WatchtimeTracker {
             recordOpenedAt = Date()
         }
 
-        await VideoStateStore.shared.save(videoId: vid, position: position, duration: duration)
-
         if needsNewRecord || isFinal {
             trackerLog.notice(
                 "checkpoint: opening watch record videoId=\(vid, privacy: .public) cmt=\(Int(position))s final=\(isFinal, privacy: .public)"
@@ -288,7 +297,9 @@ public final class WatchtimeTracker {
 
     /// Flushes the segment before a seek and starts the next segment at the target.
     /// This mirrors Android SmartTube's onSeekPositionChanged history update.
-    public func recordSeek(to targetPosition: TimeInterval, from currentPosition: TimeInterval, duration: TimeInterval) async {
+    public func recordSeek(
+        to targetPosition: TimeInterval, from currentPosition: TimeInterval, duration: TimeInterval
+    ) async {
         guard !videoId.isEmpty, duration > 0 else { return }
         if didReportFinal {
             // Rewatching after the final ping (Loop replays via seekTo(0), or a seek back out of

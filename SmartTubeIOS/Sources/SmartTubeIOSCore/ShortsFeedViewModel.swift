@@ -47,6 +47,8 @@ public final class ShortsFeedViewModel {
     /// duplicates or hidden channels). An unchanged count would otherwise leave an
     /// auto-scroll waiting at the end with nothing to trigger the next request.
     static let maxPagesPerFetch = 5
+    /// `loadError` when YouTube answered but had no Shorts at all.
+    static let emptyFeedMessage = "YouTube returned no Shorts."
 
     public private(set) var videos: [Video]
     public let startIndex: Int
@@ -216,6 +218,23 @@ public final class ShortsFeedViewModel {
             )
             await startSearchFallback()
         }
+        await fallBackIfEmpty()
+    }
+
+    /// The sequence (or the search) ran out without a single Short. Tries the search
+    /// if it hasn't run yet; if that has none either, reports the feed as failed, so
+    /// the empty state says so and the next `start()` retries instead of showing a
+    /// spinner that never ends.
+    private func fallBackIfEmpty() async {
+        guard videos.isEmpty, exhausted, loadError == nil else { return }
+        if !usingSearchFallback {
+            feedLog.error("Shorts sequence came back empty — falling back to #shorts search")
+            await startSearchFallback()
+            guard videos.isEmpty, exhausted, loadError == nil else { return }
+        }
+        feedLog.error("Shorts feed came back empty")
+        resetPaging()
+        loadError = Self.emptyFeedMessage
     }
 
     private func fetchMore(continuation token: String) async {
@@ -302,10 +321,15 @@ public final class ShortsFeedViewModel {
     /// `start()` / `loadMoreIfNeeded(currentIndex:)` retries from the sequence.
     private func failed(_ error: Error) {
         feedLog.error("Shorts feed failed: \(String(describing: error), privacy: .public)")
+        resetPaging()
+        if videos.isEmpty { loadError = String(describing: error) }
+    }
+
+    private func resetPaging() {
         continuation = nil
         searchContinuation = nil
         usingSearchFallback = false
-        if videos.isEmpty { loadError = String(describing: error) }
+        exhausted = false
     }
 
     /// Appends Shorts not already in `videos` and not from a hidden channel; returns

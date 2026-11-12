@@ -163,6 +163,53 @@ struct ShortsFeedViewModelTests {
         #expect(vm.loadError == nil)
     }
 
+    @Test("An empty sequence falls back to the #shorts search")
+    func emptySequenceFallsBackToSearch() async {
+        let provider = FakeShortsProvider()
+        provider.firstPage = .success(ShortsFeedPage(videos: [], continuation: nil, isPersonalized: false))
+        provider.searchGroup = VideoGroup(title: "Shorts", videos: [short("s1")])
+        let vm = ShortsFeedViewModel(source: .algorithm(seed: nil), provider: provider)
+
+        await vm.start()
+
+        #expect(provider.searchCalls == 1)
+        #expect(vm.videos.map(\.id) == ["s1"])
+        #expect(vm.loadError == nil)
+    }
+
+    @Test("A feed with no Shorts anywhere shows an error and retries on the next start")
+    func emptyFeedIsRetryable() async {
+        let provider = FakeShortsProvider()
+        provider.firstPage = .success(ShortsFeedPage(videos: [], continuation: nil, isPersonalized: false))
+        let vm = ShortsFeedViewModel(source: .algorithm(seed: nil), provider: provider)
+
+        await vm.start()
+        #expect(vm.videos.isEmpty)
+        #expect(vm.loadError == ShortsFeedViewModel.emptyFeedMessage)
+        #expect(provider.searchCalls == 1)
+
+        provider.firstPage = .success(ShortsFeedPage(videos: [short("a")], continuation: nil, isPersonalized: false))
+        await vm.start()
+
+        #expect(provider.seeds == [nil, nil])
+        #expect(vm.videos.map(\.id) == ["a"])
+        #expect(vm.loadError == nil)
+    }
+
+    @Test("A sequence whose later pages are all empty falls back to the search too")
+    func emptyContinuationFallsBackToSearch() async {
+        let provider = FakeShortsProvider()
+        provider.firstPage = .success(ShortsFeedPage(videos: [], continuation: "C1", isPersonalized: false))
+        provider.morePages["C1"] = ShortsFeedPage(videos: [], continuation: nil, isPersonalized: false)
+        provider.searchGroup = VideoGroup(title: "Shorts", videos: [short("s1")])
+        let vm = ShortsFeedViewModel(source: .algorithm(seed: nil), provider: provider)
+
+        await vm.start()
+
+        #expect(provider.continuations == ["C1"])
+        #expect(vm.videos.map(\.id) == ["s1"])
+    }
+
     @Test("A page of only duplicates is skipped so the feed still grows")
     func duplicateOnlyPageIsSkipped() async {
         let provider = FakeShortsProvider()

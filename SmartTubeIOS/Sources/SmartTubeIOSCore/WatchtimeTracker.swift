@@ -198,7 +198,9 @@ public final class WatchtimeTracker {
 
     /// Throttled entry point for the players' time observers: forwards to `checkpoint`
     /// at most once per `checkpointInterval`, so a tick can be wired up directly.
-    /// The near-end final ping is never throttled.
+    /// The near-end final ping is not throttled while a tracking session exists. Without one
+    /// (signed out, or resolution failed) a final checkpoint only saves local progress and
+    /// leaves `didReportFinal` unset, so it is throttled like any other to avoid a save per tick.
     public func checkpointIfDue(position: TimeInterval, duration: TimeInterval) async {
         guard !didReportFinal else {
             return
@@ -210,7 +212,8 @@ public final class WatchtimeTracker {
         guard isFinal || position > 0 else {
             return
         }
-        if !isFinal, let last = lastCheckpointAt, Date().timeIntervalSince(last) < Self.checkpointInterval {
+        let bypassesThrottle = isFinal && hasTrackingSession
+        if !bypassesThrottle, let last = lastCheckpointAt, Date().timeIntervalSince(last) < Self.checkpointInterval {
             return
         }
         // Stamped before the await: ticks arrive several times a second, and stamping after
@@ -242,8 +245,15 @@ public final class WatchtimeTracker {
         guard videoId == vid, cpn == localCPN, !didReportFinal else {
             return
         }
-
-        let localURLs = trackingURLs
+        // Without account-bound URLs both pings would be skipped. Leave the reporting state
+        // (segment start, open record, final flag) untouched so that once URLs resolve, the
+        // next checkpoint opens the record with a playback ping before any watchtime ping,
+        // and a final checkpoint can still report final=1.
+        guard let localURLs = trackingURLs, InnerTubeAPI.trackingSession(from: localURLs) != nil else {
+            trackerLog.notice(
+                "checkpoint: videoId=\(vid, privacy: .public) no tracking session — saved local progress only")
+            return
+        }
         let isFinal = Self.isNearEnd(position: position, duration: duration)
         let needsNewRecord =
             segmentStart == nil

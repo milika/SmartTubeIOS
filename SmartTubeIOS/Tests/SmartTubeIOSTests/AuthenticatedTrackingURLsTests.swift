@@ -30,6 +30,8 @@ private final class StubURLProtocol: URLProtocol, @unchecked Sendable {
     nonisolated(unsafe) static var capturedHeaders: [String: [String: String]] = [:]
     /// Number of requests per URL substring match.
     nonisolated(unsafe) static var requestCounts: [String: Int] = [:]
+    /// Every request URL in the order it was sent.
+    nonisolated(unsafe) static var requestLog: [URL] = []
 
     static func reset(responses: [String: (statusCode: Int, body: Data)]) {
         self.responses = responses
@@ -37,6 +39,7 @@ private final class StubURLProtocol: URLProtocol, @unchecked Sendable {
         capturedURLs = [:]
         capturedHeaders = [:]
         requestCounts = [:]
+        requestLog = []
     }
 
     override class func canInit(with request: URLRequest) -> Bool { true }
@@ -44,6 +47,7 @@ private final class StubURLProtocol: URLProtocol, @unchecked Sendable {
 
     override func startLoading() {
         let url = request.url?.absoluteString ?? ""
+        if let requestURL = request.url { Self.requestLog.append(requestURL) }
         for key in Self.responses.keys where url.contains(key) {
             if let body = request.httpBodyOrAccumulated() {
                 Self.capturedBodies[key] = body
@@ -266,6 +270,72 @@ struct AuthenticatedTrackingURLsTests {
         #expect(!tracker.hasTrackingSession)
         #expect(StubURLProtocol.requestCounts["api/stats/"] == nil)
         #expect(StubURLProtocol.requestCounts[Self.wwwPlayer] == 1)
+    }
+
+    /// Stats pings in send order, as (path suffix, query items).
+    private static func statsPings() -> [(kind: String, items: [URLQueryItem])] {
+        StubURLProtocol.requestLog.compactMap { url in
+            guard url.path.hasPrefix("/api/stats/") else { return nil }
+            let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+            return (url.lastPathComponent, items)
+        }
+    }
+
+    private static let failingResolution: [String: (statusCode: Int, body: Data)] = [
+        stsPage: (200, Data("\"STS\":12345".utf8)),
+        wwwPlayer: (200, playerResponse(trackingQuery: nil)),
+        googleapisPlayer: (200, playerResponse(trackingQuery: nil)),
+        "api/stats/": (200, Data()),
+    ]
+
+    private static let succeedingResolution: [String: (statusCode: Int, body: Data)] = [
+        stsPage: (200, Data("\"STS\":12345".utf8)),
+        wwwPlayer: (200, playerResponse(trackingQuery: "ei=EI_LATE&vm=V&of=O")),
+        "api/stats/": (200, Data()),
+    ]
+
+    @MainActor
+    @Test("after a failed resolution, the recovered session opens the record before reporting watchtime")
+    func trackerRecoversWithPlaybackBeforeWatchtime() async {
+        StubURLProtocol.reset(responses: Self.failingResolution)
+        let tracker = WatchtimeTracker(api: makeAPI())
+        let videoId = "recover-\(UUID().uuidString)"
+        _ = tracker.transition(to: videoId, cpn: "CPN-R", flushPosition: 0, flushDuration: 0)
+        await tracker.checkpoint(position: 10, duration: 1000)
+        #expect(!tracker.hasTrackingSession)
+
+        // A later resolution succeeds (setTrackingURLs(nil) clears the back-off, as a token
+        // refresh does; the 5-minute retry takes the same path).
+        StubURLProtocol.reset(responses: Self.succeedingResolution)
+        tracker.setTrackingURLs(nil)
+        await tracker.checkpoint(position: 40, duration: 1000)
+
+        let pings = Self.statsPings()
+        #expect(pings.map(\.kind) == ["playback", "watchtime"], "YouTube ignores watchtime without a playback ping")
+        let watchtime = pings.last?.items ?? []
+        #expect(watchtime.first { $0.name == "ei" }?.value == "EI_LATE")
+        #expect(watchtime.first { $0.name == "st" }?.value == "0.000", "The failed checkpoint must not consume the segment")
+        await VideoStateStore.shared.clear(videoId: videoId)
+    }
+
+    @MainActor
+    @Test("a final checkpoint without tracking URLs leaves final=1 to the session flush")
+    func unresolvedFinalCheckpointIsReportedByFlush() async {
+        StubURLProtocol.reset(responses: Self.failingResolution)
+        let tracker = WatchtimeTracker(api: makeAPI())
+        let videoId = "final-\(UUID().uuidString)"
+        _ = tracker.transition(to: videoId, cpn: "CPN-F", flushPosition: 0, flushDuration: 0)
+        await tracker.checkpoint(position: 990, duration: 1000)
+        #expect(Self.statsPings().isEmpty)
+
+        StubURLProtocol.reset(responses: Self.succeedingResolution)
+        let flush = tracker.transition(to: "next-\(UUID().uuidString)", cpn: "CPN-N", flushPosition: 995, flushDuration: 1000)
+        await flush()
+
+        let pings = Self.statsPings()
+        #expect(pings.map(\.kind) == ["playback", "watchtime"])
+        #expect(pings.allSatisfy { ping in ping.items.contains { $0.name == "final" && $0.value == "1" } })
+        await VideoStateStore.shared.clear(videoId: videoId)
     }
 
     @Test("WebSafari playback fetch never sends Bearer (www.youtube.com rejects it; PR #129)")

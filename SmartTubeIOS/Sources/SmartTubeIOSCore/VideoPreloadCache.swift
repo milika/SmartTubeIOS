@@ -389,7 +389,6 @@ public actor VideoPreloadCache {
         touch(videoId)
     }
 
-
     public func store(nextInfo: NextInfo, for videoId: String) {
         cacheLog.debug(
             "[store] nextInfo \(videoId, privacy: .public) related=\(nextInfo.relatedVideos.count, privacy: .public) chapters=\(nextInfo.chapters.count, privacy: .public)"

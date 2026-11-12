@@ -314,7 +314,8 @@ struct AuthenticatedTrackingURLsTests {
         #expect(pings.map(\.kind) == ["playback", "watchtime"], "YouTube ignores watchtime without a playback ping")
         let watchtime = pings.last?.items ?? []
         #expect(watchtime.first { $0.name == "ei" }?.value == "EI_LATE")
-        #expect(watchtime.first { $0.name == "st" }?.value == "0.000", "The failed checkpoint must not consume the segment")
+        #expect(
+            watchtime.first { $0.name == "st" }?.value == "0.000", "The failed checkpoint must not consume the segment")
         await VideoStateStore.shared.clear(videoId: videoId)
     }
 
@@ -329,7 +330,8 @@ struct AuthenticatedTrackingURLsTests {
         #expect(Self.statsPings().isEmpty)
 
         StubURLProtocol.reset(responses: Self.succeedingResolution)
-        let flush = tracker.transition(to: "next-\(UUID().uuidString)", cpn: "CPN-N", flushPosition: 995, flushDuration: 1000)
+        let flush = tracker.transition(
+            to: "next-\(UUID().uuidString)", cpn: "CPN-N", flushPosition: 995, flushDuration: 1000)
         await flush()
 
         let pings = Self.statsPings()

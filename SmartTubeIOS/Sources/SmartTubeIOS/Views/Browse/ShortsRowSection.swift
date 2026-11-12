@@ -172,26 +172,36 @@ struct ShortsRowSection: View {
 
 /// Stand-in for the horizontal Shorts row while its Shorts are still loading, so the
 /// grid below doesn't jump down when they arrive. Same card size and padding.
+///
+/// The cards are an overlay on a frame of the offered width: an HStack of fixed-size
+/// cards wider than the screen would otherwise make Home's whole stack (chips, grid)
+/// that wide, zooming and off-centring every video card until the Shorts arrived.
 struct ShortsRowPlaceholder: View {
     private let cardCount = 9
+    private let cardHeight = ShortsRowSection.cardWidth * 16 / 9
 
     var body: some View {
-        HStack(alignment: .top, spacing: videoGridRowSpacing) {
-            ForEach(0..<cardCount, id: \.self) { _ in
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(.secondary.opacity(0.15))
-                    .frame(width: ShortsRowSection.cardWidth, height: ShortsRowSection.cardWidth * 16 / 9)
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: cardHeight)
+            .overlay(alignment: .topLeading) {
+                HStack(alignment: .top, spacing: videoGridRowSpacing) {
+                    ForEach(0..<cardCount, id: \.self) { _ in
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.secondary.opacity(0.15))
+                            .frame(width: ShortsRowSection.cardWidth, height: cardHeight)
+                    }
+                }
+                .padding(.horizontal)
+                .fixedSize()
             }
-        }
-        .padding(.horizontal)
-        #if os(tvOS)
-        .padding(.vertical, 4)
-        #else
-        .padding(.top, 4)
-        .padding(.bottom, 12)
-        #endif
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .clipped()
-        .accessibilityHidden(true)
+            .clipped()
+            #if os(tvOS)
+            .padding(.vertical, 4)
+            #else
+            .padding(.top, 4)
+            .padding(.bottom, 12)
+            #endif
+            .accessibilityHidden(true)
     }
 }

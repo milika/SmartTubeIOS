@@ -36,18 +36,7 @@ extension ShortsEmbedPlayerViewModel {
         )
         Task { await flush() }
         shortsLog.notice("[watchtime] session transitioned \(outgoingVideoId) → \(newVideoId)")
-
-        // Resolve cached account-bound tracking URLs for the new video — mirrors
-        // TOSPlayerViewModel+WatchHistory.swift's beginWatchtimeTracking() cache
-        // consume. A cache miss simply leaves trackingURLs nil (anonymous reporting),
-        // which is still functionally correct.
-        Task {
-            let cached = await VideoPreloadCache.shared.consume(videoId: newVideoId)
-            let urls = cached.trackingURLs ?? nil
-            self.tracker.setTrackingURLs(urls)
-            shortsLog.notice(
-                "[watchtime] trackingURLs resolved for \(newVideoId): \(urls != nil ? "account-bound" : "none")")
-        }
+        // The tracker resolves the account-bound tracking URLs on the first checkpoint.
     }
 
     /// Checkpoints the last-displayed Short's watch position/duration when the Shorts

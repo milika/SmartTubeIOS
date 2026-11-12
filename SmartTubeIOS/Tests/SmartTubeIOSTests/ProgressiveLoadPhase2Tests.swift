@@ -7,7 +7,7 @@ import Testing
 //
 // Verifies the data contracts that Phase 2 of loadAsync depends on:
 //   1. CachedVideoData fields used by Phase 2 default to `nil` (uncached).
-//   2. All Phase 2 fields (nextInfo, endCards, sponsorSegments, trackingURLs)
+//   2. All Phase 2 fields (nextInfo, endCards, sponsorSegments)
 //      are independently cacheable and independently nil-able.
 //   3. `phase2Task` is a separate concern from `loadTask` — both can be cancelled
 //      independently (structural contract validated at the model layer).
@@ -33,13 +33,6 @@ struct ProgressiveLoadPhase2Tests {
     func cachedVideoDataSponsorDefault() async {
         let cached = await VideoPreloadCache.shared.consume(videoId: "phase2-test-\(Int.random(in: 0..<Int.max))")
         #expect(cached.sponsorSegments == nil)
-    }
-
-    @Test("CachedVideoData trackingURLs defaults to nil (double-optional)")
-    func cachedVideoDataTrackingDefault() async {
-        let cached = await VideoPreloadCache.shared.consume(videoId: "phase2-test-\(Int.random(in: 0..<Int.max))")
-        // trackingURLs is PlaybackTrackingURLs?? — outer nil means not yet prefetched
-        #expect(cached.trackingURLs == nil)
     }
 
     @Test("CachedVideoData playerInfo defaults to nil")

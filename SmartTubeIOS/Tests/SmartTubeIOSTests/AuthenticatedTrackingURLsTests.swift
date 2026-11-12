@@ -5,39 +5,17 @@ import Testing
 
 // MARK: - AuthenticatedTrackingURLsTests
 //
-// #51/#78 (and comment #4917617951) watch-history regression series.
+// #51/#78 watch-history series. YouTube records a watch only when the stats pings carry
+// the `ei`/`vm`/`of` that an *authenticated* player response minted. Earlier attempts
+// asked the TV client on googleapis.com (no `playbackTracking`), then the WEB client on
+// www.youtube.com (HTTP 400: it rejects the TV Bearer token), then fell back to the
+// unauthenticated iOS response's URLs, which are bound to an anonymous visitor: their
+// pings get HTTP 200 and are never recorded.
 //
-// Three prior fixes all failed to credit the view to the user's history:
-//   1. Auth propagation (commit 20a2b9f) — pings now carry the Bearer token.
-//   2. Duration fix (commit f34477b) — checkpoint no longer skipped with dur=0.
-//   3. Body shape (commit 8a28f97) — buildTrackingURLsBody mirrored
-//      fetchPlayerInfoAuthenticated. Author flagged this fix as unverified live.
-//
-// Live retest by user Aiddog10 (GitHub comment 4917617951, 2026-07-08): still
-// `usedFallback=true` and `no tracking data in TV player response` for every
-// video. The body-shape hypothesis was a red herring.
-//
-// The actual root causes are at the transport layer, not the body layer:
-//
-// A. `fetchAuthenticatedTrackingURLs` was using `postTV` (googleapis.com TV
-//    client). The googleapis.com InnerTube surface is a restricted API that
-//    exposes streamingData/playabilityStatus/videoDetails but does NOT include
-//    `playbackTracking` in the response. Switching to a www.youtube.com
-//    endpoint (postWebSafari) — which is what the IFrame player and
-//    youtube.com use — reliably returns playbackTracking.
-//
-// B. The stats pings reused the server-supplied `baseUrl`, which frequently
-//    points at `s.youtube.com`. Android rebuilds every ping against
-//    `https://www.youtube.com/api/stats/…` — that prefix is exactly what its
-//    OkHttp interceptor matches when attaching the Bearer token and
-//    X-Goog-Visitor-Id, so the rebuild is what makes a ping attributable at all.
-//    Pings without `ei`/`vm`/`of` are now skipped instead of fired blindly.
-//
-// The auth context is already in place: AuthService.fetchYouTubeWebCookies()
-// (called from AuthService+DeviceFlow.swift:71 after every sign-in) obtains
-// the YouTube.com SAPISID cookie and stores it on the InnerTubeAPI actor
-// via setSAPISID(). postWebSafari uses SAPISIDHASH auth when SAPISID is
-// present, Bearer+AuthUser otherwise.
+// Android (MediaServiceCore `FormatInfoWrapper.syncWithAuthInfoIfNeeded` →
+// `VideoInfoService.getAuthVideoInfo`) asks the TVHTML5 client on www.youtube.com with
+// the Bearer token and the session's `cpn`, and pings with the same Bearer/TV identity.
+// These tests pin that request shape and the tracker's lazy resolution.
 
 private final class StubURLProtocol: URLProtocol, @unchecked Sendable {
     nonisolated(unsafe) static var responses: [String: (statusCode: Int, body: Data)] = [:]
@@ -50,6 +28,16 @@ private final class StubURLProtocol: URLProtocol, @unchecked Sendable {
     nonisolated(unsafe) static var capturedURLs: [String: URL] = [:]
     /// Captured request headers keyed by URL substring match.
     nonisolated(unsafe) static var capturedHeaders: [String: [String: String]] = [:]
+    /// Number of requests per URL substring match.
+    nonisolated(unsafe) static var requestCounts: [String: Int] = [:]
+
+    static func reset(responses: [String: (statusCode: Int, body: Data)]) {
+        self.responses = responses
+        capturedBodies = [:]
+        capturedURLs = [:]
+        capturedHeaders = [:]
+        requestCounts = [:]
+    }
 
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
@@ -62,6 +50,7 @@ private final class StubURLProtocol: URLProtocol, @unchecked Sendable {
             }
             Self.capturedURLs[key] = request.url
             Self.capturedHeaders[key] = request.allHTTPHeaderFields ?? [:]
+            Self.requestCounts[key, default: 0] += 1
         }
         let match = Self.responses.filter { url.contains($0.key) }.max(by: { $0.key.count < $1.key.count })
         let (statusCode, body) = match.map { ($0.value.statusCode, $0.value.body) } ?? (200, Data("{}".utf8))
@@ -97,8 +86,12 @@ private extension URLRequest {
     }
 }
 
-@Suite("Authenticated tracking URLs — endpoint + auth (#291)", .serialized)
+@Suite("Authenticated tracking URLs — TV client on www.youtube.com (#51/#78)", .serialized)
 struct AuthenticatedTrackingURLsTests {
+
+    private static let wwwPlayer = "www.youtube.com/youtubei/v1/player"
+    private static let googleapisPlayer = "googleapis.com/youtubei/v1/player"
+    private static let stsPage = "youtube.com/"
 
     private func makeAPI(authToken: String? = "fake-token") -> InnerTubeAPI {
         let config = URLSessionConfiguration.ephemeral
@@ -107,142 +100,165 @@ struct AuthenticatedTrackingURLsTests {
         return InnerTubeAPI(authToken: authToken, session: session)
     }
 
-    // MARK: - Existing-shape tests (updated for new endpoint)
-
-    @Test("the actual /player request body includes playbackContext.contentPlaybackContext")
-    func requestBodyIncludesPlaybackContext() async {
-        // The "youtubei/v1/player" key is intentionally longer than "youtube.com/" (12 chars)
-        // so the stub dispatch picks the player response (not the STS homepage response) for
-        // the actual /player request.
-        StubURLProtocol.responses = [
-            "youtube.com/": (200, Data("\"STS\":12345".utf8)),
-            "youtubei/v1/player": (200, Data("{}".utf8)),
-        ]
-        StubURLProtocol.capturedBodies = [:]
-        let api = makeAPI()
-        _ = await api.fetchAuthenticatedTrackingURLs(videoId: "testvid123")
-
-        guard let playerBodyData = StubURLProtocol.capturedBodies["youtubei/v1/player"],
-            let body = try? JSONSerialization.jsonObject(with: playerBodyData) as? [String: Any]
-        else {
-            Issue.record("No request body captured for /player")
-            return
-        }
-        let playbackContext = body["playbackContext"] as? [String: Any]
-        let cpbc = playbackContext?["contentPlaybackContext"] as? [String: Any]
-        #expect(
-            cpbc != nil,
-            "Body must include playbackContext.contentPlaybackContext — its absence is why playbackTracking never came back from YouTube"
-        )
-        #expect(cpbc?["html5Preference"] as? String == "HTML5_PREF_WANTS")
-        #expect(body["videoId"] as? String == "testvid123")
-    }
-
-    @Test("fetchAuthenticatedTrackingURLs extracts URLs when playbackTracking is present")
-    func extractsTrackingURLsWhenPresent() async {
-        let playerResponse: [String: Any] = [
+    private static func playerResponse(trackingQuery: String?) -> Data {
+        var response: [String: Any] = [
             "videoDetails": ["videoId": "testvid123"],
             "playabilityStatus": ["status": "OK"],
             "streamingData": ["formats": [], "adaptiveFormats": []],
-            "playbackTracking": [
+        ]
+        if let trackingQuery {
+            response["playbackTracking"] = [
                 "videostatsPlaybackUrl": [
-                    "baseUrl": "https://www.youtube.com/api/stats/playback?ns=yt&c=TVHTML5&cver=7.0&ver=2"
+                    "baseUrl": "https://s.youtube.com/api/stats/playback?ns=yt&c=TVHTML5&\(trackingQuery)"
                 ],
                 "videostatsWatchtimeUrl": [
-                    "baseUrl": "https://www.youtube.com/api/stats/watchtime?ns=yt&c=TVHTML5&cver=7.0&ver=2"
+                    "baseUrl": "https://s.youtube.com/api/stats/watchtime?ns=yt&c=TVHTML5&\(trackingQuery)"
                 ],
-            ],
-        ]
-        let responseData = try! JSONSerialization.data(withJSONObject: playerResponse)
-        StubURLProtocol.responses = [
-            "youtube.com/": (200, Data("\"STS\":12345".utf8)),
-            "youtubei/v1/player": (200, responseData),
-        ]
-        let api = makeAPI()
-        let result = await api.fetchAuthenticatedTrackingURLs(videoId: "testvid123")
-
-        #expect(result != nil, "Must extract tracking URLs from a response that includes playbackTracking")
-        #expect(result?.playbackURL.absoluteString.contains("api/stats/playback") == true)
-        #expect(result?.watchtimeURL.absoluteString.contains("api/stats/watchtime") == true)
+            ]
+        }
+        return try! JSONSerialization.data(withJSONObject: response)
     }
 
-    @Test("fetchAuthenticatedTrackingURLs returns nil without an auth token or SAPISID")
-    func returnsNilWithoutAuth() async {
-        let api = makeAPI(authToken: nil)
-        let result = await api.fetchAuthenticatedTrackingURLs(videoId: "testvid123")
-        #expect(result == nil)
+    private static func json(_ data: Data?) -> [String: Any]? {
+        data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
     }
 
-    // MARK: - New tests for the actual fix (#291)
+    // MARK: - fetchHistoryTrackingURLs
 
-    @Test("fetchAuthenticatedTrackingURLs hits www.youtube.com, not googleapis.com")
-    func fetchesFromWwwYouTube() async {
-        // Red test for #291: the current implementation posts to youtubei.googleapis.com,
-        // which does not return playbackTracking. The fix switches to www.youtube.com
-        // (the same endpoint the IFrame player and youtube.com use), which does.
-        StubURLProtocol.responses = [
-            "youtube.com/": (200, Data("\"STS\":12345".utf8)),
-            "youtubei/v1/player": (200, Data("{}".utf8)),
-        ]
-        StubURLProtocol.capturedURLs = [:]
-        let api = makeAPI()
-        _ = await api.fetchAuthenticatedTrackingURLs(videoId: "testvid123")
+    @Test("history tracking request is the authenticated TVHTML5 /player on www.youtube.com")
+    func historyRequestMatchesAndroid() async {
+        StubURLProtocol.reset(responses: [
+            Self.stsPage: (200, Data("\"STS\":12345".utf8)),
+            Self.wwwPlayer: (200, Self.playerResponse(trackingQuery: "ei=E&vm=V&of=O")),
+        ])
+        _ = await makeAPI().fetchHistoryTrackingURLs(videoId: "testvid123", cpn: "CPN123")
 
-        guard let playerURL = StubURLProtocol.capturedURLs["youtubei/v1/player"] else {
-            Issue.record("No request URL captured for /player")
+        guard let url = StubURLProtocol.capturedURLs[Self.wwwPlayer],
+            let headers = StubURLProtocol.capturedHeaders[Self.wwwPlayer],
+            let body = Self.json(StubURLProtocol.capturedBodies[Self.wwwPlayer])
+        else {
+            Issue.record("No /player request captured on www.youtube.com")
             return
         }
-        #expect(
-            playerURL.host?.contains("www.youtube.com") == true,
-            "Tracking-URLs fetch must hit www.youtube.com (where playbackTracking is returned), not youtubei.googleapis.com. Captured: \(playerURL.absoluteString)"
-        )
+        let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        #expect(!query.contains { $0.name == "key" }, "Bearer requests carry no API key")
+        #expect(headers["Authorization"] == "Bearer fake-token")
+        #expect(headers["X-YouTube-Client-Name"] == InnerTubeClients.TV.nameID)
+        #expect(headers["User-Agent"] == InnerTubeClients.TV.userAgent)
+        #expect(headers["Referer"] == InnerTubeClients.TV.referer)
+        let client = (body["context"] as? [String: Any])?["client"] as? [String: Any]
+        #expect(client?["clientName"] as? String == InnerTubeClients.TV.name)
+        #expect(body["videoId"] as? String == "testvid123")
+        #expect(body["cpn"] as? String == "CPN123", "The pings reuse this cpn, so the request must carry it")
+        let cpbc = (body["playbackContext"] as? [String: Any])?["contentPlaybackContext"] as? [String: Any]
+        #expect(cpbc?["html5Preference"] as? String == "HTML5_PREF_WANTS")
+        #expect(StubURLProtocol.requestCounts[Self.googleapisPlayer] == nil, "No fallback when www answers")
     }
 
-    @Test("fetchAuthenticatedTrackingURLs uses SAPISIDHASH auth when SAPISID is present")
-    func usesSAPISIDHASHWhenSAPISIDPresent() async {
-        // Red test for #291: the current implementation posts to googleapis.com with
-        // Bearer auth; www.youtube.com rejects Bearer on the web client and requires
-        // either SAPISIDHASH (when the YouTube web session cookie is available — which
-        // fetchYouTubeWebCookies obtains after every sign-in) or Bearer+AuthUser as a
-        // fallback. The web endpoint reliably returns playbackTracking in both auth
-        // modes; SAPISIDHASH is the canonical "legitimate web session" mode.
-        StubURLProtocol.responses = [
-            "youtube.com/": (200, Data("\"STS\":12345".utf8)),
-            "youtubei/v1/player": (200, Data("{}".utf8)),
-        ]
-        StubURLProtocol.capturedHeaders = [:]
+    @Test("returns the account-bound URLs when the response carries ei/vm/of")
+    func extractsAccountBoundURLs() async {
+        StubURLProtocol.reset(responses: [
+            Self.stsPage: (200, Data("\"STS\":12345".utf8)),
+            Self.wwwPlayer: (200, Self.playerResponse(trackingQuery: "ei=E&vm=V&of=O")),
+        ])
+        let urls = await makeAPI().fetchHistoryTrackingURLs(videoId: "testvid123", cpn: "CPN123")
+        #expect(InnerTubeAPI.trackingSession(from: urls)?.eventId == "E")
+    }
+
+    @Test("falls back to the googleapis.com TV host when www.youtube.com has no tracking data")
+    func fallsBackToGoogleapisHost() async {
+        StubURLProtocol.reset(responses: [
+            Self.stsPage: (200, Data("\"STS\":12345".utf8)),
+            Self.wwwPlayer: (400, Data("{}".utf8)),
+            Self.googleapisPlayer: (200, Self.playerResponse(trackingQuery: "ei=G&vm=V&of=O")),
+        ])
+        let urls = await makeAPI().fetchHistoryTrackingURLs(videoId: "testvid123", cpn: "CPN123")
+        #expect(InnerTubeAPI.trackingSession(from: urls)?.eventId == "G")
+        #expect(StubURLProtocol.capturedHeaders[Self.googleapisPlayer]?["Authorization"] == "Bearer fake-token")
+    }
+
+    @Test("URLs without ei/vm/of are rejected — their pings would never be recorded")
+    func rejectsURLsWithoutSessionParams() async {
+        StubURLProtocol.reset(responses: [
+            Self.stsPage: (200, Data("\"STS\":12345".utf8)),
+            Self.wwwPlayer: (200, Self.playerResponse(trackingQuery: "vm=V&of=O")),
+            Self.googleapisPlayer: (200, Self.playerResponse(trackingQuery: nil)),
+        ])
+        let urls = await makeAPI().fetchHistoryTrackingURLs(videoId: "testvid123", cpn: "CPN123")
+        #expect(urls == nil)
+    }
+
+    @Test("signed out: no request, no URLs")
+    func returnsNilWithoutAuth() async {
+        StubURLProtocol.reset(responses: [Self.wwwPlayer: (200, Self.playerResponse(trackingQuery: "ei=E&vm=V&of=O"))])
+        let urls = await makeAPI(authToken: nil).fetchHistoryTrackingURLs(videoId: "testvid123", cpn: "CPN123")
+        #expect(urls == nil)
+        #expect(StubURLProtocol.requestCounts[Self.wwwPlayer] == nil)
+    }
+
+    // MARK: - Stats pings
+
+    @Test("stats pings use the Bearer token and TV identity, even when a SAPISID is set")
+    func statsPingsUseTVIdentity() async {
+        StubURLProtocol.reset(responses: ["api/stats/watchtime": (200, Data())])
         let api = makeAPI()
         await api.setSAPISID("test-sapisid-cookie-value")
-        _ = await api.fetchAuthenticatedTrackingURLs(videoId: "testvid123")
+        let bound = URL(string: "https://s.youtube.com/api/stats/watchtime?ei=E&vm=V&of=O")!
+        await api.reportWatchtime(
+            videoId: "testvid123", cpn: "CPN123",
+            trackingURLs: PlaybackTrackingURLs(playbackURL: bound, watchtimeURL: bound),
+            lengthSeconds: 100, segmentStart: 0, segmentEnd: 10)
 
-        guard let playerHeaders = StubURLProtocol.capturedHeaders["youtubei/v1/player"] else {
-            Issue.record("No request headers captured for /player")
-            return
-        }
-        let auth = playerHeaders["Authorization"] ?? playerHeaders["authorization"]
-        #expect(
-            auth?.hasPrefix("SAPISIDHASH ") == true,
-            "With SAPISID set, request must use SAPISIDHASH Authorization (the only auth scheme www.youtube.com accepts for web-client nameIDs). Captured Authorization: \(auth ?? "<none>")"
-        )
-        // The X-Origin header is required for SAPISIDHASH auth (per postWebSafari's existing wiring).
-        #expect(
-            playerHeaders["X-Origin"] == "1",
-            "SAPISIDHASH auth requires X-Origin: 1 (set by postWebSafari). Captured headers: \(playerHeaders.keys.sorted())"
-        )
+        let headers = StubURLProtocol.capturedHeaders["api/stats/watchtime"]
+        #expect(headers?["Authorization"] == "Bearer fake-token")
+        #expect(headers?["User-Agent"] == InnerTubeClients.TV.userAgent)
+        #expect(headers?["Referer"] == InnerTubeClients.TV.referer)
     }
 
-    @Test("fetchAuthenticatedTrackingURLs falls back to Bearer when SAPISID is absent")
-    func trackingFetchUsesBearerWithoutSAPISID() async {
-        StubURLProtocol.responses = [
-            "youtube.com/": (200, Data("\"STS\":12345".utf8)),
-            "youtubei/v1/player": (200, Data("{}".utf8)),
-        ]
-        StubURLProtocol.capturedHeaders = [:]
-        let api = makeAPI()
-        _ = await api.fetchAuthenticatedTrackingURLs(videoId: "testvid123")
+    // MARK: - WatchtimeTracker lazy resolution
 
-        let auth = StubURLProtocol.capturedHeaders["youtubei/v1/player"]?["Authorization"]
-        #expect(auth == "Bearer fake-token")
+    @MainActor
+    @Test("the first checkpoint resolves account-bound URLs and pings with the session cpn")
+    func trackerResolvesOnFirstCheckpoint() async {
+        StubURLProtocol.reset(responses: [
+            Self.stsPage: (200, Data("\"STS\":12345".utf8)),
+            Self.wwwPlayer: (200, Self.playerResponse(trackingQuery: "ei=EI_AUTH&vm=V&of=O")),
+            "api/stats/playback": (200, Data()),
+            "api/stats/watchtime": (200, Data()),
+        ])
+        let tracker = WatchtimeTracker(api: makeAPI())
+        _ = tracker.transition(to: "resolvevid-\(UUID().uuidString)", cpn: "CPN-A", flushPosition: 0, flushDuration: 0)
+        await tracker.checkpoint(position: 10, duration: 1000)
+
+        #expect(tracker.hasTrackingSession)
+        #expect(Self.json(StubURLProtocol.capturedBodies[Self.wwwPlayer])?["cpn"] as? String == "CPN-A")
+        guard let ping = StubURLProtocol.capturedURLs["api/stats/watchtime"] else {
+            Issue.record("No watchtime ping sent")
+            return
+        }
+        let items = URLComponents(url: ping, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        #expect(items.first { $0.name == "ei" }?.value == "EI_AUTH")
+        #expect(items.first { $0.name == "cpn" }?.value == "CPN-A")
+        #expect(StubURLProtocol.requestCounts["api/stats/playback"] == 1)
+    }
+
+    @MainActor
+    @Test("without account-bound URLs nothing is pinged, and a failure is not retried per checkpoint")
+    func trackerSkipsPingsAndBacksOffWhenUnresolved() async {
+        StubURLProtocol.reset(responses: [
+            Self.stsPage: (200, Data("\"STS\":12345".utf8)),
+            Self.wwwPlayer: (200, Self.playerResponse(trackingQuery: nil)),
+            Self.googleapisPlayer: (200, Self.playerResponse(trackingQuery: nil)),
+            "api/stats/": (200, Data()),
+        ])
+        let tracker = WatchtimeTracker(api: makeAPI())
+        _ = tracker.transition(to: "unresolved-\(UUID().uuidString)", cpn: "CPN-B", flushPosition: 0, flushDuration: 0)
+        await tracker.checkpoint(position: 10, duration: 1000)
+        await tracker.checkpoint(position: 40, duration: 1000)
+
+        #expect(!tracker.hasTrackingSession)
+        #expect(StubURLProtocol.requestCounts["api/stats/"] == nil)
+        #expect(StubURLProtocol.requestCounts[Self.wwwPlayer] == 1)
     }
 
     @Test("WebSafari playback fetch never sends Bearer (www.youtube.com rejects it; PR #129)")

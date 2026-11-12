@@ -132,6 +132,8 @@ package enum InnerTubeClients {
         package static let version = "7.20260707.07.00"
         package static let userAgent =
             "Mozilla/5.0 (ChromiumStylePlatform) Cobalt/25.lts.30.1034943-gold (unlike Gecko), Unknown_TV_Unknown_0/Unknown (Unknown, Unknown)"
+        /// Android `CLIENTS.TV.REFERER`, sent with TV requests to www.youtube.com.
+        package static let referer = "https://www.youtube.com/tv"
     }
 
     /// Maximum number of videos fetched per shelf/related-videos request.

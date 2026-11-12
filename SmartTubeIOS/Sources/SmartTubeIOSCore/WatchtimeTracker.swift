@@ -16,13 +16,15 @@ private let trackerLog = Logger(subsystem: appSubsystem, category: "WatchtimeTra
 //     → called from load() to flush the previous session and begin a new one.
 //       Returns a @Sendable async closure; fire it in a detached Task.
 //
-//   setTrackingURLs(_:)
-//     → called once authenticated tracking URLs resolve in loadAsync.
-//
 //   checkpoint(position:duration:)
 //     → called periodically while playing and from suspend(), stop().
-//       The segment start is recorded lazily on the first call,
-//       which also fires reportPlaybackStarted.
+//       The first call resolves the account-bound tracking URLs (an authenticated
+//       TV /player request carrying this session's cpn — Android's
+//       syncWithAuthInfoIfNeeded), records the segment start and fires
+//       reportPlaybackStarted.
+//
+//   setTrackingURLs(nil)
+//     → called on sign-in/out and token refresh so the next checkpoint resolves again.
 
 @MainActor
 public final class WatchtimeTracker {
@@ -35,6 +37,9 @@ public final class WatchtimeTracker {
     private static let recordRenewInterval: TimeInterval = 30 * 60
     /// Minimum spacing between periodic checkpoints driven by the players' time observers.
     public static let checkpointInterval: TimeInterval = 30
+    /// How long to wait after a failed tracking-URL resolution before trying again, so a
+    /// failure doesn't re-fire the authenticated player requests on every checkpoint.
+    static let trackingResolveRetryInterval: TimeInterval = 300
 
     // MARK: - Private state
 
@@ -52,6 +57,10 @@ public final class WatchtimeTracker {
     private var didReportFinal = false
     /// Throttle state for `checkpointIfDue`.
     private var lastCheckpointAt: Date?
+    /// Single in-flight tracking-URL resolution; overlapping checkpoints await it.
+    private var resolveTask: Task<Void, Never>?
+    /// Last time resolution came back empty; gates retries (`trackingResolveRetryInterval`).
+    private var lastResolveFailureAt: Date?
 
     // MARK: - Init
 
@@ -94,6 +103,8 @@ public final class WatchtimeTracker {
         recordOpenedAt = nil
         didReportFinal = false
         lastCheckpointAt = nil
+        resolveTask = nil
+        lastResolveFailureAt = nil
 
         trackerLog.notice(
             "transition: \(oldVideoId, privacy: .public) → \(newVideoId, privacy: .public) cpn=\(newCPN.prefix(8), privacy: .public)…"
@@ -107,6 +118,11 @@ public final class WatchtimeTracker {
                 "transition flush: videoId=\(oldVideoId, privacy: .public) st=\(Int(segStart))s et=\(Int(flushPosition))s final=\(isFinal, privacy: .public)"
             )
             await VideoStateStore.shared.save(videoId: oldVideoId, position: flushPosition, duration: flushDuration)
+            // A session closed before its first checkpoint never resolved its URLs.
+            var oldURLs = oldURLs
+            if InnerTubeAPI.trackingSession(from: oldURLs) == nil {
+                oldURLs = await api.fetchHistoryTrackingURLs(videoId: oldVideoId, cpn: oldCPN)
+            }
             // The playback ping must precede the watchtime ping — YouTube ignores
             // standalone watchtime pings.
             await api.reportPlaybackStarted(
@@ -123,10 +139,12 @@ public final class WatchtimeTracker {
 
     // MARK: - Tracking URLs
 
-    /// Store authenticated tracking URLs once they resolve in `loadAsync`.
-    /// Safe to call any time between `transition` and the first `checkpoint`.
+    /// Replaces the session's tracking URLs. Pass nil when the account changes (sign-in,
+    /// sign-out, token refresh) so the next checkpoint resolves them again for that account.
     public func setTrackingURLs(_ urls: PlaybackTrackingURLs?) {
         trackingURLs = urls
+        resolveTask = nil
+        lastResolveFailureAt = nil
         let hasSession = InnerTubeAPI.trackingSession(from: urls) != nil
         trackerLog.notice(
             "setTrackingURLs: \(urls != nil ? "received" : "nil", privacy: .public) accountBound=\(hasSession, privacy: .public)"
@@ -136,6 +154,36 @@ public final class WatchtimeTracker {
     /// Indicates whether the tracker has the session parameters required by YouTube.
     public var hasTrackingSession: Bool {
         InnerTubeAPI.trackingSession(from: trackingURLs) != nil
+    }
+
+    /// Resolves the account-bound tracking URLs for the current session if they are missing.
+    /// Overlapping callers share one request; a failure backs off for
+    /// `trackingResolveRetryInterval`. A result that arrives after the session changed is dropped.
+    private func ensureTrackingSession() async {
+        guard !videoId.isEmpty, !hasTrackingSession else { return }
+        if let resolveTask {
+            await resolveTask.value
+            return
+        }
+        if let failedAt = lastResolveFailureAt,
+            Date().timeIntervalSince(failedAt) < Self.trackingResolveRetryInterval
+        {
+            return
+        }
+        let vid = videoId
+        let sessionCPN = cpn
+        let api = self.api
+        let task = Task { @MainActor in
+            let urls = await api.fetchHistoryTrackingURLs(videoId: vid, cpn: sessionCPN)
+            guard self.videoId == vid, self.cpn == sessionCPN else { return }
+            self.trackingURLs = urls
+            self.lastResolveFailureAt = urls == nil ? Date() : nil
+            trackerLog.notice(
+                "resolved tracking URLs for \(vid, privacy: .public): accountBound=\(urls != nil, privacy: .public)")
+        }
+        resolveTask = task
+        await task.value
+        if resolveTask == task { resolveTask = nil }
     }
 
     // MARK: - Checkpoint (periodic / suspend / stop)
@@ -165,12 +213,14 @@ public final class WatchtimeTracker {
 
     /// Records the current watch position and reports the watched interval.
     ///
-    /// The first call is the lazy playback-start: it fires `reportPlaybackStarted`
-    /// and records the segment start. Subsequent calls save the position and
+    /// The first call is the lazy playback-start: it resolves the account-bound tracking
+    /// URLs, fires `reportPlaybackStarted` and records the segment start. Subsequent calls save the position and
     /// report the interval [segmentStart, position]. Once less than 5% of the
     /// video remains, the final=1 pings mark it fully watched.
     public func checkpoint(position: TimeInterval, duration: TimeInterval) async {
-        guard !videoId.isEmpty else {
+        let sessionVideoId = videoId
+        await ensureTrackingSession()
+        guard !videoId.isEmpty, videoId == sessionVideoId else {
             return
         }
         guard duration > 0 else {

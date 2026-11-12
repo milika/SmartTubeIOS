@@ -375,7 +375,7 @@ public final class PlaybackViewModel {
     var seekDebounceTask: Task<Void, Never>?
     /// Tracks the in-flight loadAsync so it can be cancelled if load() is called again.
     var loadTask: Task<Void, Never>?
-    /// Phase 2 background work: nextInfo, endCards, trackingURLs, neighbour prefetch.
+    /// Phase 2 background work: nextInfo, endCards, neighbour prefetch.
     /// Cancelled at the start of every new load() and in stop().
     var phase2Task: Task<Void, Never>?
     /// Background prefetch task: either fetches AndroidVR playerInfo (muxed fallback)

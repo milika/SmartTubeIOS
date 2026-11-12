@@ -19,11 +19,6 @@ struct VideoPreloadCacheTTLTests {
         #expect(VideoPreloadCache.playerInfoTTL == 5.5 * 3600)
     }
 
-    @Test("trackingTTL is 1 hour")
-    func trackingTTLIs1h() {
-        #expect(VideoPreloadCache.trackingTTL == 3600)
-    }
-
     @Test("nextInfoTTL is 20 minutes")
     func nextInfoTTLIs20min() {
         #expect(VideoPreloadCache.nextInfoTTL == 20 * 60)

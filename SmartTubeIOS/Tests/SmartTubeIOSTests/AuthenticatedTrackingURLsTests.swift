@@ -120,7 +120,7 @@ struct AuthenticatedTrackingURLsTests {
                 ],
             ]
         }
-        return try! JSONSerialization.data(withJSONObject: response)
+        return (try? JSONSerialization.data(withJSONObject: response)) ?? Data()
     }
 
     private static func json(_ data: Data?) -> [String: Any]? {

@@ -8,10 +8,10 @@ import UIKit
 
 #if os(iOS)
 /// A transparent UIKit view whose pan/tap gesture recognizers are mirrored onto
-/// the window, so they fire *alongside* — not instead of — touches delivered to
-/// the WKWebView below. This lets YouTube's native `controls=1` chrome (play/pause,
-/// volume, CC, settings gear, etc.) remain tappable while swipe up/down still
-/// drives Shorts navigation and a tap still toggles `shortsOverlay`.
+/// the window, so they see touches that hit-test to any view below — including
+/// UIKit-hosted content SwiftUI gestures never receive. The Shorts embeds themselves
+/// take no touches (`ShortsTOSWebView`): YouTube's player would turn a tap into its
+/// own play/pause toggle on top of ours.
 ///
 /// - `hitTest` always returns `nil`, so this view itself never intercepts a
 ///   touch — the WKWebView underneath becomes the hit-tested view.

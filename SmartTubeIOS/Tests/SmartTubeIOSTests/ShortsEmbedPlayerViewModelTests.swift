@@ -54,7 +54,7 @@ struct ShortsEmbedPlayerViewModelTests {
         var settings = AppSettings()
         settings.sponsorBlockExcludedChannels = ["UCX": "Excluded"]
         vm.updateSettings(settings)
-        vm.loadShort(video: Video(id: "a", title: "", channelTitle: "", isShort: true))
+        vm.loadShort(video: Video(id: "a", title: "", channelTitle: "", isShort: true), live: true)
         vm.sponsorSegments = [SponsorSegment(start: 5, end: 10, category: .sponsor)]
 
         vm.updateChannelId("UCX", for: "other")  // stale: metadata for another Short
@@ -74,7 +74,7 @@ struct ShortsEmbedPlayerViewModelTests {
         vm.duration = 60
         vm.isReady = true
 
-        vm.loadShort(video: Video(id: "abc123", title: "Test Short", channelTitle: "Channel"))
+        vm.loadShort(video: Video(id: "abc123", title: "Test Short", channelTitle: "Channel"), live: true)
 
         #expect(vm.videoId == "abc123")
         #expect(vm.playerState == .unstarted)
@@ -166,7 +166,7 @@ struct ShortsEmbedPlayerViewModelTests {
     func currentVideoIdTracksVideoId() {
         let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
         #expect(vm.currentVideoId == "")
-        vm.loadShort(video: Video(id: "abc123", title: "Test Short", channelTitle: "Channel"))
+        vm.loadShort(video: Video(id: "abc123", title: "Test Short", channelTitle: "Channel"), live: true)
         #expect(vm.currentVideoId == "abc123")
         #expect(vm.currentVideoId == vm.videoId)
     }
@@ -269,53 +269,162 @@ struct ShortsEmbedPlayerViewModelTests {
         #expect(TOSPlayerError.iframeError(999).isFatal == false)
     }
 
-    // MARK: - Standby pre-warm (#271)
+    // MARK: - Live / held (ShortsPlayerPool)
 
-    @Test("isStandby is false on fresh VM")
-    func standbyFalseOnInit() {
-        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
-        #expect(vm.isStandby == false)
+    private func short(_ id: String) -> Video {
+        Video(id: id, title: "Test", channelTitle: "Channel", isShort: true)
     }
 
-    @Test("loadShortAsStandby sets isStandby = true before awaiting isReady")
-    func standbyFlagSetByLoadShortAsStandby() async {
+    @Test("A fresh VM is not live")
+    func freshVMIsNotLive() {
         let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
-        #expect(vm.isStandby == false)
-        let video = Video(id: "dQw4w9WgXcQ", title: "Test", channelTitle: "Channel")
-        // loadShortAsStandby sets isStandby = true synchronously, then awaits isReady.
-        // Cancel the task quickly — we only need to verify the flag is set.
-        let task = Task { await vm.loadShortAsStandby(video: video) }
-        try? await Task.sleep(for: .milliseconds(20))
-        task.cancel()
-        await task.value
-        #expect(vm.isStandby == true)
+        #expect(vm.isLive == false)
+        #expect(vm.hasFrame == false)
+        #expect(vm.video == nil)
     }
 
-    @Test("activate clears isStandby and does not crash on fresh VM")
-    func activateClearsStandbyFlag() async {
+    @Test("loadShort(live:) sets the mode and resets hasFrame")
+    func loadShortSetsMode() {
         let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
-        let video = Video(id: "dQw4w9WgXcQ", title: "Test", channelTitle: "Channel")
-        // Put the VM into standby state by starting (then cancelling) loadShortAsStandby.
-        let task = Task { await vm.loadShortAsStandby(video: video) }
-        try? await Task.sleep(for: .milliseconds(20))
-        task.cancel()
-        await task.value
-        #expect(vm.isStandby == true)
-        vm.activate()
-        #expect(vm.isStandby == false)
+        vm.loadShort(video: short("a"), live: false)
+        #expect(vm.isLive == false)
+        #expect(vm.logTag.hasSuffix("/held"))
+        vm.hasFrame = true
+
+        vm.loadShort(video: short("b"), live: true)
+        #expect(vm.isLive == true)
+        #expect(vm.hasFrame == false)
+        #expect(vm.video?.id == "b")
     }
 
-    @Test("activate resets hasReceivedFirstTick so tickstarted can refire on re-promotion")
-    func activateResetsHasReceivedFirstTick() {
-        // Backward-swap (#277) reuses an ALREADY-ticked VM instance (previousVM),
-        // unlike the forward standby path which always promotes a fresh VM (where
-        // this flag is already false). Without resetting it here, the
-        // "tickstarted" Darwin notification would never refire after a backward
-        // swipe, since the gate in the WebBridge's "tick" handler is one-shot.
+    @Test("activate makes a held Short live without reloading it")
+    func activateKeepsPreloadedShort() {
         let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: false)
+        vm.isReady = true
+        vm.hasFrame = true
+        vm.playerState = .paused
         vm.hasReceivedFirstTick = true
+
         vm.activate()
+
+        #expect(vm.isLive == true)
+        #expect(vm.isReady == true)
+        #expect(vm.hasFrame == true)
         #expect(vm.hasReceivedFirstTick == false)
+        // The held embed reported "paused"; the paused icon must not flash.
+        #expect(vm.playerState == .buffering)
+    }
+
+    @Test("activate is a no-op for the live Short")
+    func activateNoOpWhenLive() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: true)
+        vm.hasReceivedFirstTick = true
+        vm.playerState = .paused
+
+        vm.activate()
+
+        #expect(vm.hasReceivedFirstTick == true)
+        #expect(vm.playerState == .paused)
+    }
+
+    @Test("activate reloads a held Short whose preload timed out")
+    func activateRetriesTimedOutPreload() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: false)
+        vm.playerError = .webViewLoadFailed
+
+        vm.activate()
+
+        #expect(vm.isLive == true)
+        #expect(vm.playerError == nil)
+        #expect(vm.videoId == "a")
+    }
+
+    @Test("activate keeps a held Short's fatal embed error so the player skips it")
+    func activateKeepsEmbedError() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: false)
+        vm.playerError = .embeddingDisabled
+
+        vm.activate()
+
+        #expect(vm.isLive == true)
+        #expect(vm.playerError == .embeddingDisabled)
+    }
+
+    @Test("deactivate puts the live Short back on hold")
+    func deactivateReturnsToHeld() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: true)
+        vm.videoEnded = true
+        vm.showControls()
+
+        vm.deactivate()
+
+        #expect(vm.isLive == false)
+        #expect(vm.videoEnded == false)
+        #expect(vm.controlsVisible == false)
+        #expect(vm.videoId == "a")
     }
 }
+
+#if os(iOS)
+@MainActor
+@Suite("ShortsPlayerPool")
+struct ShortsPlayerPoolTests {
+
+    private func short(_ id: String) -> Video {
+        Video(id: id, title: "Test", channelTitle: "Channel", isShort: true)
+    }
+
+    @Test("show plays the live Short and preloads its neighbours held")
+    func showPreloadsNeighbours() {
+        let pool = ShortsPlayerPool(api: InnerTubeAPI())
+        pool.show(live: short("a"), neighbours: [short("b")], settings: AppSettings())
+
+        #expect(pool.live.video?.id == "a")
+        #expect(pool.live.isLive)
+        let next = pool.player(holding: "b")
+        #expect(next != nil)
+        #expect(next?.isLive == false)
+        #expect(pool.players.filter(\.isLive).count == 1)
+    }
+
+    @Test("Swiping onto a preloaded Short reuses its player instead of reloading")
+    func swipeReusesPreloadedPlayer() {
+        let pool = ShortsPlayerPool(api: InnerTubeAPI())
+        pool.show(live: short("a"), neighbours: [short("b")], settings: AppSettings())
+        let previous = pool.live
+        let next = pool.player(holding: "b")
+        next?.isReady = true
+        next?.hasFrame = true
+
+        pool.show(live: short("b"), neighbours: [short("c"), short("a")], settings: AppSettings())
+
+        #expect(pool.live === next)
+        #expect(pool.live.isLive)
+        #expect(pool.live.isReady)  // not reloaded
+        #expect(pool.live.hasFrame)
+        #expect(previous.isLive == false)
+        #expect(pool.player(holding: "a") === previous)
+        #expect(pool.player(holding: "c")?.isLive == false)
+        #expect(pool.players.filter(\.isLive).count == 1)
+    }
+
+    @Test("preload never changes the live Short")
+    func preloadLeavesLiveAlone() {
+        let pool = ShortsPlayerPool(api: InnerTubeAPI())
+        pool.show(live: short("a"), neighbours: [], settings: AppSettings())
+        let live = pool.live
+
+        pool.preload(neighbours: [short("b")], settings: AppSettings())
+
+        #expect(pool.live === live)
+        #expect(pool.live.isLive)
+        #expect(pool.player(holding: "b")?.isLive == false)
+    }
+}
+#endif
 #endif

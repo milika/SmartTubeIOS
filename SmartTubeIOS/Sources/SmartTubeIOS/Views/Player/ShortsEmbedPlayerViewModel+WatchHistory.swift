@@ -8,34 +8,25 @@ private let shortsLog = Logger(subsystem: "com.void.smarttube.app", category: "S
 // MARK: - Watch History / Mark-as-Watched
 //
 // Adapts TOSPlayerViewModel+WatchHistory.swift's WatchtimeTracker integration for a
-// view model that plays many Shorts in sequence (one persistent instance per Shorts
-// session, vs. one TOSPlayerViewModel instance per video). TOS calls
-// tracker.transition(...) ONCE, from "ready" — opening the session for its single
-// video with a no-op flush (no prior video in that instance's lifetime). Here,
-// transitionWatchHistory(to:) is called from EVERY loadShort(video:) (see Task 7,
-// Step 3): each swipe both flushes the OUTGOING Short's watch interval
-// ([0, currentTime], via tracker.transition's returned closure) and opens a fresh
-// session for the incoming Short. The very first call behaves like TOS's: the
-// tracker's internal videoId is empty, so the flush closure no-ops.
+// view model that plays many Shorts in sequence and also preloads Shorts nobody has
+// watched yet (`ShortsPlayerPool`'s held neighbours). A watch session opens when a
+// Short goes live (`beginWatchSession()`, from `loadShort(video:live:)` or
+// `activate()`) and is flushed with the watched interval [0, currentTime] when it
+// stops being live (`endWatchSession()`, from `deactivate()` or the next live load).
+// Preloading alone never reports anything.
 
 extension ShortsEmbedPlayerViewModel {
 
-    /// Flushes the outgoing Short's watch-progress report and opens a WatchtimeTracker
-    /// session for `newVideoId`. Must be called BEFORE `loadShort(video:)` resets
-    /// `currentTime`/`duration`/`videoId` to the new Short's (zeroed) values — see
-    /// Task 7, Step 3.
-    func transitionWatchHistory(to newVideoId: String) {
+    /// Opens a WatchtimeTracker session for the current Short. Any earlier session of
+    /// this VM was already flushed by `endWatchSession()`.
+    func beginWatchSession() {
         guard settings.historyState == .enabled else {
-            shortsLog.debug("[watchtime] history disabled — skipping tracker transition")
+            shortsLog.debug("[watchtime] history disabled — skipping tracker session")
             return
         }
-        let outgoingVideoId = videoId
-        let flush = tracker.transition(
-            to: newVideoId, cpn: InnerTubeAPI.generateCPN(),
-            flushPosition: currentTime, flushDuration: duration
-        )
-        Task { await flush() }
-        shortsLog.notice("[watchtime] session transitioned \(outgoingVideoId) → \(newVideoId)")
+        let newVideoId = videoId
+        tracker.transition(to: newVideoId, cpn: InnerTubeAPI.generateCPN(), flushPosition: 0, flushDuration: 0)
+        shortsLog.notice("[watchtime] session opened for \(newVideoId)")
 
         // Resolve cached account-bound tracking URLs for the new video — mirrors
         // TOSPlayerViewModel+WatchHistory.swift's beginWatchtimeTracking() cache
@@ -48,6 +39,18 @@ extension ShortsEmbedPlayerViewModel {
             shortsLog.notice(
                 "[watchtime] trackingURLs resolved for \(newVideoId): \(urls != nil ? "account-bound" : "none")")
         }
+    }
+
+    /// Flushes the live Short's watched interval and closes its session. Must run
+    /// before `currentTime`/`duration` are reset for another Short.
+    func endWatchSession() {
+        guard settings.historyState == .enabled else { return }
+        let flush = tracker.transition(
+            to: "", cpn: InnerTubeAPI.generateCPN(),
+            flushPosition: currentTime, flushDuration: duration
+        )
+        Task { await flush() }
+        shortsLog.notice("[watchtime] session closed for \(self.videoId) at \(Int(self.currentTime))s")
     }
 
     /// Checkpoints the last-displayed Short's watch position/duration when the Shorts

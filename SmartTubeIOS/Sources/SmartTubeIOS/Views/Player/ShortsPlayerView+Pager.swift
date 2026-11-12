@@ -10,13 +10,16 @@ import UIKit
 // Swiping drags the live Short and its neighbours together, like the official app:
 // the previous/next Shorts are attached directly above/below and follow the finger.
 //
-// There is only one WKWebView (the live page). Moving it between views leaves it
-// black (#279, see `goTo(_:)`), so the neighbours are *posters* — the Short's
-// portrait thumbnail plus a passive channel/title panel. A committed swipe slides the
-// old Short fully off screen first; only then is the web view pointed at the new
-// Short, so the new one starts playing once the old one is gone. The new page's
-// poster stays on top of the web view until the embed reports ready, then fades out,
-// so the hand-off from poster to video never flashes black.
+// On iOS every page is a real video: `ShortsPlayerPool` keeps the next and previous
+// Shorts loaded in their own web views, paused on their first frame, and each web
+// view keeps its place in the hierarchy (moving one leaves it black, #279) — paging
+// only changes offsets. A committed swipe slides the old Short off screen and the
+// new one, already on screen with its first frame, starts playing.
+//
+// A page whose video has no frame yet (still loading, or failed) is covered by a
+// *poster* — the Short's portrait thumbnail — which fades out once the frame is on
+// screen, so the hand-off never flashes black. Neighbour pages also get a passive
+// channel/title panel.
 
 /// One page of the pager: a Short and its position relative to the live page.
 struct ShortsPage: Identifiable {
@@ -70,29 +73,41 @@ extension ShortsPlayerView {
         #endif
     }
 
-    /// The live page's poster covers the web view until the embed is ready.
-    var isLivePageCovered: Bool {
+    /// A page's poster covers its web view until the video has a frame on screen.
+    func isCovered(_ page: ShortsPage) -> Bool {
         #if os(iOS)
-        !vm.isReady
+        !(pool.player(holding: page.video.id)?.hasFrame ?? false)
         #else
-        false
+        page.position != 0
         #endif
     }
 
+    #if os(iOS)
+    /// Where a pool slot's web view sits: on its page, or parked off screen when it
+    /// holds no Short of the current window.
+    func slotOffset(for player: ShortsEmbedPlayerViewModel, pageHeight: CGFloat) -> CGFloat {
+        guard let videoId = player.video?.id,
+            let page = pageWindow.first(where: { $0.video.id == videoId })
+        else { return pageHeight * 3 }
+        return CGFloat(page.position) * pageHeight + slideOffset
+    }
+    #endif
+
     // MARK: Layers
 
-    /// Thumbnails for the live page (as its loading cover) and its neighbours, laid
-    /// out in the video's coordinate space so they line up with the web view.
+    /// Thumbnails covering pages whose video has no frame yet, laid out in the
+    /// video's coordinate space so they line up with the web views.
     func pagePosters(size: CGSize, videoHeight: CGFloat) -> some View {
         ForEach(pageWindow) { page in
             let isLive = page.position == 0
+            let covered = isCovered(page)
             ShortsPosterView(video: page.video, width: size.width, videoHeight: videoHeight)
                 .frame(width: size.width, height: size.height)
                 .animation(ShortsPaging.coverFadeAnimation) { content in
-                    content.opacity(isLive && !isLivePageCovered ? 0 : 1)
+                    content.opacity(covered ? 1 : 0)
                 }
                 .overlay {
-                    if isLive && isLivePageCovered {
+                    if isLive && covered {
                         Color.clear.accessibilityIdentifier(AccessibilityID.Shorts.loadingCover)
                     }
                 }
@@ -184,6 +199,21 @@ extension ShortsPlayerView {
     }
 }
 
+// MARK: - Clipping
+
+/// Clips only below the bottom edge. In the Shorts tab the page ends above the tab
+/// bar, and nothing of the next page may show there; above and beside the page
+/// (status bar, shrink animation) nothing is cut.
+struct ShortsPageBottomClip: Shape {
+    func path(in rect: CGRect) -> Path {
+        let reach = max(rect.width, rect.height) * 4
+        return Path(
+            CGRect(
+                x: rect.minX - reach, y: rect.minY - reach,
+                width: rect.width + 2 * reach, height: rect.height + reach))
+    }
+}
+
 // MARK: - Poster views
 
 /// A Short's portrait thumbnail, framed like the live video.
@@ -195,13 +225,12 @@ struct ShortsPosterView: View {
     var body: some View {
         ZStack {
             Color.black
-            AsyncImage(url: video.thumbnailURL) { phase in
-                if let image = phase.image {
-                    image.resizable().scaledToFill()
-                } else {
-                    Color.black
-                }
-            }
+            ThumbnailFillView(
+                primaryURL: video.thumbnailURL,
+                fallbackURLs: video.portraitThumbnailFallbackURLs(excluding: video.thumbnailURL),
+                placeholder: .black,
+                showsProgress: false
+            )
             .frame(width: width, height: videoHeight)
             .clipped()
         }

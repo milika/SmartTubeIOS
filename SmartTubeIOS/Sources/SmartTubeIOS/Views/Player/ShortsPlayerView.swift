@@ -34,11 +34,8 @@ public struct ShortsPlayerView: View {
     let isSuspended: Bool
     @State var feed: ShortsFeedViewModel
     #if os(iOS)
-    @State var vm: ShortsEmbedPlayerViewModel
-    /// Pre-warmed VM for Short N+1 — unused since #279 (see goTo(_:)); kept for that revisit.
-    @State var standbyVM: ShortsEmbedPlayerViewModel? = nil
-    /// The retired Short N-1 — unused since #279 (see goTo(_:)); kept for that revisit.
-    @State var previousVM: ShortsEmbedPlayerViewModel? = nil
+    /// The live Short's player plus its preloaded neighbours (see ShortsPlayerPool).
+    @State var pool: ShortsPlayerPool
     #else
     @State var vm: PlaybackViewModel
     #endif
@@ -94,7 +91,7 @@ public struct ShortsPlayerView: View {
         self._feed = State(initialValue: feed)
         self._currentIndex = State(initialValue: feed.startIndex)
         #if os(iOS)
-        self._vm = State(initialValue: ShortsEmbedPlayerViewModel(api: api))
+        self._pool = State(initialValue: ShortsPlayerPool(api: api))
         self._captions = State(initialValue: ShortsCaptionsController(api: api))
         #else
         self._vm = State(initialValue: PlaybackViewModel(api: api))
@@ -102,6 +99,11 @@ public struct ShortsPlayerView: View {
     }
 
     var videos: [Video] { feed.videos }
+
+    #if os(iOS)
+    /// The player showing the current Short.
+    var vm: ShortsEmbedPlayerViewModel { pool.live }
+    #endif
 
     var currentVideo: Video? {
         videos.indices.contains(currentIndex) ? videos[currentIndex] : nil
@@ -142,30 +144,23 @@ public struct ShortsPlayerView: View {
                 let videoH = min(geo.size.height, geo.size.width * 16.0 / 9.0)
                 ZStack {
                     Color.clear.allowsHitTesting(false)
-                    ShortsTOSWebView(vm: vm)
-                        .frame(width: geo.size.width, height: videoH)
-                        .offset(y: slideOffset)
-                        .accessibilityHidden(true)
-                    // Unreachable since #279 (goTo(_:) never promotes these); kept off-screen
-                    // for the day the WKWebView-reparenting bug is revisited.
-                    if let standby = standbyVM {
-                        ShortsTOSWebView(vm: standby)
+                    // One web view per pool slot, each fixed in place for its whole life;
+                    // paging only moves them (see ShortsPlayerPool).
+                    ForEach(pool.players.indices, id: \.self) { slot in
+                        ShortsTOSWebView(vm: pool.players[slot])
                             .frame(width: geo.size.width, height: videoH)
-                            .offset(y: geo.size.height * 3)
+                            .offset(y: slotOffset(for: pool.players[slot], pageHeight: geo.size.height))
                             .allowsHitTesting(false)
                             .accessibilityHidden(true)
                     }
-                    if let previous = previousVM {
-                        ShortsTOSWebView(vm: previous)
-                            .frame(width: geo.size.width, height: videoH)
-                            .offset(y: geo.size.height * 3)
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
-                    }
-                    // Neighbour pages, and the live page's cover while its embed loads.
+                    // Posters over pages whose video has no frame on screen yet.
                     pagePosters(size: geo.size, videoHeight: videoH)
                     captionLayer(videoHeight: videoH)
                 }
+                // Neighbour pages sit just outside the page; in the Shorts tab the page
+                // ends above the tab bar, so without this the next Short's top edge
+                // shows under the tab bar.
+                .clipped()
                 .scaleEffect(isVideoShrunk ? shrunkScale(height: geo.size.height) : 1, anchor: .top)
                 .offset(y: isVideoShrunk ? shrunkTopInset : 0)
                 .animation(ShortsPaging.shrinkAnimation, value: isVideoShrunk)
@@ -262,6 +257,7 @@ public struct ShortsPlayerView: View {
         .overlay {
             if !isScreenCleared && !isVideoShrunk {
                 neighbourInfoPanels
+                    .clipShape(ShortsPageBottomClip())
             }
         }
         .overlay {
@@ -269,6 +265,7 @@ public struct ShortsPlayerView: View {
                 shortsOverlay
                     .offset(y: slideOffset)
                     .ignoresSafeArea(.keyboard)
+                    .clipShape(ShortsPageBottomClip())
                     .accessibilityElement(children: .contain)
                     .accessibilityIdentifier(AccessibilityID.Shorts.controlsOverlay)
             }
@@ -325,9 +322,6 @@ public struct ShortsPlayerView: View {
             // Sheets and the share sheet keep the Short playing, like the official app.
             guard !isInBackground, activeSheet == nil, !isSharing, !showSignIn else { return }
             vm.stop()
-            #if os(iOS)
-            previousVM?.stop()
-            #endif
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
@@ -353,22 +347,25 @@ public struct ShortsPlayerView: View {
                 handleShortEnded()
             }
         }
-        .onChange(of: vm.playerError) { _, newError in
-            if newError != nil {
+        // Keyed by video too: a swipe onto a preloaded Short that failed with the
+        // same error as the previous one must still skip it.
+        .onChange(of: LiveShortError(videoId: vm.currentVideoId, error: vm.playerError)) { _, new in
+            if new.error != nil {
                 advanceAfterError()
             }
         }
+        .onChange(of: pageWindow.map(\.id)) { preloadNeighbours() }
         .onChange(of: vm.currentTime) { _, time in captions.update(time: time) }
         // Reel entries load before their metadata names the channel; hand it to the
         // player so SponsorBlock's channel exclusions apply.
         .onChange(of: currentVideo?.channelId) { _, channelId in
             guard let video = currentVideo else { return }
-            vm.updateChannelId(channelId, for: video.id)
+            pool.updateChannelId(channelId, for: video.id)
         }
         .onChange(of: currentVideo?.id, initial: true) { applyCaptions() }
         .onChange(of: store.settings.shortsCaptions) { applyCaptions() }
         .onChange(of: store.settings.playbackSpeed) { _, speed in
-            vm.updateSettings(store.settings)
+            pool.updateSettings(store.settings)
             vm.setPlaybackRate(speed)
         }
         #endif
@@ -439,6 +436,12 @@ public struct ShortsPlayerView: View {
 }
 
 #if os(iOS)
+/// The live Short's error, tagged with the Short it belongs to.
+private struct LiveShortError: Equatable {
+    let videoId: String
+    let error: TOSPlayerError?
+}
+
 /// Dark, always-visible tab bar while the Shorts tab is showing (official look).
 private struct ShortsTabBarStyle: ViewModifier {
     let mode: ShortsPlayerMode

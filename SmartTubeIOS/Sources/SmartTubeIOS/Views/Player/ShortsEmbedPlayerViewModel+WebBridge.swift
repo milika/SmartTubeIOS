@@ -34,8 +34,16 @@ extension ShortsEmbedPlayerViewModel {
             return
         }
 
+        // Messages from a frame still showing a Short this VM has since moved away
+        // from (two loads within one JS round trip, #275) must not touch its state.
+        let frameVideoId = frameInfo.request.url.flatMap(ShortsEmbedURL.videoId(fromEmbedURL:))
+        let isStaleFrame = frameVideoId.map { $0 != videoId } ?? false
+
         switch type {
         case "ping":
+            if !frameInfo.isMainFrame, frameVideoId != nil, !isStaleFrame {
+                captureEmbedFrame(frameInfo)
+            }
             shortsLog.notice(
                 "[\(self.logTag, privacy: .public)] [ytCallback] JS<->Swift bridge ping received — videoId=\(self.videoId, privacy: .public)"
             )
@@ -46,84 +54,17 @@ extension ShortsEmbedPlayerViewModel {
             )
 
         case "ready":
-            // STALE-LOAD GUARD: if loadShort(video:) was called again before this
-            // frame's "ready" arrived (e.g. two swipes/auto-advances within the
-            // same ~100-200ms JS round-trip window — confirmed happening via the
-            // per-VM/videoId log tags added in #275), this message belongs to an
-            // ABANDONED load, not the currently-intended video. Accepting it would
-            // poison `embedFrameInfo` with a detached frame — every later eval()
-            // (play/pause/setPlaybackRate) would then silently target dead content,
-            // which is exactly the "JS bridge says ready but nothing ever plays"
-            // symptom #275 was chasing. Detect by comparing the frame's own embed
-            // URL (which encodes its videoId) against `self.videoId` (the video
-            // loadShort(_:) most recently set) — they only match for the load this
-            // VM is actually waiting on.
-            let frameVideoId = frameInfo.request.url.flatMap(ShortsEmbedURL.videoId(fromEmbedURL:))
-            if let frameVideoId, frameVideoId != videoId {
-                shortsLog.notice(
-                    "[\(self.logTag, privacy: .public)] [ytCallback] ready DISCARDED — stale load for videoId=\(frameVideoId, privacy: .public), current videoId=\(self.videoId, privacy: .public)"
-                )
-                break
-            }
-
-            // Cancel the "ready" timeout started by loadShort() — see
-            // startReadyTimeout(for:) (ShortsEmbedPlayerViewModel.swift).
-            readyTimeoutTask?.cancel()
-            readyTimeoutTask = nil
-
-            // CAPTURE the embed iframe's frame info — `embedFrameInfo` is reset to
-            // nil in loadShort(), so each iframe-src swap re-captures its own
-            // frame here exactly once. See embedFrameInfo's doc comment
-            // (ShortsEmbedPlayerViewModel.swift) for the full root-cause story.
-            if embedFrameInfo == nil {
-                embedFrameInfo = frameInfo
-                shortsLog.notice(
-                    "[\(self.logTag, privacy: .public)] [frame] captured embed iframe frameInfo — isMainFrame=\(frameInfo.isMainFrame, privacy: .public) url=\(frameInfo.request.url?.absoluteString ?? "nil", privacy: .public)"
-                )
-
-            }
-            isReady = true
-            duration = (json["duration"] as? Double) ?? 0
-            shortsLog.notice(
-                "[\(self.logTag, privacy: .public)] [ytCallback] ready — videoId=\(self.videoId, privacy: .public) duration=\(self.duration, format: .fixed(precision: 1))s"
-            )
-            if isStandby {
-                // Pause immediately so the background WKWebView produces no audio.
-                // The embed URL loads with mute=1, but calling pause() here prevents
-                // the JS auto-unmute (which fires at t > 0.1) from racing with Swift.
-                // Since ready fires after t > 0, the JS retry loop (t === 0 guard)
-                // won't restart playback after this pause.
-                pause()
-                // Skip Darwin notification — standby events must not trigger active-VM
-                // UI observers (ShortsPlayerView.onChange(of: vm.playerError) etc.).
-                break
-            }
-            CFNotificationCenterPostNotification(
-                CFNotificationCenterGetDarwinNotifyCenter(),
-                CFNotificationName("com.void.smarttube.shortsplayer.ready" as CFString),
-                nil, nil, true
-            )
-            // Kick off SponsorBlock segment loading for this Short — parity with
-            // TOSPlayerViewModel+WebBridge.swift's "ready" case.
-            sponsorTask?.cancel()
-            sponsorTask = Task { await self.fetchSponsorSegments() }
-            // Apply the user's saved playback-speed preference — parity with
-            // TOSPlayerViewModel+WebBridge.swift's "ready" case.
-            if settings.playbackSpeed != 1.0 {
-                setPlaybackRate(settings.playbackSpeed)
-                shortsLog.notice(
-                    "[\(self.logTag, privacy: .public)] [ytCallback] applied saved playback speed \(self.settings.playbackSpeed, format: .fixed(precision: 2))×"
-                )
-            }
+            handleReady(json, frameInfo: frameInfo, frameVideoId: frameVideoId, isStaleFrame: isStaleFrame)
 
         case "stateChange":
+            guard !isStaleFrame else { break }
             let raw = (json["state"] as? Int) ?? 999
             playerState = YTPlayerState(raw: raw)
-            // Standby VMs suppress notifications and controls manipulation — the
-            // active VM's observers must not fire for background WKWebView events.
-            if isStandby {
+            // Held neighbours suppress notifications and controls manipulation — the
+            // live VM's observers must not fire for off-screen WKWebView events.
+            if !isLive {
                 shortsLog.debug(
-                    "[\(self.logTag, privacy: .public)] [ytCallback] stateChange (standby) → \(raw) videoId=\(self.videoId, privacy: .public)"
+                    "[\(self.logTag, privacy: .public)] [ytCallback] stateChange (held) → \(raw) videoId=\(self.videoId, privacy: .public)"
                 )
                 break
             }
@@ -150,6 +91,13 @@ extension ShortsEmbedPlayerViewModel {
                     nil, nil, true
                 )
             }
+
+        case "frame":
+            guard !isStaleFrame else { break }
+            hasFrame = true
+            shortsLog.notice(
+                "[\(self.logTag, privacy: .public)] [ytCallback] first frame on screen — videoId=\(self.videoId, privacy: .public)"
+            )
 
         case "diag":
             // Raw <video> element diagnostics straight from the browser, fired
@@ -180,12 +128,13 @@ extension ShortsEmbedPlayerViewModel {
             )
 
         case "tick":
+            guard !isStaleFrame else { break }
             let t = (json["t"] as? Double) ?? 0
             let s = (json["state"] as? Int) ?? 999
             currentTime = t
-            // Standby VMs suppress tick processing — skip notifications and
-            // SponsorBlock checks for the background WKWebView.
-            if isStandby { break }
+            // Held neighbours suppress tick processing — skip notifications and
+            // SponsorBlock checks for the off-screen WKWebView.
+            if !isLive { break }
             let newState = YTPlayerState(raw: s)
             if !hasReceivedFirstTick {
                 hasReceivedFirstTick = true
@@ -228,6 +177,7 @@ extension ShortsEmbedPlayerViewModel {
             logSkipLanding(at: t)
 
         case "error":
+            guard !isStaleFrame else { break }
             let code = (json["code"] as? Int) ?? -1
             let errText = (json["text"] as? String) ?? ""
             let errName: String
@@ -263,6 +213,79 @@ extension ShortsEmbedPlayerViewModel {
         default:
             break
         }
+    }
+
+    /// The `ready` message: the embed's player loaded its video.
+    private func handleReady(
+        _ json: [String: Any], frameInfo: WKFrameInfo, frameVideoId: String?, isStaleFrame: Bool
+    ) {
+        // STALE-LOAD GUARD: if loadShort(video:) was called again before this
+        // frame's "ready" arrived (e.g. two swipes/auto-advances within the
+        // same ~100-200ms JS round-trip window — confirmed happening via the
+        // per-VM/videoId log tags added in #275), this message belongs to an
+        // ABANDONED load, not the currently-intended video. Accepting it would
+        // poison `embedFrameInfo` with a detached frame — every later eval()
+        // (play/pause/setPlaybackRate) would then silently target dead content,
+        // which is exactly the "JS bridge says ready but nothing ever plays"
+        // symptom #275 was chasing. Detect by comparing the frame's own embed
+        // URL (which encodes its videoId) against `self.videoId` (the video
+        // loadShort(_:) most recently set) — they only match for the load this
+        // VM is actually waiting on.
+        if let frameVideoId, isStaleFrame {
+            shortsLog.notice(
+                "[\(self.logTag, privacy: .public)] [ytCallback] ready DISCARDED — stale load for videoId=\(frameVideoId, privacy: .public), current videoId=\(self.videoId, privacy: .public)"
+            )
+            return
+        }
+
+        // Cancel the "ready" timeout started by loadShort() — see
+        // startReadyTimeout(for:) (ShortsEmbedPlayerViewModel.swift).
+        readyTimeoutTask?.cancel()
+        readyTimeoutTask = nil
+
+        // CAPTURE the embed iframe's frame info — `embedFrameInfo` is reset to
+        // nil in loadShort(), so each iframe-src swap re-captures its own
+        // frame here exactly once. See embedFrameInfo's doc comment
+        // (ShortsEmbedPlayerViewModel.swift) for the full root-cause story.
+        captureEmbedFrame(frameInfo)
+        isReady = true
+        duration = (json["duration"] as? Double) ?? 0
+        shortsLog.notice(
+            "[\(self.logTag, privacy: .public)] [ytCallback] ready — videoId=\(self.videoId, privacy: .public) duration=\(self.duration, format: .fixed(precision: 1))s"
+        )
+        // A held neighbour posts "ready" from activate() instead, so observers
+        // only ever hear about the Short on screen.
+        if isLive {
+            CFNotificationCenterPostNotification(
+                CFNotificationCenterGetDarwinNotifyCenter(),
+                CFNotificationName("com.void.smarttube.shortsplayer.ready" as CFString),
+                nil, nil, true
+            )
+        }
+        // Kick off SponsorBlock segment loading for this Short — parity with
+        // TOSPlayerViewModel+WebBridge.swift's "ready" case.
+        sponsorTask?.cancel()
+        sponsorTask = Task { await self.fetchSponsorSegments() }
+        // Apply the user's saved playback-speed preference — parity with
+        // TOSPlayerViewModel+WebBridge.swift's "ready" case.
+        if settings.playbackSpeed != 1.0 {
+            setPlaybackRate(settings.playbackSpeed)
+            shortsLog.notice(
+                "[\(self.logTag, privacy: .public)] [ytCallback] applied saved playback speed \(self.settings.playbackSpeed, format: .fixed(precision: 2))×"
+            )
+        }
+    }
+
+    /// Records the embed iframe's frame (the target of every `eval`) the first time
+    /// it reports in for the current Short, and tells it whether it is live or held —
+    /// see `embedFrameInfo`'s doc comment (ShortsEmbedPlayerViewModel.swift).
+    func captureEmbedFrame(_ frameInfo: WKFrameInfo) {
+        guard embedFrameInfo == nil else { return }
+        embedFrameInfo = frameInfo
+        shortsLog.notice(
+            "[\(self.logTag, privacy: .public)] [frame] captured embed iframe frameInfo — isMainFrame=\(frameInfo.isMainFrame, privacy: .public) url=\(frameInfo.request.url?.absoluteString ?? "nil", privacy: .public)"
+        )
+        applyPlaybackMode()
     }
 }
 #endif  // !os(tvOS)

@@ -35,11 +35,14 @@ final class ShortsEmbedPlayerViewModel: NSObject {
     /// Non-nil when the player encounters an error that requires falling back
     /// (e.g. auto-advancing to the next Short — see Task 9).
     var playerError: TOSPlayerError? = nil
-    /// True while this VM is loading a Short in the background for pre-warming.
-    /// Suppresses Darwin notifications and auto-unmute so the standby WKWebView
-    /// doesn't produce audible output or confuse active-VM observers.
-    /// Cleared by `activate()` when the standby is promoted to the active slot.
-    private(set) var isStandby: Bool = false
+    /// A decoded frame of this Short is on screen in the web view (JS `frame`
+    /// message): the poster covering this page can drop without flashing black.
+    var hasFrame: Bool = false
+    /// True for the Short on screen. False for a neighbour preloading in its own
+    /// slot of `ShortsPlayerPool`: the embed sits muted and paused on its first frame
+    /// (`ShortsEmbedJS` "held" mode), and Darwin notifications, tick-driven state and
+    /// watch history stay quiet until `activate()`.
+    private(set) var isLive: Bool = false
 
     // MARK: - View State
     //
@@ -111,9 +114,9 @@ final class ShortsEmbedPlayerViewModel: NSObject {
     /// Task 6).
     let sponsorService = SponsorBlockService()
     let api: InnerTubeAPI
-    /// Used by `transitionWatchHistory(to:)` (called from `loadShort`, once per
-    /// swipe) and `saveProgress()` (called on dismiss) — see
-    /// ShortsEmbedPlayerViewModel+WatchHistory.swift, Task 7.
+    /// Used by `beginWatchSession()`/`endWatchSession()` (a Short going live / leaving
+    /// the screen) and `saveProgress()` (called on dismiss) — see
+    /// ShortsEmbedPlayerViewModel+WatchHistory.swift.
     let tracker: WatchtimeTracker
 
     // MARK: - Internal
@@ -124,11 +127,14 @@ final class ShortsEmbedPlayerViewModel: NSObject {
     /// which of two simultaneously-running VMs produced a given log line. See #275.
     let instanceId: Int
     private static var nextInstanceId = 0
-    /// Short tag prefixed onto every log line — e.g. "vm3" or "vm3/standby".
-    var logTag: String { "vm\(instanceId)\(isStandby ? "/standby" : "")" }
+    /// Short tag prefixed onto every log line — e.g. "vm3" or "vm3/held".
+    var logTag: String { "vm\(instanceId)\(isLive ? "" : "/held")" }
     /// Set by `loadShort(video:)`. Read by Task 6's `fetchSponsorSegments()` and
     /// Task 7's watch-history tracking — hence `private(set)`, not `private`.
     private(set) var videoId: String = ""
+    /// The Short last passed to `loadShort(video:live:)` — reloaded by `activate()`
+    /// when its preload timed out.
+    private(set) var video: Video?
     /// Used to respect `settings.sponsorBlockExcludedChannels` — read by
     /// `fetchSponsorSegments()` (Task 6).
     private(set) var channelId: String? = nil
@@ -190,7 +196,7 @@ final class ShortsEmbedPlayerViewModel: NSObject {
             ))
         contentController.addUserScript(
             WKUserScript(
-                source: ShortsEmbedJS.stateDetectionJS,
+                source: ShortsEmbedJS.pooledStateDetectionJS,
                 injectionTime: .atDocumentEnd,
                 forMainFrameOnly: false,
                 in: .page
@@ -263,15 +269,20 @@ final class ShortsEmbedPlayerViewModel: NSObject {
 
     /// Loads `video` into the persistent `WKWebView`. The first call loads the HTML
     /// wrapper page (`startEmbed`); every subsequent call swaps the already-loaded
-    /// `<iframe id="yt">`'s `src` (`swapEmbed`) — the mechanism validated by Task 1's
-    /// spike. Resets all per-video `@Observable` state before loading, per the design
-    /// spec's Data Flow section.
-    func loadShort(video: Video) {
-        transitionWatchHistory(to: video.id)
+    /// `<iframe id="yt">`'s `src` (`swapEmbed`). Resets all per-video `@Observable`
+    /// state before loading.
+    ///
+    /// `live: false` preloads it as a neighbour: muted, paused on its first frame,
+    /// until `activate()`.
+    func loadShort(video: Video, live: Bool) {
+        if isLive { endWatchSession() }
+        isLive = live
+        playPauseEpoch &+= 1
 
         sponsorTask?.cancel()
         sponsorTask = nil
 
+        self.video = video
         videoId = video.id
         channelId = video.channelId
 
@@ -279,6 +290,7 @@ final class ShortsEmbedPlayerViewModel: NSObject {
         currentTime = 0
         duration = 0
         isReady = false
+        hasFrame = false
         playerError = nil
         videoEnded = false
         embedFrameInfo = nil
@@ -290,11 +302,10 @@ final class ShortsEmbedPlayerViewModel: NSObject {
         lastLoggedToastSegment = nil
         lastLoggedNearEndSegment = nil
 
-        CFNotificationCenterPostNotification(
-            CFNotificationCenterGetDarwinNotifyCenter(),
-            CFNotificationName("com.void.smarttube.shortsplayer.loadstarted" as CFString),
-            nil, nil, true
-        )
+        if live {
+            beginWatchSession()
+            postLoadStarted()
+        }
 
         if hasStarted {
             swapEmbed(to: video.id)
@@ -313,46 +324,64 @@ final class ShortsEmbedPlayerViewModel: NSObject {
         startReadyTimeout(for: video.id)
     }
 
-    /// Loads `video` into this VM's WKWebView in standby (pre-warm) mode.
-    /// The video initialises and reaches the "ready" state, but is immediately
-    /// paused and never unmuted — no audible output occurs.
-    /// Awaits `isReady` or a terminal `playerError` before returning, so the
-    /// caller can check `isReady` synchronously after the call.
-    func loadShortAsStandby(video: Video) async {
-        isStandby = true
-        loadShort(video: video)
-        while !isReady && playerError == nil {
-            if Task.isCancelled { break }
-            try? await Task.sleep(for: .milliseconds(50))
+    /// Makes this preloaded Short the one on screen: unmutes it and starts it from
+    /// its first frame, which is already decoded and buffered. No-op when already live.
+    func activate() {
+        guard !isLive else { return }
+        if case .webViewLoadFailed? = playerError, let video {
+            // The preload never got ready; try again as the live Short.
+            loadShort(video: video, live: true)
+            return
         }
+        isLive = true
+        hasReceivedFirstTick = false
+        playPauseEpoch &+= 1
+        // The held embed reports "paused"; don't flash the paused icon until the
+        // next tick reports real playback.
+        if playerState == .paused || playerState == .ended { playerState = .buffering }
+        beginWatchSession()
+        postLoadStarted()
+        applyPlaybackMode()
+        if isReady {
+            CFNotificationCenterPostNotification(
+                CFNotificationCenterGetDarwinNotifyCenter(),
+                CFNotificationName("com.void.smarttube.shortsplayer.ready" as CFString),
+                nil, nil, true
+            )
+        }
+        if settings.playbackSpeed != 1.0 { setPlaybackRate(settings.playbackSpeed) }
+        shortsLog.notice("[\(self.logTag, privacy: .public)] [activate] videoId=\(self.videoId, privacy: .public) isReady=\(self.isReady, privacy: .public) hasFrame=\(self.hasFrame, privacy: .public)")
     }
 
-    /// Promotes this VM to active: clears the standby flag and begins playback.
-    /// Call after swapping this VM into the active `vm` slot — either a fresh
-    /// forward standby (#272) or a cached `previousVM` being resumed after a
-    /// backward swipe (#277).
-    ///
-    /// The "ready" Darwin notification is posted here rather than relying on a
-    /// fresh JS message — "ready" only fires once per page load, and for a
-    /// forward standby it already fired (suppressed) while in standby mode, so
-    /// no second one is coming.
-    ///
-    /// `hasReceivedFirstTick` is reset here unconditionally. It's a one-shot
-    /// gate ("has this VM ever ticked") that a fresh forward standby naturally
-    /// starts at `false` — but `previousVM` is the SAME instance that was
-    /// already active before being retired, so its first tick already fired
-    /// and the flag is permanently `true` without this reset. Left unreset, the
-    /// "tickstarted" Darwin notification (and downstream UI relying on it)
-    /// would never refire on a backward swipe — confirmed via
-    /// `ShortsEmbedPlayerUITests.testSwipingBackwardAlsoRefiresJSBridge`. The
-    /// reset is a harmless no-op for the forward case, where it's already false.
-    func activate() {
-        isStandby = false
-        hasReceivedFirstTick = false
-        play()
+    /// The Short scrolled off screen but stays loaded as a neighbour: flushes its
+    /// watch history and puts it back on hold (muted, paused on its first frame).
+    func deactivate() {
+        guard isLive else { return }
+        endWatchSession()
+        isLive = false
+        playPauseEpoch &+= 1
+        videoEnded = false
+        controlsVisible = false
+        cancelControlsHide()
+        currentToastSegment = nil
+        activeSkipEnd = nil
+        pendingSkipLog = nil
+        applyPlaybackMode()
+        shortsLog.notice("[\(self.logTag, privacy: .public)] [deactivate] videoId=\(self.videoId, privacy: .public)")
+    }
+
+    /// Tells the embed whether it is live or held (`window.__stSetLive`). Before the
+    /// embed frame has reported in there is nothing to target; the frame's first
+    /// message calls this again (see `captureEmbedFrame(_:)`).
+    func applyPlaybackMode() {
+        guard embedFrameInfo != nil else { return }
+        eval(isLive ? "setLive(true)" : "setLive(false)", "window.__stSetLive && window.__stSetLive(\(isLive));")
+    }
+
+    private func postLoadStarted() {
         CFNotificationCenterPostNotification(
             CFNotificationCenterGetDarwinNotifyCenter(),
-            CFNotificationName("com.void.smarttube.shortsplayer.ready" as CFString),
+            CFNotificationName("com.void.smarttube.shortsplayer.loadstarted" as CFString),
             nil, nil, true
         )
     }

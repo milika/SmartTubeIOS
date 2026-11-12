@@ -13,8 +13,25 @@ extension InnerTubeAPI {
     ///
     /// - Parameter seedVideoId: The Short the user tapped. The sequence then continues
     ///   from it (it is *not* included — callers put it first themselves). nil starts a
-    ///   seedless feed (Shorts tab) whose first Short *is* included.
+    ///   seedless feed (Shorts tab) whose first Short *is* included; that one reuses the
+    ///   page a Shorts shelf just requested for this account (`ShortsFirstPageShare`).
     public func fetchShortsFeed(seedVideoId: String? = nil) async throws -> ShortsFeedPage {
+        if seedVideoId == nil, let shared = shortsFirstPageShare.take(for: shortsAccount) {
+            if let page = try? await shared.value {
+                shortsLog.notice("Shorts feed: reusing the Shorts shelf's first page (\(page.videos.count) Shorts)")
+                return page
+            }
+        }
+        return try await requestShortsFeed(seedVideoId: seedVideoId)
+    }
+
+    /// The Bearer token and Brand Account a Shorts sequence is personalised for.
+    private var shortsAccount: ShortsFirstPageShare.Account {
+        ShortsFirstPageShare.Account(token: authToken, pageId: activeChannel.pageId)
+    }
+
+    /// `fetchShortsFeed(seedVideoId:)`'s request, without the shared page.
+    private func requestShortsFeed(seedVideoId: String?) async throws -> ShortsFeedPage {
         var leading: [Video] = []
         let sequenceParams: String
         if let seedVideoId {
@@ -92,7 +109,10 @@ extension InnerTubeAPI {
         if let continuation {
             page = try await fetchShortsFeedMore(continuation: continuation)
         } else {
-            page = try await fetchShortsFeed()
+            // Offered to the Shorts tab as soon as it starts, not after the titles.
+            let request = Task { try await self.requestShortsFeed(seedVideoId: nil) }
+            shortsFirstPageShare.offer(request, for: shortsAccount)
+            page = try await request.value
         }
         let videos = await withShortTitles(page.videos)
         return VideoGroup(

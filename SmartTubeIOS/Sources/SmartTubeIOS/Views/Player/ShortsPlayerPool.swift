@@ -43,15 +43,21 @@ final class ShortsPlayerPool {
     func show(live video: Video, neighbours: [Video], settings: AppSettings) {
         let plan = plan(live: video, neighbours: neighbours)
         guard let newLive = plan.firstIndex(of: video.id) else { return }
-        if newLive != liveSlot { live.deactivate() }
+        // The outgoing Short stops being live now but keeps playing with sound until
+        // the incoming one has been told to play with sound, so the audio session
+        // never goes idle in between (see `ShortsEmbedPlayerViewModel.deactivate`).
+        let outgoing = newLive != liveSlot ? live : nil
+        outgoing?.deactivate(keepingEmbedLive: true)
         liveSlot = newLive
         load(plan, from: [video] + neighbours, settings: settings)
 
         let player = players[newLive]
+        var handOff: Task<Void, Never>?
         if !player.isLive {
             player.updateSettings(settings)
-            player.activate()
+            handOff = player.activate()
         }
+        outgoing?.holdEmbed(after: handOff)
         poolLog.notice(
             "[pool] live=\(player.logTag, privacy: .public) videoId=\(video.id, privacy: .public) slots=\(self.summary, privacy: .public)"
         )

@@ -109,8 +109,9 @@ enum ShortsEmbedJS {
     /// `stateChange`/`autoUnmuted`/`error` via `window.__nativeYTCallback.postMessage`.
     ///
     /// Two modes, switched from Swift with `window.__stSetLive(bool)`:
-    /// - **live**: the Short on screen. Autoplays muted, unmutes as soon as playback
-    ///   starts (mirrors `TOSPlayerViewModel.stateDetectionJS`).
+    /// - **live**: the Short on screen. A fresh live embed autoplays muted and unmutes
+    ///   as soon as playback starts (mirrors `TOSPlayerViewModel.stateDetectionJS`);
+    ///   a held Short going live is unmuted before it plays.
     /// - **held**: a neighbour preloading off screen. Lets YouTube's autoplay decode
     ///   the first frames muted, then pauses on frame 0 and keeps it paused, so the
     ///   Short slides in showing its real first frame with its stream already
@@ -160,14 +161,26 @@ enum ShortsEmbedJS {
                 var p = ytPlayer();
                 if (_live) {
                     if (video) {
-                        var unmute = function() {
-                            _autoUnmuted = true;
-                            video.muted = false;
-                            if (p && typeof p.unMute === 'function') { p.unMute(); }
-                        };
+                        // Unmute *before* playing, in this same call. If the Short
+                        // started muted and unmuted only once play() resolved, there
+                        // was a moment with no audible video in any slot (the old Short
+                        // is muted right after this): WebKit then deactivates the audio
+                        // session, and on a device the new Short's audio stays dead
+                        // until the next pause/play (no sound, then a frozen picture).
+                        _autoUnmuted = true;
+                        video.muted = false;
+                        if (p && typeof p.unMute === 'function') { p.unMute(); }
                         if (p && typeof p.playVideo === 'function') { p.playVideo(); }
                         var started = video.play();
-                        if (started && started.then) { started.then(unmute, function() {}); } else { unmute(); }
+                        if (started && started.catch) {
+                            started.catch(function() {
+                                // Unmuted playback refused: start muted; the poll
+                                // unmutes once it is playing.
+                                _autoUnmuted = false;
+                                video.muted = true;
+                                video.play();
+                            });
+                        }
                     }
                 } else {
                     _autoUnmuted = false;

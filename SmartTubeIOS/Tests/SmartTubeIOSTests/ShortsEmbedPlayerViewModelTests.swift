@@ -368,6 +368,31 @@ struct ShortsEmbedPlayerViewModelTests {
         #expect(vm.controlsVisible == false)
         #expect(vm.videoId == "a")
     }
+
+    @Test("deactivate keeping the embed live still ends the live state at once")
+    func deactivateKeepingEmbedLiveEndsLiveState() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: true)
+        vm.videoEnded = true
+        vm.showControls()
+
+        vm.deactivate(keepingEmbedLive: true)
+
+        #expect(vm.isLive == false)
+        #expect(vm.videoEnded == false)
+        #expect(vm.controlsVisible == false)
+    }
+
+    @Test("activate reports no hand-off when the embed has not reported in")
+    func activateWithoutEmbedFrameHasNoHandOff() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: false)
+
+        let handOff = vm.activate()
+
+        #expect(handOff == nil)
+        #expect(vm.isLive == true)
+    }
 }
 
 #if os(iOS)

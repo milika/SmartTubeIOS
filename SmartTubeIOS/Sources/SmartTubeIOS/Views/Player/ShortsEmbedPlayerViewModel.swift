@@ -326,12 +326,17 @@ final class ShortsEmbedPlayerViewModel: NSObject {
 
     /// Makes this preloaded Short the one on screen: unmutes it and starts it from
     /// its first frame, which is already decoded and buffered. No-op when already live.
-    func activate() {
-        guard !isLive else { return }
+    ///
+    /// Returns a task that finishes once the embed has been told to play with sound
+    /// (nil when nothing was sent to it), so the outgoing Short can stay audible
+    /// until then — see `holdEmbed(after:)`.
+    @discardableResult
+    func activate() -> Task<Void, Never>? {
+        guard !isLive else { return nil }
         if case .webViewLoadFailed? = playerError, let video {
             // The preload never got ready; try again as the live Short.
             loadShort(video: video, live: true)
-            return
+            return nil
         }
         isLive = true
         hasReceivedFirstTick = false
@@ -341,7 +346,7 @@ final class ShortsEmbedPlayerViewModel: NSObject {
         if playerState == .paused || playerState == .ended { playerState = .buffering }
         beginWatchSession()
         postLoadStarted()
-        applyPlaybackMode()
+        let started = applyPlaybackMode()
         if isReady {
             CFNotificationCenterPostNotification(
                 CFNotificationCenterGetDarwinNotifyCenter(),
@@ -352,12 +357,20 @@ final class ShortsEmbedPlayerViewModel: NSObject {
         // Unconditionally: a neighbour preloaded at another speed keeps that rate on
         // its <video> until told otherwise, including back to 1×.
         setPlaybackRate(settings.playbackSpeed)
-        shortsLog.notice("[\(self.logTag, privacy: .public)] [activate] videoId=\(self.videoId, privacy: .public) isReady=\(self.isReady, privacy: .public) hasFrame=\(self.hasFrame, privacy: .public)")
+        shortsLog.notice(
+            "[\(self.logTag, privacy: .public)] [activate] videoId=\(self.videoId, privacy: .public) isReady=\(self.isReady, privacy: .public) hasFrame=\(self.hasFrame, privacy: .public)"
+        )
+        return started
     }
 
     /// The Short scrolled off screen but stays loaded as a neighbour: flushes its
     /// watch history and puts it back on hold (muted, paused on its first frame).
-    func deactivate() {
+    ///
+    /// `keepingEmbedLive` leaves the embed itself playing until `holdEmbed(after:)`.
+    /// The pool does that on a swipe: if the old Short went quiet before the new one
+    /// was playing with sound, WebKit would deactivate the audio session in between,
+    /// and on a device the new Short's audio would stay dead.
+    func deactivate(keepingEmbedLive: Bool = false) {
         guard isLive else { return }
         endWatchSession()
         isLive = false
@@ -368,16 +381,49 @@ final class ShortsEmbedPlayerViewModel: NSObject {
         currentToastSegment = nil
         activeSkipEnd = nil
         pendingSkipLog = nil
-        applyPlaybackMode()
+        if !keepingEmbedLive { applyPlaybackMode() }
         shortsLog.notice("[\(self.logTag, privacy: .public)] [deactivate] videoId=\(self.videoId, privacy: .public)")
+    }
+
+    /// Puts the embed of a Short deactivated with `keepingEmbedLive` on hold once
+    /// `handOff` (the incoming Short's `activate()`) has finished. Skipped if the
+    /// Short became live again meanwhile.
+    func holdEmbed(after handOff: Task<Void, Never>?) {
+        guard let handOff else {
+            if !isLive { applyPlaybackMode() }
+            return
+        }
+        Task { @MainActor in
+            await handOff.value
+            guard !self.isLive else { return }
+            self.applyPlaybackMode()
+        }
     }
 
     /// Tells the embed whether it is live or held (`window.__stSetLive`). Before the
     /// embed frame has reported in there is nothing to target; the frame's first
     /// message calls this again (see `captureEmbedFrame(_:)`).
-    func applyPlaybackMode() {
-        guard embedFrameInfo != nil else { return }
-        eval(isLive ? "setLive(true)" : "setLive(false)", "window.__stSetLive && window.__stSetLive(\(isLive));")
+    ///
+    /// Returns a task that finishes once the page has run it, or nil if there was no
+    /// embed frame to tell.
+    @discardableResult
+    func applyPlaybackMode() -> Task<Void, Never>? {
+        guard let frame = embedFrameInfo else { return nil }
+        let live = isLive
+        let label = live ? "setLive(true)" : "setLive(false)"
+        let js = "window.__stSetLive && window.__stSetLive(\(live));"
+        return Task { @MainActor in
+            do {
+                let value = try await self.webView.evaluateJavaScript(js, in: frame, contentWorld: .page)
+                shortsLog.notice(
+                    "[\(self.logTag, privacy: .public)] [eval] \(label, privacy: .public) result: \(String(describing: value), privacy: .public)"
+                )
+            } catch {
+                shortsLog.notice(
+                    "[\(self.logTag, privacy: .public)] [eval] \(label, privacy: .public) ERROR: \(String(describing: error), privacy: .public)"
+                )
+            }
+        }
     }
 
     private func postLoadStarted() {

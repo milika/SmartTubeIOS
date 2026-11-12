@@ -99,8 +99,11 @@ extension ShortsEmbedPlayerViewModel {
         play()
     }
 
-    /// The live Short has been told to play but hasn't started yet (still loading).
-    var isStarting: Bool { isLive && !hasReceivedFirstTick }
+    /// The live Short has been told to play but hasn't got past its start yet: still
+    /// loading, or ticking at 0 s while it buffers. The embed keeps retrying its
+    /// autoplay (and then unmutes) while the video sits at 0, so a plain pause doesn't
+    /// hold it there — see `suspendPlayback()`.
+    var isStarting: Bool { isLive && (!hasReceivedFirstTick || currentTime <= 0) }
 
     /// The player went out of sight (tab left, page pushed over it, another player
     /// full screen). Stays stopped until the next `play()`.

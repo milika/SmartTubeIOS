@@ -427,6 +427,19 @@ struct ShortsEmbedPlayerViewModelTests {
         #expect(vm.playerState == .unstarted)
     }
 
+    @Test("A Short ticking at 0 s is still starting, so stopping it holds it")
+    func firstTickAtZeroIsStillStarting() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: true)
+        vm.hasReceivedFirstTick = true  // a buffering tick at t = 0
+        vm.currentTime = 0
+
+        #expect(vm.isStarting)
+
+        vm.currentTime = 0.3
+        #expect(vm.isStarting == false)
+    }
+
     @Test("Going to the background mid-start holds the Short; coming back starts it")
     func backgroundWhileLoading() {
         let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())

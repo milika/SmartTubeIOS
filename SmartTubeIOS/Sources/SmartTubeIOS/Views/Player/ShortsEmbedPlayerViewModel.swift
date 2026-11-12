@@ -349,7 +349,9 @@ final class ShortsEmbedPlayerViewModel: NSObject {
                 nil, nil, true
             )
         }
-        if settings.playbackSpeed != 1.0 { setPlaybackRate(settings.playbackSpeed) }
+        // Unconditionally: a neighbour preloaded at another speed keeps that rate on
+        // its <video> until told otherwise, including back to 1×.
+        setPlaybackRate(settings.playbackSpeed)
         shortsLog.notice("[\(self.logTag, privacy: .public)] [activate] videoId=\(self.videoId, privacy: .public) isReady=\(self.isReady, privacy: .public) hasFrame=\(self.hasFrame, privacy: .public)")
     }
 

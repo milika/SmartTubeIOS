@@ -258,6 +258,33 @@ struct ShortsFeedViewModelTests {
         #expect(vm.videos.map(\.id) == ["a", "b"])
     }
 
+    @Test("A later page can't bring back a removed Short whose metadata names a hidden channel")
+    func hiddenShortStaysHiddenOnLaterPages() async {
+        let provider = FakeShortsProvider()
+        provider.firstPage = .success(
+            ShortsFeedPage(
+                videos: [Video(id: "a", title: "", channelTitle: "", channelId: "X", isShort: true)],
+                continuation: "C1", isPersonalized: true))
+        provider.morePages["C1"] = ShortsFeedPage(
+            videos: [short("b"), short("c")], continuation: "C2", isPersonalized: true)
+        // The sequence serves "c" again, still without a channel ID.
+        provider.morePages["C2"] = ShortsFeedPage(
+            videos: [short("c"), short("d")], continuation: nil, isPersonalized: true)
+        let vm = ShortsFeedViewModel(source: .algorithm(seed: nil), provider: provider)
+        await vm.start()
+        vm.hideChannel("X", after: 0)
+        await vm.loadMoreIfNeeded(currentIndex: 0)
+        provider.metadataResult = .success(
+            ShortMetadata(videoId: "c", title: "", channelTitle: "", channelId: "X"))
+        await vm.loadMetadata(for: "c", signedIn: true)
+        vm.removeHiddenChannels(after: 1)
+        #expect(vm.videos.map(\.id) == ["a", "b"])
+
+        await vm.loadMoreIfNeeded(currentIndex: 1)
+
+        #expect(vm.videos.map(\.id) == ["a", "b", "d"])
+    }
+
     @Test("Removing hidden channels keeps the Short being watched")
     func hideChannelKeepsCurrentShort() async {
         let provider = FakeShortsProvider()

@@ -10,6 +10,8 @@ extension ShortsPlayerView {
     // MARK: - Lifecycle
 
     func handleAppear() {
+        let resumeOnReappear = resumeOnReappear
+        self.resumeOnReappear = false
         if let video = currentVideo {
             if vm.currentVideoId == video.id {
                 // Back from a pushed channel page / another tab (e.g. Settings).
@@ -21,7 +23,7 @@ extension ShortsPlayerView {
                 if mode == .tab {
                     willResume()
                     vm.resume()
-                } else if vm.wasPlayingBeforeSuspend {
+                } else if resumeOnReappear || vm.wasPlayingBeforeSuspend {
                     vm.resume()
                 }
             } else {
@@ -49,11 +51,20 @@ extension ShortsPlayerView {
             return
         }
         #if os(iOS)
-        if vm.videoEnded, store.settings.shortsAutoScroll, currentIndex + 1 < newCount, !isTransitioning {
-            performVerticalTransition(direction: -1) { goTo(currentIndex + 1) }
-        }
+        continueAutoScrollIfWaiting()
         #endif
     }
+
+    #if os(iOS)
+    /// Advances past a Short that ended (or failed) while auto-scroll had to wait —
+    /// for the next page, or for a sheet over the player to close.
+    func continueAutoScrollIfWaiting() {
+        guard vm.videoEnded, store.settings.shortsAutoScroll, currentIndex + 1 < videos.count,
+            !isTransitioning, !isOverlayPresented
+        else { return }
+        performVerticalTransition(direction: -1) { goTo(currentIndex + 1) }
+    }
+    #endif
 
     // MARK: - Navigation
 
@@ -171,6 +182,10 @@ extension ShortsPlayerView {
         case .replay:
             vm.seekTo(0)
             vm.play()
+        case .advance where isOverlayPresented:
+            // A sheet's actions target the current Short: loop it until the sheet closes.
+            vm.seekTo(0)
+            vm.play()
         case .advance(let next):
             performVerticalTransition(direction: -1) { goTo(next) }
         case .freeze:
@@ -192,7 +207,10 @@ extension ShortsPlayerView {
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(1500))
             guard vm.currentVideoId == erroredVideoId, !isTransitioning else { return }
-            if let next = ShortsNavigation.targetIndex(
+            if isOverlayPresented {
+                // Skipped once the sheet closes (`continueAutoScrollIfWaiting()`).
+                vm.videoEnded = true
+            } else if let next = ShortsNavigation.targetIndex(
                 vertical: -100, horizontal: 0, current: currentIndex, count: videos.count)
             {
                 performVerticalTransition(direction: -1) { goTo(next) }

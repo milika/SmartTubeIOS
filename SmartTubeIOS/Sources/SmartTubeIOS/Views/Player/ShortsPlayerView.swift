@@ -65,6 +65,10 @@ public struct ShortsPlayerView: View {
     /// "Clear Screen" from the ⋯ menu: overlay hidden until the next tap.
     @State var isScreenCleared = false
     @State var showSearch = false
+    /// The Short was playing when a pushed page (channel, search) covered the player;
+    /// it resumes on return. Not `vm.wasPlayingBeforeSuspend`, which
+    /// `handleForeground()` would act on while the pushed page is still on screen.
+    @State var resumeOnReappear = false
     /// Short confirmation shown over the player ("Saved to Watch Later").
     @State var toastMessage: String?
     #if os(iOS)
@@ -117,9 +121,15 @@ public struct ShortsPlayerView: View {
     /// The tab bar must stay usable in tab mode, so the player stops above it there.
     private var ignoredEdges: Edge.Set { mode == .tab ? .top : .all }
 
+    /// A sheet, the share sheet or sign-in is up over the (still playing) Short. Their
+    /// actions target `currentVideo`, so auto-scroll and error skips hold until it closes.
+    var isOverlayPresented: Bool {
+        activeSheet != nil || isSharing || showSignIn
+    }
+
     /// Window-level gestures are off while anything is presented over the player.
     private var gesturesEnabled: Bool {
-        activeSheet == nil && !isSharing && !showSignIn && channelDestination == nil && !showSearch
+        !isOverlayPresented && channelDestination == nil && !showSearch
     }
 
     /// The comments/description sheet is up: the video shrinks into the space above it.
@@ -320,7 +330,8 @@ public struct ShortsPlayerView: View {
         .onAppear(perform: handleAppear)
         .onDisappear {
             // Sheets and the share sheet keep the Short playing, like the official app.
-            guard !isInBackground, activeSheet == nil, !isSharing, !showSignIn else { return }
+            guard !isInBackground, !isOverlayPresented else { return }
+            resumeOnReappear = vm.isPlaying
             vm.stop()
         }
         .onChange(of: scenePhase) { _, phase in
@@ -353,6 +364,9 @@ public struct ShortsPlayerView: View {
             if new.error != nil {
                 advanceAfterError()
             }
+        }
+        .onChange(of: isOverlayPresented) { _, presented in
+            if !presented { continueAutoScrollIfWaiting() }
         }
         .onChange(of: pageWindow.map(\.id)) { preloadNeighbours() }
         .onChange(of: vm.currentTime) { _, time in captions.update(time: time) }

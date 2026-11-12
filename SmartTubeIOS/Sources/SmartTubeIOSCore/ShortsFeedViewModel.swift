@@ -308,12 +308,14 @@ public final class ShortsFeedViewModel {
         if videos.isEmpty { loadError = String(describing: error) }
     }
 
-    /// Appends Shorts not already in `videos`; returns how many were added.
+    /// Appends Shorts not already in `videos` and not from a hidden channel; returns
+    /// how many were added. Reel entries carry no channel, so the channel comes from
+    /// cached metadata when an earlier page's copy of the Short was identified.
     @discardableResult
     private func append(_ newVideos: [Video]) -> Int {
         var seen = Set(videos.map(\.id))
         let fresh = newVideos.filter { video in
-            if let channelId = video.channelId, hiddenChannelIds.contains(channelId) { return false }
+            if let channelId = channelId(of: video), hiddenChannelIds.contains(channelId) { return false }
             return seen.insert(video.id).inserted
         }
         videos.append(contentsOf: fresh)

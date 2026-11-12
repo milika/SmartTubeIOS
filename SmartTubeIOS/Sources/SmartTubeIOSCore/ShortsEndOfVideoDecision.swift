@@ -26,4 +26,11 @@ public enum ShortsEndOfVideoDecision: Equatable {
         let next = currentIndex + 1
         return next < count ? .advance(to: next) : .freeze
     }
+
+    /// A Short that ended or failed while the player had to wait (for the feed's next
+    /// page, or for a sheet to close) moves on once it can: after a failure always —
+    /// an unplayable Short can't loop — and after a normal end only with auto-scroll on.
+    public static func advancesAfterWaiting(settings: AppSettings, failed: Bool) -> Bool {
+        failed || settings.shortsAutoScroll
+    }
 }

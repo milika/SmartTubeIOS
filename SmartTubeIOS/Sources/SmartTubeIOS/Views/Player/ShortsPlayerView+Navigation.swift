@@ -64,8 +64,10 @@ extension ShortsPlayerView {
     /// Advances past a Short that ended (or failed) while auto-scroll had to wait —
     /// for the next page, or for a sheet over the player to close.
     func continueAutoScrollIfWaiting() {
-        guard vm.videoEnded, store.settings.shortsAutoScroll, currentIndex + 1 < videos.count,
-            !isTransitioning, !isOverlayPresented
+        guard vm.videoEnded,
+            ShortsEndOfVideoDecision.advancesAfterWaiting(
+                settings: store.settings, failed: vm.playerError?.isFatal == true),
+            currentIndex + 1 < videos.count, !isTransitioning, !isOverlayPresented
         else { return }
         performVerticalTransition(direction: -1) { goTo(currentIndex + 1) }
     }

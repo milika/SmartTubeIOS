@@ -20,6 +20,17 @@ struct ShortsEndOfVideoDecisionTests {
         #expect(result == .advance(to: 1))
     }
 
+    @Test("A failed Short moves on after waiting even with auto-scroll off; an ended one loops")
+    func failedShortAdvancesAfterWaiting() {
+        let settings = AppSettings()  // auto-scroll off
+        #expect(ShortsEndOfVideoDecision.advancesAfterWaiting(settings: settings, failed: true))
+        #expect(ShortsEndOfVideoDecision.advancesAfterWaiting(settings: settings, failed: false) == false)
+
+        var autoScroll = AppSettings()
+        autoScroll.shortsAutoScroll = true
+        #expect(ShortsEndOfVideoDecision.advancesAfterWaiting(settings: autoScroll, failed: false))
+    }
+
     @Test("Auto-scroll on, at the last index → freeze until more Shorts arrive")
     func freezesAtLastIndex() {
         var settings = AppSettings()

@@ -3,7 +3,7 @@ import Foundation
 import os
 import SmartTubeIOSCore
 
-private let shortsLog = Logger(subsystem: "com.void.smarttube.app", category: "ShortsPlayer")
+private let shortsLog = Logger(subsystem: appSubsystem, category: "ShortsPlayer")
 
 // MARK: - Watch History / Mark-as-Watched
 //

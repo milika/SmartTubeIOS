@@ -3,7 +3,7 @@ import Foundation
 import SmartTubeIOSCore
 import os
 
-private let poolLog = Logger(subsystem: "com.void.smarttube.app", category: "ShortsPlayer")
+private let poolLog = Logger(subsystem: appSubsystem, category: "ShortsPlayer")
 
 /// A fixed set of Shorts embed players: the live Short plus its next and previous
 /// neighbours, each in its own `WKWebView`.
@@ -22,14 +22,21 @@ final class ShortsPlayerPool {
     /// Live, next and previous.
     static let slotCount = 3
 
-    let players: [ShortsEmbedPlayerViewModel]
+    /// Created on first use, not in `init`: SwiftUI evaluates `ShortsPlayerView`'s
+    /// `State(initialValue:)` on every re-creation of the view and throws all but the
+    /// first pool away, and each player builds a `WKWebView` (with its own WebContent
+    /// process) as it is created.
+    @ObservationIgnored private(set) lazy var players: [ShortsEmbedPlayerViewModel] =
+        (0..<Self.slotCount).map { _ in ShortsEmbedPlayerViewModel(api: api) }
     private(set) var liveSlot = 0
 
     /// The player showing the current Short.
     var live: ShortsEmbedPlayerViewModel { players[liveSlot] }
 
+    @ObservationIgnored private let api: InnerTubeAPI
+
     init(api: InnerTubeAPI) {
-        players = (0..<Self.slotCount).map { _ in ShortsEmbedPlayerViewModel(api: api) }
+        self.api = api
     }
 
     /// The player holding `videoId`, if any.

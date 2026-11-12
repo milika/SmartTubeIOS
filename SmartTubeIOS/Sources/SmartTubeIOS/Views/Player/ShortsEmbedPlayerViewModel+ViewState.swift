@@ -3,7 +3,7 @@ import Foundation
 import os
 import SmartTubeIOSCore
 
-private let shortsLog = Logger(subsystem: "com.void.smarttube.app", category: "ShortsPlayer")
+private let shortsLog = Logger(subsystem: appSubsystem, category: "ShortsPlayer")
 
 // MARK: - View State
 //
@@ -107,11 +107,13 @@ extension ShortsEmbedPlayerViewModel {
 
     /// The player went out of sight (tab left, page pushed over it, another player
     /// full screen). Stays stopped until the next `play()`.
+    ///
+    /// A Short still loading keeps its ready timeout: firing while stopped it marks
+    /// the Short to reload on the next `play()` (`timedOut()`). Cancelled here, a
+    /// stalled load would never be retried.
     func stop() {
         suspendPlayback()
         cancelControlsHide()
-        readyTimeoutTask?.cancel()
-        readyTimeoutTask = nil
         sponsorTask?.cancel()
         sponsorTask = nil
         saveProgress()

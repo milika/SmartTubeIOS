@@ -6,7 +6,7 @@ import WebKit
 import os
 import SmartTubeIOSCore
 
-private let shortsLog = Logger(subsystem: "com.void.smarttube.app", category: "ShortsPlayer")
+private let shortsLog = Logger(subsystem: appSubsystem, category: "ShortsPlayer")
 
 /// State owner for the iOS Shorts TOS-embed player — replaces the AVPlayer-based
 /// `PlaybackViewModel` for the Shorts pipeline (see

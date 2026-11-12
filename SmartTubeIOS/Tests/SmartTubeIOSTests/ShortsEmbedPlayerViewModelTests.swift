@@ -484,6 +484,16 @@ struct ShortsEmbedPlayerViewModelTests {
         #expect(vm.isLive)
     }
 
+    @Test("Stopping a loading Short keeps its ready timeout, so a stalled load is retried")
+    func stopKeepsReadyTimeout() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: true)
+
+        vm.stop()
+
+        #expect(vm.readyTimeoutTask != nil)
+    }
+
     @Test("A Short that times out on screen fails as before")
     func timeoutOnScreenFails() {
         let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())

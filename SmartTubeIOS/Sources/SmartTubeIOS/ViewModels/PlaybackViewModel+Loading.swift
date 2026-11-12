@@ -651,6 +651,10 @@ extension PlaybackViewModel {
                         // this is a user-side network condition, not an app bug.
                         playerLog.error("⚠️ iOS client detected IP block — reason: \(reason)")
                         throw error
+                    } else if case APIError.unavailable = error, !hasAuthToken {
+                        // Signed out: no token for the TV client, so take the Android step it falls back to.
+                        playerLog.notice("⚠️ iOS client returned unavailable — retrying with Android client")
+                        info = try await api.fetchPlayerInfoAndroid(videoId: video.id)
                     } else if case APIError.unavailable = error, hasAuthToken {
                         playerLog.notice("⚠️ iOS client returned unavailable — retrying with authenticated TV client")
                         do {

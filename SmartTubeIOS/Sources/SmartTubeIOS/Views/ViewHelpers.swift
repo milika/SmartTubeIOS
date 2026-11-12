@@ -201,7 +201,6 @@ enum AppSymbol {
     static let clearScreen = "rectangle.dashed"
     static let captions = "captions.bubble"
     static let playbackSpeed = "gauge.with.dots.needle.67percent"
-    static let notInterested = "eye.slash"
     static let dontRecommendChannel = "person.slash"
     static let report = "flag"
 }

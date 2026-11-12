@@ -31,7 +31,6 @@ enum AccessibilityID {
         static let clearScreenAction = "shorts.action.clearScreen"
         static let captionsAction = "shorts.action.captions"
         static let playbackSpeedAction = "shorts.action.playbackSpeed"
-        static let notInterestedAction = "shorts.action.notInterested"
         static let dontRecommendChannelAction = "shorts.action.dontRecommendChannel"
         static let reportAction = "shorts.action.report"
         static let descriptionSheet = "shorts.descriptionSheet"

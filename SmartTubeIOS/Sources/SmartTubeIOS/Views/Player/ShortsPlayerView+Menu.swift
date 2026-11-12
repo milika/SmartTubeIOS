@@ -31,11 +31,6 @@ extension ShortsPlayerView {
                 isScreenCleared = true
             }
             showToast(String(localized: "Tap to show controls", bundle: .module))
-        case .notInterested:
-            activeSheet = nil
-            sendFeedback(videoId: video.id, iconType: "NOT_INTERESTED")
-            showToast(String(localized: "You'll see fewer Shorts like this", bundle: .module))
-            swipe(toNext: true)
         case .dontRecommendChannel:
             activeSheet = nil
             guard let metadata = currentMetadata, let channelId = metadata.channelId else { return }

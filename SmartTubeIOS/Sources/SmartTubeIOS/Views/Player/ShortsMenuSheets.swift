@@ -11,7 +11,6 @@ enum ShortsMenuAction {
     case description
     case saveToPlaylist
     case clearScreen
-    case notInterested
     case dontRecommendChannel
     case report
 }
@@ -19,7 +18,7 @@ enum ShortsMenuAction {
 /// The ⋯ sheet, laid out like the official app's: actions first, then settings, then
 /// the feedback actions, then Cancel.
 struct ShortsMoreSheet: View {
-    /// Save/Not interested/Don't recommend need an account, so they're hidden signed out.
+    /// Save/Don't recommend need an account, so they're hidden signed out.
     let isSignedIn: Bool
     /// Whether the Short's channel is known ("Don't recommend channel" needs it).
     let hasChannel: Bool
@@ -72,11 +71,6 @@ struct ShortsMoreSheet: View {
                 .accessibilityIdentifier(AccessibilityID.Shorts.autoScrollToggle)
             }
             Section {
-                if isSignedIn {
-                    actionRow(
-                        .notInterested, "Not Interested", AppSymbol.notInterested,
-                        AccessibilityID.Shorts.notInterestedAction)
-                }
                 if isSignedIn && hasChannel {
                     actionRow(
                         .dontRecommendChannel, "Don't Recommend Channel", AppSymbol.dontRecommendChannel,

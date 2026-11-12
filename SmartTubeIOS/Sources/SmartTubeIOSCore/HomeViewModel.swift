@@ -467,12 +467,13 @@ public final class HomeViewModel {
         isLoadingMoreShorts = true
         defer { isLoadingMoreShorts = false }
         var loopIteration = 0
+        var emptyPages = 0
         // Loop until we have at least `threshold` items or pages run out.
         while shortsVideos.count < threshold, shortsNextPageToken != nil {
             loopIteration += 1
             homeLog.notice(
                 "loadMoreShortsIfNeeded: loop=\(loopIteration) count=\(shortsVideos.count) threshold=\(threshold)")
-            guard await fetchOneShortsPage() else { break }
+            guard await keepsPaging(afterPageAdded: fetchOneShortsPage(), emptyPages: &emptyPages) else { break }
         }
     }
 
@@ -489,9 +490,17 @@ public final class HomeViewModel {
         let preloadHighThreshold = 40
         #endif
         guard !isLoadingMoreShorts else { return }
+        // YouTube's Shorts sequence costs a metadata request per Short (for the card
+        // titles), so it isn't paged ahead in the background: the row pages it as the
+        // user scrolls (`loadNextShortsPage()`).
+        if shortsNextPageToken?.hasPrefix(ShortsSequenceParams.shelfTokenPrefix) == true {
+            homeLog.notice("preloadMoreShorts: skipped — the Shorts sequence pages on demand")
+            return
+        }
         isLoadingMoreShorts = true
         defer { isLoadingMoreShorts = false }
         var loopIteration = 0
+        var emptyPages = 0
         while !Task.isCancelled, homeShortsVideos.count < preloadHighThreshold {
             guard shortsNextPageToken != nil || subsShortsToken != nil else {
                 homeLog.notice(
@@ -501,11 +510,28 @@ public final class HomeViewModel {
             loopIteration += 1
             homeLog.notice(
                 "preloadMoreShorts: iteration=\(loopIteration) count=\(homeShortsVideos.count)/\(preloadHighThreshold)")
-            guard await fetchOneShortsPage() else {
-                homeLog.notice("preloadMoreShorts: stopping — page returned no new videos")
-                break
-            }
+            guard await keepsPaging(afterPageAdded: fetchOneShortsPage(), emptyPages: &emptyPages) else { break }
         }
+    }
+
+    /// How many pages in a row may add nothing (all duplicates) before a paging loop
+    /// gives up although a next-page token is left.
+    static let maxEmptyShortsPagesInARow = 3
+
+    /// Whether a paging loop goes on after a page: always after one that added
+    /// Shorts; after one that added nothing only while `maxEmptyShortsPagesInARow`
+    /// isn't reached — a page of duplicates doesn't mean the feed has ended.
+    private func keepsPaging(afterPageAdded added: Bool, emptyPages: inout Int) -> Bool {
+        if added {
+            emptyPages = 0
+            return true
+        }
+        emptyPages += 1
+        guard emptyPages < Self.maxEmptyShortsPagesInARow else {
+            homeLog.notice("Shorts paging: stopping — \(emptyPages) pages in a row added nothing")
+            return false
+        }
+        return true
     }
 
     // MARK: - Private fetch helpers

@@ -139,17 +139,33 @@ extension InnerTubeAPI {
 
     // MARK: Private
 
+    /// How long a shelf page waits for its Shorts' titles. A slow metadata request
+    /// would otherwise hold back the whole page.
+    private static let shortTitlesDeadline: Duration = .seconds(4)
+
     /// Fills title/channel from each Short's overlay metadata, concurrently. A Short
-    /// whose metadata fails keeps its empty title rather than being dropped.
+    /// whose metadata fails — or hasn't arrived by `shortTitlesDeadline` — keeps its
+    /// empty title rather than being dropped.
     private func withShortTitles(_ videos: [Video]) async -> [Video] {
-        let fetched = await withTaskGroup(of: (Int, ShortMetadata?).self) { group in
+        let fetched = await withTaskGroup(of: (Int, ShortMetadata?)?.self) { group in
             for (index, video) in videos.enumerated() {
                 group.addTask { (index, try? await self.fetchShortMetadata(videoId: video.id)) }
             }
+            group.addTask {
+                try? await Task.sleep(for: Self.shortTitlesDeadline)
+                return nil
+            }
             var results: [Int: ShortMetadata] = [:]
-            for await (index, metadata) in group {
+            var pending = videos.count
+            while pending > 0, let next = await group.next() {
+                guard let (index, metadata) = next else {
+                    shortsLog.notice("Shorts shelf: \(pending, privacy: .public) titles still loading — showing the page without them")
+                    break
+                }
+                pending -= 1
                 if let metadata { results[index] = metadata }
             }
+            group.cancelAll()
             return results
         }
         var titled = videos

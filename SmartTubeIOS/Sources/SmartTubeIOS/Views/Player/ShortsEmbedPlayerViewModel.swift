@@ -43,6 +43,16 @@ final class ShortsEmbedPlayerViewModel: NSObject {
     /// (`ShortsEmbedJS` "held" mode), and Darwin notifications, tick-driven state and
     /// watch history stay quiet until `activate()`.
     private(set) var isLive: Bool = false
+    /// Set by `stop()` (and by going to the background mid-start) until the next
+    /// `play()`. While set, the embed is kept on hold even when this Short is live:
+    /// its frame can report in late, and telling it to go live then would start the
+    /// hidden player with sound.
+    private(set) var isStopped: Bool = false
+    /// `applyPlaybackMode()` held a live Short because it was stopped; `play()`
+    /// sends the live mode it skipped.
+    private(set) var isLiveModeDeferred: Bool = false
+    /// The live Short timed out while stopped (see `timedOut()`); `play()` reloads it.
+    private(set) var reloadsOnPlay: Bool = false
 
     // MARK: - View State
     //
@@ -294,6 +304,8 @@ final class ShortsEmbedPlayerViewModel: NSObject {
         playerError = nil
         videoEnded = false
         embedFrameInfo = nil
+        isLiveModeDeferred = false
+        reloadsOnPlay = false
         hasReceivedFirstTick = false
         sponsorSegments = []
         currentToastSegment = nil
@@ -374,6 +386,13 @@ final class ShortsEmbedPlayerViewModel: NSObject {
         guard isLive else { return }
         endWatchSession()
         isLive = false
+        isStopped = false
+        isLiveModeDeferred = false
+        if reloadsOnPlay {
+            // Held now: `activate()` retries a failed preload.
+            reloadsOnPlay = false
+            playerError = .webViewLoadFailed
+        }
         playPauseEpoch &+= 1
         videoEnded = false
         controlsVisible = false
@@ -409,7 +428,8 @@ final class ShortsEmbedPlayerViewModel: NSObject {
     @discardableResult
     func applyPlaybackMode() -> Task<Void, Never>? {
         guard let frame = embedFrameInfo else { return nil }
-        let live = isLive
+        let live = embedShouldBeLive
+        isLiveModeDeferred = isLive && !live
         let label = live ? "setLive(true)" : "setLive(false)"
         let js = "window.__stSetLive && window.__stSetLive(\(live));"
         return Task { @MainActor in
@@ -424,6 +444,31 @@ final class ShortsEmbedPlayerViewModel: NSObject {
                 )
             }
         }
+    }
+
+    /// What `applyPlaybackMode()` tells the embed: live only for the Short on screen,
+    /// and not while it is stopped.
+    var embedShouldBeLive: Bool { isLive && !isStopped }
+
+    /// Pauses the player until the next `play()`. A Short still starting is put back
+    /// on hold instead: pausing alone doesn't stick there, as the embed keeps
+    /// retrying its autoplay while the video sits at its start.
+    func suspendPlayback() {
+        isStopped = true
+        pause()
+        if isStarting { applyPlaybackMode() }
+    }
+
+    /// This player becomes live while the player view is still out of sight
+    /// (`ShortsPlayerPool.show` carries the stop over): it stays on hold until `play()`.
+    func markStopped() {
+        isStopped = true
+    }
+
+    /// The player view is visible again but not resuming (e.g. the user had paused).
+    /// A Short held by the stop stays on hold, paused, until `play()`.
+    func endStop() {
+        isStopped = false
     }
 
     private func postLoadStarted() {
@@ -511,9 +556,20 @@ final class ShortsEmbedPlayerViewModel: NSObject {
             guard let self, !Task.isCancelled else { return }
             guard self.videoId == videoId, !self.isReady else { return }
             shortsLog.notice(
-                "[\(self.logTag, privacy: .public)] [loadShort] ready TIMEOUT — videoId=\(videoId, privacy: .public) after 9s"
+                "[\(self.logTag, privacy: .public)] [loadShort] ready TIMEOUT — videoId=\(videoId, privacy: .public) after 9s stopped=\(self.isStopped, privacy: .public)"
             )
-            self.playerError = .webViewLoadFailed
+            self.timedOut()
+        }
+    }
+
+    /// The Short never got ready. A hidden web view doesn't load the stream, so a live
+    /// Short that timed out while stopped isn't broken: it reloads on the next
+    /// `play()` instead of failing (which would skip it while nobody is looking).
+    func timedOut() {
+        if isLive && isStopped {
+            reloadsOnPlay = true
+        } else {
+            playerError = .webViewLoadFailed
         }
     }
 
@@ -523,6 +579,11 @@ final class ShortsEmbedPlayerViewModel: NSObject {
     // `embedFrameInfo`'s doc comment for why frame-targeting is required.
 
     func play() {
+        isStopped = false
+        if reloadsOnPlay, isLive, let video {
+            loadShort(video: video, live: true)
+            return
+        }
         playPauseEpoch &+= 1
         let myEpoch = playPauseEpoch
         // Wait for any in-flight pauseAllMediaPlayback() (from a just-prior pause())
@@ -532,6 +593,11 @@ final class ShortsEmbedPlayerViewModel: NSObject {
         Task { [weak self] in
             await priorPause?.value
             guard let self, self.playPauseEpoch == myEpoch else { return }
+            if self.isLiveModeDeferred {
+                // Held while stopped: going live unmutes it and starts it.
+                self.applyPlaybackMode()
+                return
+            }
             self.eval(
                 "play",
                 "(function(){var p=document.getElementById('movie_player');var api=!!(p&&typeof p.playVideo==='function');if(api){p.playVideo();}var v=document.querySelector('video');if(v){v.play();}return {found: !!v, api: api, paused: v ? v.paused : null};})();"

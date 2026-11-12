@@ -12,6 +12,11 @@ extension ShortsPlayerView {
     func handleAppear() {
         let resumeOnReappear = resumeOnReappear
         self.resumeOnReappear = false
+        isOffScreen = false
+        #if os(iOS)
+        // On screen again: Shorts that go live from now on play (see `vm.stop()`).
+        vm.endStop()
+        #endif
         if let video = currentVideo {
             if vm.currentVideoId == video.id {
                 // Back from a pushed channel page / another tab (e.g. Settings).

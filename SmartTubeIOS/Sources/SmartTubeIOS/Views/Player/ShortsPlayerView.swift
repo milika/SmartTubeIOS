@@ -69,6 +69,9 @@ public struct ShortsPlayerView: View {
     /// it resumes on return. Not `vm.wasPlayingBeforeSuspend`, which
     /// `handleForeground()` would act on while the pushed page is still on screen.
     @State var resumeOnReappear = false
+    /// Another tab or a pushed page covers the player (set where it stops on
+    /// disappearing, cleared on appearing).
+    @State var isOffScreen = false
     /// Short confirmation shown over the player ("Saved to Watch Later").
     @State var toastMessage: String?
     #if os(iOS)
@@ -342,7 +345,13 @@ public struct ShortsPlayerView: View {
         .onDisappear {
             // Sheets and the share sheet keep the Short playing, like the official app.
             guard !isInBackground, !isOverlayPresented else { return }
+            #if os(iOS)
+            // A Short still loading would have started on its own.
+            resumeOnReappear = vm.isPlaying || vm.isStarting
+            #else
             resumeOnReappear = vm.isPlaying
+            #endif
+            isOffScreen = true
             vm.stop()
         }
         .onChange(of: scenePhase) { _, phase in
@@ -361,7 +370,13 @@ public struct ShortsPlayerView: View {
             handleFeedGrew(from: oldCount, to: newCount)
         }
         .onChange(of: isSuspended) { _, suspended in
-            if suspended { vm.stop() }
+            if suspended {
+                vm.stop()
+            } else if !isOffScreen {
+                #if os(iOS)
+                vm.endStop()
+                #endif
+            }
         }
         #if os(iOS)
         .onChange(of: vm.playerState) { _, newState in

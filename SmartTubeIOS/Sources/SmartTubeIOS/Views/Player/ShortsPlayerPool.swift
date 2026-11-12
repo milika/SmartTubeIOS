@@ -47,11 +47,16 @@ final class ShortsPlayerPool {
         // the incoming one has been told to play with sound, so the audio session
         // never goes idle in between (see `ShortsEmbedPlayerViewModel.deactivate`).
         let outgoing = newLive != liveSlot ? live : nil
+        // Out of sight (tab left, page pushed over it): a Short that becomes live now
+        // — the feed's first page arriving, a skip past a failed Short — must not
+        // start until the player is back.
+        let stopped = live.isStopped
         outgoing?.deactivate(keepingEmbedLive: true)
         liveSlot = newLive
         load(plan, from: [video] + neighbours, settings: settings)
 
         let player = players[newLive]
+        if stopped { player.markStopped() }
         var handOff: Task<Void, Never>?
         if !player.isLive {
             player.updateSettings(settings)

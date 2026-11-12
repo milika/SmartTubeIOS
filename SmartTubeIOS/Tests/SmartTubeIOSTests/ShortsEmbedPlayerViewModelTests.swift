@@ -393,6 +393,105 @@ struct ShortsEmbedPlayerViewModelTests {
         #expect(handOff == nil)
         #expect(vm.isLive == true)
     }
+
+    // MARK: Stopped (out of sight)
+
+    @Test("A Short stopped while loading stays on hold until play")
+    func stopWhileLoadingHoldsUntilPlay() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: true)
+        #expect(vm.isStarting)
+
+        vm.stop()
+
+        // A late iframe callback must not tell the embed to go live.
+        #expect(vm.isLive)
+        #expect(vm.isStopped)
+        #expect(vm.embedShouldBeLive == false)
+
+        vm.resume()
+
+        #expect(vm.isStopped == false)
+        #expect(vm.embedShouldBeLive)
+    }
+
+    @Test("Visible again without resuming: no longer stopped, still not playing")
+    func endStopDoesNotPlay() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: true)
+        vm.stop()
+
+        vm.endStop()
+
+        #expect(vm.isStopped == false)
+        #expect(vm.playerState == .unstarted)
+    }
+
+    @Test("Going to the background mid-start holds the Short; coming back starts it")
+    func backgroundWhileLoading() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: true)
+
+        vm.handleBackground()
+        #expect(vm.isStopped)
+        #expect(vm.wasPlayingBeforeSuspend)
+
+        vm.handleForeground()
+        #expect(vm.isStopped == false)
+    }
+
+    @Test("A stopped player going to the background is not resumed on returning")
+    func backgroundWhileStopped() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: true)
+        vm.stop()
+
+        vm.handleBackground()
+        vm.handleForeground()
+
+        #expect(vm.wasPlayingBeforeSuspend == false)
+        #expect(vm.isStopped)
+    }
+
+    @Test("A Short that times out while stopped reloads on play instead of failing")
+    func timeoutWhileStoppedReloadsOnPlay() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: true)
+        vm.stop()
+
+        vm.timedOut()
+
+        #expect(vm.playerError == nil)  // not skipped while away
+        #expect(vm.reloadsOnPlay)
+
+        vm.resume()
+
+        #expect(vm.reloadsOnPlay == false)
+        #expect(vm.videoId == "a")
+        #expect(vm.isLive)
+    }
+
+    @Test("A Short that times out on screen fails as before")
+    func timeoutOnScreenFails() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: true)
+
+        vm.timedOut()
+
+        #expect(vm.playerError == .webViewLoadFailed)
+        #expect(vm.reloadsOnPlay == false)
+    }
+
+    @Test("A Short leaving the screen drops the stop")
+    func deactivateClearsStop() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: true)
+        vm.stop()
+
+        vm.deactivate()
+
+        #expect(vm.isStopped == false)
+    }
 }
 
 #if os(iOS)
@@ -436,6 +535,35 @@ struct ShortsPlayerPoolTests {
         #expect(pool.player(holding: "a") === previous)
         #expect(pool.player(holding: "c")?.isLive == false)
         #expect(pool.players.filter(\.isLive).count == 1)
+    }
+
+    @Test("A Short going live while the player is out of sight stays stopped")
+    func showWhileStoppedKeepsNewShortStopped() {
+        let pool = ShortsPlayerPool(api: InnerTubeAPI())
+        pool.live.stop()  // tab left before the feed arrived
+
+        pool.show(live: short("a"), neighbours: [short("b")], settings: AppSettings())
+        #expect(pool.live.isStopped)
+        #expect(pool.live.embedShouldBeLive == false)
+
+        // A skip past a failed Short while still away.
+        pool.show(live: short("b"), neighbours: [short("a")], settings: AppSettings())
+        #expect(pool.live.video?.id == "b")
+        #expect(pool.live.isStopped)
+        #expect(pool.player(holding: "a")?.isStopped == false)
+    }
+
+    @Test("Once visible again, a swipe plays the next Short")
+    func showAfterEndStopPlays() {
+        let pool = ShortsPlayerPool(api: InnerTubeAPI())
+        pool.show(live: short("a"), neighbours: [short("b")], settings: AppSettings())
+        pool.live.stop()
+        pool.live.endStop()
+
+        pool.show(live: short("b"), neighbours: [short("a")], settings: AppSettings())
+
+        #expect(pool.live.isStopped == false)
+        #expect(pool.live.embedShouldBeLive)
     }
 
     @Test("preload never changes the live Short")

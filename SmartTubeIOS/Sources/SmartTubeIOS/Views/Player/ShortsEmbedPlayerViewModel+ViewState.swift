@@ -82,10 +82,10 @@ extension ShortsEmbedPlayerViewModel {
     }
 
     func handleBackground() {
-        guard !settings.backgroundPlaybackEnabled else { return }
-        guard isPlaying else { return }
+        guard !settings.backgroundPlaybackEnabled, !isStopped else { return }
+        guard isPlaying || isStarting else { return }
         wasPlayingBeforeSuspend = true
-        pause()
+        suspendPlayback()
     }
 
     func handleForeground() {
@@ -99,8 +99,13 @@ extension ShortsEmbedPlayerViewModel {
         play()
     }
 
+    /// The live Short has been told to play but hasn't started yet (still loading).
+    var isStarting: Bool { isLive && !hasReceivedFirstTick }
+
+    /// The player went out of sight (tab left, page pushed over it, another player
+    /// full screen). Stays stopped until the next `play()`.
     func stop() {
-        pause()
+        suspendPlayback()
         cancelControlsHide()
         readyTimeoutTask?.cancel()
         readyTimeoutTask = nil

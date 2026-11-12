@@ -41,6 +41,7 @@ enum AccessibilityID {
     enum Settings {
         static let shortsAutoScrollToggle = "settings.shortsAutoScrollToggle"
         static let shortsSponsorBlockToggle = "settings.shortsSponsorBlockToggle"
+        static let shortsFillScreenToggle = "settings.shortsFillScreenToggle"
         static let hideShortsTabToggle = "settings.hideShortsTabToggle"
     }
 }

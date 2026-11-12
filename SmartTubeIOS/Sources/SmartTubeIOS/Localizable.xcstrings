@@ -8115,6 +8115,14 @@
         }
       }
     },
+    "Fill Screen" : {
+      "comment" : "Settings › Shorts toggle: zoom Shorts in so the video reaches the top of the screen, cropping the sides",
+      "extractionState" : "manual"
+    },
+    "Zoom Shorts in so the video starts at the top of the screen, behind the status bar, like the YouTube app. The sides are cropped." : {
+      "comment" : "Settings › Shorts footer explaining the Fill Screen toggle",
+      "extractionState" : "manual"
+    },
     "ended" : {
       "localizations" : {
         "ar" : {

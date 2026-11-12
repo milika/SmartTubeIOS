@@ -149,10 +149,12 @@ public struct ShortsPlayerView: View {
             Color.black.ignoresSafeArea()
 
             #if os(iOS)
-            // The video sits below the status bar and runs down to the progress bar
-            // (see ShortsVideoLayout).
+            // The video sits below the status bar (or, with Fill Screen, behind it)
+            // and runs down to the progress bar (see ShortsVideoLayout).
             GeometryReader { geo in
-                let layout = ShortsVideoLayout(pageFrame: geo.frame(in: .global), controlsFrame: playerFrame)
+                let layout = ShortsVideoLayout(
+                    pageFrame: geo.frame(in: .global), controlsFrame: playerFrame,
+                    fillsScreen: store.settings.shortsFillScreen)
                 let scale = isVideoShrunk ? shrunkScale(height: layout.box.height) : 1
                 ZStack {
                     Color.clear.allowsHitTesting(false)

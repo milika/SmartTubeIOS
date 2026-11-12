@@ -83,6 +83,11 @@ public struct AppSettings: Codable {
     /// Shorts player: skip SponsorBlock segments (default on). Only applies while
     /// `sponsorBlockEnabled` is on, with the same categories as the main player.
     public var shortsSponsorBlock: Bool
+    /// Shorts player: zoom the video in so its top reaches the top of the screen
+    /// (behind the status bar) while its bottom stays at the progress bar, cropping
+    /// the sides, like the official app. Off (default): the video starts below the
+    /// status bar.
+    public var shortsFillScreen: Bool
     public var hideVideoPremieres: Bool
     /// When `true` (default), a per-device `visitorData` token is included in home-feed
     /// requests so YouTube tailors recommendations to this device.
@@ -297,6 +302,7 @@ public struct AppSettings: Codable {
         hideShortsTab = false
         shortsCaptions = false
         shortsSponsorBlock = true
+        shortsFillScreen = false
         hideVideoPremieres = false
         perDeviceRecommendationsEnabled = true
         themeName = .system
@@ -390,6 +396,7 @@ extension AppSettings {
         case hideShortsTab
         case shortsCaptions
         case shortsSponsorBlock
+        case shortsFillScreen
         case hideVideoPremieres
         case perDeviceRecommendationsEnabled
         case themeName
@@ -448,6 +455,7 @@ extension AppSettings {
         hideShortsTab = c.safeDecode(Bool.self, forKey: .hideShortsTab, default: d.hideShortsTab)
         shortsCaptions = c.safeDecode(Bool.self, forKey: .shortsCaptions, default: d.shortsCaptions)
         shortsSponsorBlock = c.safeDecode(Bool.self, forKey: .shortsSponsorBlock, default: d.shortsSponsorBlock)
+        shortsFillScreen = c.safeDecode(Bool.self, forKey: .shortsFillScreen, default: d.shortsFillScreen)
         hideVideoPremieres = c.safeDecode(Bool.self, forKey: .hideVideoPremieres, default: d.hideVideoPremieres)
         perDeviceRecommendationsEnabled = c.safeDecode(
             Bool.self, forKey: .perDeviceRecommendationsEnabled, default: d.perDeviceRecommendationsEnabled)

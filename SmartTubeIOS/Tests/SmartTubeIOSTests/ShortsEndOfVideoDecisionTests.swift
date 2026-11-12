@@ -67,4 +67,16 @@ struct ShortsEndOfVideoDecisionTests {
         let decoded = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
         #expect(decoded.shortsSponsorBlock == false)
     }
+
+    @Test("shortsFillScreen defaults to off (also for old JSON) and survives a round-trip when on")
+    func fillScreenPersistence() throws {
+        #expect(AppSettings().shortsFillScreen == false)
+        let legacy = try JSONDecoder().decode(AppSettings.self, from: Data("{}".utf8))
+        #expect(legacy.shortsFillScreen == false)
+
+        var settings = AppSettings()
+        settings.shortsFillScreen = true
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
+        #expect(decoded.shortsFillScreen == true)
+    }
 }

@@ -9,6 +9,10 @@ import SwiftUI
 /// slightly taller than 9:16, so filling leaves no black band above or below the
 /// video. Where filling would cut off too much (iPhone SE in the Shorts tab, iPad)
 /// the video fits instead, centered in the box.
+///
+/// With `fillsScreen` (Settings › Shorts › Fill Screen) the box starts at the top of
+/// the page, behind the status bar, as in the official app, and a box narrower than
+/// 9:16 is always filled however much that crops off the sides.
 struct ShortsVideoLayout: Equatable {
     /// Shorts are 9:16.
     static let videoAspect: CGFloat = 9.0 / 16.0
@@ -27,12 +31,13 @@ struct ShortsVideoLayout: Equatable {
     /// ignores the top safe area). `safeArea` is how far the controls sit inside it:
     /// the top inset keeps the video below the status bar, the bottom one (full-screen
     /// player only) keeps it above the home indicator, where the progress bar sits.
-    init(page: CGSize, safeArea: EdgeInsets) {
+    /// `fillsScreen` ignores the top inset and fills the box (see the type's doc).
+    init(page: CGSize, safeArea: EdgeInsets, fillsScreen: Bool = false) {
         self.page = page
-        let top = min(max(safeArea.top, 0), page.height)
+        let top = fillsScreen ? 0 : min(max(safeArea.top, 0), page.height)
         let bottom = min(max(safeArea.bottom, 0), page.height - top)
         box = CGRect(x: 0, y: top, width: page.width, height: page.height - top - bottom)
-        videoSize = Self.videoSize(in: box.size)
+        videoSize = Self.videoSize(in: box.size, fillsScreen: fillsScreen)
     }
 
     /// `pageFrame` is the pager page and `controlsFrame` the player's safe-area frame
@@ -40,20 +45,20 @@ struct ShortsVideoLayout: Equatable {
     /// The page's own safe-area insets can't be used: it ignores the top one, and in
     /// the Shorts tab it reports the tab bar as a bottom inset although it already
     /// ends above it. An unmeasured `controlsFrame` (empty) means no insets.
-    init(pageFrame: CGRect, controlsFrame: CGRect) {
+    init(pageFrame: CGRect, controlsFrame: CGRect, fillsScreen: Bool = false) {
         let insets =
             controlsFrame.isEmpty
             ? EdgeInsets()
             : EdgeInsets(
                 top: max(0, controlsFrame.minY - pageFrame.minY), leading: 0,
                 bottom: max(0, pageFrame.maxY - controlsFrame.maxY), trailing: 0)
-        self.init(page: pageFrame.size, safeArea: insets)
+        self.init(page: pageFrame.size, safeArea: insets, fillsScreen: fillsScreen)
     }
 
     /// Vertical offset that moves a view centered on the page to the center of `box`.
     var boxCenterOffset: CGFloat { box.midY - page.height / 2 }
 
-    private static func videoSize(in box: CGSize) -> CGSize {
+    private static func videoSize(in box: CGSize, fillsScreen: Bool) -> CGSize {
         guard box.width > 0, box.height > 0 else { return .zero }
         let widthBound = box.width / videoAspect <= box.height
         let fit =
@@ -64,6 +69,8 @@ struct ShortsVideoLayout: Equatable {
             widthBound
             ? CGSize(width: box.height * videoAspect, height: box.height)
             : CGSize(width: box.width, height: box.width / videoAspect)
+        // Filling a box narrower than 9:16 crops the sides only.
+        if fillsScreen && widthBound { return fill }
         let crop = 1 - fit.width / fill.width
         return crop <= maxFillCrop ? fill : fit
     }

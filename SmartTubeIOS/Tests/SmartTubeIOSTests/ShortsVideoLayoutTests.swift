@@ -96,6 +96,55 @@ struct ShortsVideoLayoutTests {
         #expect(layout.box == CGRect(x: 0, y: 0, width: 402, height: 791))
     }
 
+    // MARK: Fill Screen
+
+    @Test("Fill Screen: the video starts at the top of the screen and still ends at the progress bar")
+    func fillScreenTab() {
+        let layout = ShortsVideoLayout(
+            pageFrame: CGRect(x: 0, y: 0, width: 402, height: 791),
+            controlsFrame: CGRect(x: 0, y: 62, width: 402, height: 729), fillsScreen: true)
+
+        #expect(layout.box == CGRect(x: 0, y: 0, width: 402, height: 791))
+        #expect(layout.videoSize.height == 791)
+        // The sides are cropped.
+        #expect(layout.videoSize.width > layout.box.width)
+        #expect(layout.boxCenterOffset == 0)
+    }
+
+    @Test("Fill Screen in the full-screen player stays above the home indicator")
+    func fillScreenPresented() {
+        let layout = ShortsVideoLayout(
+            page: CGSize(width: 402, height: 874), safeArea: EdgeInsets(top: 62, leading: 0, bottom: 34, trailing: 0),
+            fillsScreen: true)
+
+        #expect(layout.box.minY == 0)
+        #expect(layout.box.maxY == 840)
+        #expect(layout.videoSize.height == 840)
+    }
+
+    /// Without the setting a Pro Max box this tall would crop more than
+    /// `maxFillCrop`; Fill Screen crops the sides anyway.
+    @Test("Fill Screen fills a large iPhone however much it crops off the sides")
+    func fillScreenProMax() {
+        let layout = ShortsVideoLayout(
+            page: CGSize(width: 440, height: 873), safeArea: EdgeInsets(top: 62, leading: 0, bottom: 0, trailing: 0),
+            fillsScreen: true)
+
+        #expect(1 - layout.box.width / layout.videoSize.width > ShortsVideoLayout.maxFillCrop)
+        #expect(layout.videoSize.height == layout.box.height)
+    }
+
+    @Test("Fill Screen never crops an iPad's top and bottom away")
+    func fillScreenIPad() {
+        let layout = ShortsVideoLayout(
+            page: CGSize(width: 820, height: 1115), safeArea: EdgeInsets(top: 24, leading: 0, bottom: 0, trailing: 0),
+            fillsScreen: true)
+
+        #expect(layout.box.minY == 0)
+        #expect(layout.videoSize.height == layout.box.height)
+        #expect(layout.videoSize.width < layout.box.width)
+    }
+
     @Test("An empty page has no video size")
     func emptyPage() {
         let layout = ShortsVideoLayout(page: .zero, safeArea: EdgeInsets())

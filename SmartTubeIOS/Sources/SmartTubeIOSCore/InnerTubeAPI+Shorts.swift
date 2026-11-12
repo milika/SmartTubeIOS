@@ -159,7 +159,9 @@ extension InnerTubeAPI {
             var pending = videos.count
             while pending > 0, let next = await group.next() {
                 guard let (index, metadata) = next else {
-                    shortsLog.notice("Shorts shelf: \(pending, privacy: .public) titles still loading — showing the page without them")
+                    shortsLog.notice(
+                        "Shorts shelf: \(pending, privacy: .public) titles still loading — showing the page without them"
+                    )
                     break
                 }
                 pending -= 1

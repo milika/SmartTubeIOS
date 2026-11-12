@@ -15,7 +15,6 @@ import Foundation
 //
 // Gotcha: a TV `continuation` must be sent back as `continuation`. Sent as
 // `sequenceParams` it is accepted but silently returns the first page again.
-// See docs/superpowers/plans/2026-11-11-shorts-algorithm-feed-and-ui.md.
 
 /// One page of Shorts from YouTube's Shorts sequence.
 public struct ShortsFeedPage: Sendable, Equatable {

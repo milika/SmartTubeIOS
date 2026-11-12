@@ -424,7 +424,8 @@ struct HomeViewModelTests {
         let mock = MockInnerTubeAPI()
         let shelf = (0..<2).map { Video(id: "algo\($0)_KKKKK", title: "S\($0)", channelTitle: "Ch", isShort: true) }
         mock.shortsResult = VideoGroup(title: "Shorts", videos: shelf, nextPageToken: nil)
-        mock.subscriptionsResult = VideoGroup(title: "Subs", videos: [makeVideo("sub0_KKKKK")], nextPageToken: "subs_tok")
+        mock.subscriptionsResult = VideoGroup(
+            title: "Subs", videos: [makeVideo("sub0_KKKKK")], nextPageToken: "subs_tok")
 
         let vm = HomeViewModel(api: mock)
         defer { vm.cancel() }

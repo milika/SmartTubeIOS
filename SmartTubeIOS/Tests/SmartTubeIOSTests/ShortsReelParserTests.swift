@@ -3,9 +3,8 @@ import Testing
 
 @testable import SmartTubeIOSCore
 
-/// The JSON below mirrors the TVHTML5 `reel/*` responses captured on 2026-11-11
-/// (see docs/superpowers/plans/2026-11-11-shorts-algorithm-feed-and-ui.md), trimmed
-/// to the fields the parser reads.
+/// The JSON below mirrors the TVHTML5 `reel/*` responses captured on 2026-11-11,
+/// trimmed to the fields the parser reads.
 @Suite("Shorts reel parser")
 struct ShortsReelParserTests {
 

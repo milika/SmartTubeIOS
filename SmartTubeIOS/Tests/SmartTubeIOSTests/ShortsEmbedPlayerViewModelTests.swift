@@ -466,6 +466,22 @@ struct ShortsEmbedPlayerViewModelTests {
         #expect(vm.isStopped)
     }
 
+    @Test("A Short leaving the screen drops the stop")
+    func deactivateClearsStop() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: true)
+        vm.stop()
+
+        vm.deactivate()
+
+        #expect(vm.isStopped == false)
+    }
+}
+
+// MARK: Ready timeout
+
+extension ShortsEmbedPlayerViewModelTests {
+
     @Test("A Short that times out while stopped reloads on play instead of failing")
     func timeoutWhileStoppedReloadsOnPlay() {
         let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
@@ -503,17 +519,6 @@ struct ShortsEmbedPlayerViewModelTests {
 
         #expect(vm.playerError == .webViewLoadFailed)
         #expect(vm.reloadsOnPlay == false)
-    }
-
-    @Test("A Short leaving the screen drops the stop")
-    func deactivateClearsStop() {
-        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
-        vm.loadShort(video: short("a"), live: true)
-        vm.stop()
-
-        vm.deactivate()
-
-        #expect(vm.isStopped == false)
     }
 }
 

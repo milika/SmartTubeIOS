@@ -179,6 +179,11 @@ struct ShortsRowSection: View {
 struct ShortsRowPlaceholder: View {
     private let cardCount = 9
     private let cardHeight = ShortsRowSection.cardWidth * 16 / 9
+    #if os(tvOS)
+    private let bottomPadding: CGFloat = 4
+    #else
+    private let bottomPadding: CGFloat = 12
+    #endif
 
     var body: some View {
         Color.clear
@@ -196,12 +201,8 @@ struct ShortsRowPlaceholder: View {
                 .fixedSize()
             }
             .clipped()
-            #if os(tvOS)
-            .padding(.vertical, 4)
-            #else
             .padding(.top, 4)
-            .padding(.bottom, 12)
-            #endif
+            .padding(.bottom, bottomPadding)
             .accessibilityHidden(true)
     }
 }

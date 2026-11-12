@@ -40,7 +40,12 @@ private final class FakeShortsProvider: ShortsFeedProviding, @unchecked Sendable
         if searchShouldFail { throw FakeError() }
         return searchGroup
     }
-    func fetchShortsMore(continuationToken: String) throws -> VideoGroup { VideoGroup(title: "", videos: []) }
+    var moreSearchPages: [String: VideoGroup] = [:]
+    private(set) var searchContinuations: [String] = []
+    func fetchShortsMore(continuationToken: String) throws -> VideoGroup {
+        searchContinuations.append(continuationToken)
+        return moreSearchPages[continuationToken] ?? VideoGroup(title: "", videos: [])
+    }
     func like(videoId: String) throws {
         likeCalls.append("like")
         if likeShouldFail { throw FakeError() }
@@ -175,6 +180,21 @@ struct ShortsFeedViewModelTests {
         #expect(provider.searchCalls == 1)
         #expect(vm.videos.map(\.id) == ["s1"])
         #expect(vm.loadError == nil)
+    }
+
+    @Test("The search fallback after an empty sequence keeps paging")
+    func searchFallbackPagesOn() async {
+        let provider = FakeShortsProvider()
+        provider.firstPage = .success(ShortsFeedPage(videos: [], continuation: nil, isPersonalized: false))
+        provider.searchGroup = VideoGroup(title: "Shorts", videos: [short("s1")], nextPageToken: "S1")
+        provider.moreSearchPages["S1"] = VideoGroup(title: "", videos: [short("s2")])
+        let vm = ShortsFeedViewModel(source: .algorithm(seed: nil), provider: provider)
+
+        await vm.start()
+        await vm.loadMoreIfNeeded(currentIndex: 0)
+
+        #expect(provider.searchContinuations == ["S1"])
+        #expect(vm.videos.map(\.id) == ["s1", "s2"])
     }
 
     @Test("A feed with no Shorts anywhere shows an error and retries on the next start")

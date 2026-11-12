@@ -275,6 +275,10 @@ public final class ShortsFeedViewModel {
             return
         }
         usingSearchFallback = true
+        // A new source: the sequence's paging state (an empty last page marked the
+        // feed exhausted) must not stop the search from paging on.
+        continuation = nil
+        exhausted = false
         do {
             let group = try await provider.searchShorts()
             searchContinuation = group.nextPageToken

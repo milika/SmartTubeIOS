@@ -70,6 +70,11 @@ public final class ShortsFeedViewModel {
     private var didStart = false
     private var metadataInFlight: Set<String> = []
     private var hiddenChannelIds: Set<String> = []
+    /// Like/dislike and subscribe changes made in this feed. They also apply to a
+    /// Short whose metadata hasn't arrived yet (or failed), and override the state
+    /// in metadata fetched before the change landed.
+    private var likeChanges: [String: LikeStatus] = [:]
+    private var subscriptionChanges: [String: Bool] = [:]
 
     public init(source: Source, provider: any ShortsFeedProviding) {
         self.source = source
@@ -129,6 +134,10 @@ public final class ShortsFeedViewModel {
             if !signedIn, let channelId = fetched.channelId {
                 fetched.isSubscribed = await LocalSubscriptionStore.shared.isFollowing(channelId)
             }
+            if let changed = likeChanges[videoId] { fetched.likeStatus = changed }
+            if let channelId = fetched.channelId, let changed = subscriptionChanges[channelId] {
+                fetched.isSubscribed = changed
+            }
             metadata[videoId] = fetched
             if let index = videos.firstIndex(where: { $0.id == videoId }) {
                 if videos[index].title.isEmpty { videos[index].title = fetched.title }
@@ -141,22 +150,37 @@ public final class ShortsFeedViewModel {
         }
     }
 
+    /// What the overlay shows for `video`: its metadata, or — until that arrives —
+    /// what the feed already knows, with any like/subscribe change made meanwhile.
+    public func displayMetadata(for video: Video) -> ShortMetadata {
+        if let loaded = metadata[video.id] { return loaded }
+        var known = ShortMetadata(
+            videoId: video.id, title: video.title, channelTitle: video.channelTitle, channelId: video.channelId)
+        known.likeStatus = likeChanges[video.id] ?? .none
+        if let channelId = video.channelId { known.isSubscribed = subscriptionChanges[channelId] ?? false }
+        return known
+    }
+
     // MARK: Actions
 
     /// Like ↔ none. Optimistic; reverts on failure. Requires sign-in (caller gates).
     public func toggleLike(videoId: String) async {
-        await setLikeStatus(videoId: videoId, to: metadata[videoId]?.likeStatus == .like ? .none : .like)
+        await setLikeStatus(videoId: videoId, to: likeStatus(of: videoId) == .like ? .none : .like)
     }
 
     /// Dislike ↔ none. Optimistic; reverts on failure. Requires sign-in (caller gates).
     public func toggleDislike(videoId: String) async {
-        await setLikeStatus(videoId: videoId, to: metadata[videoId]?.likeStatus == .dislike ? .none : .dislike)
+        await setLikeStatus(videoId: videoId, to: likeStatus(of: videoId) == .dislike ? .none : .dislike)
     }
 
     /// Subscribes/unsubscribes the channel of `videoId`. Signed in → YouTube account;
     /// signed out → the app's local subscriptions (same as ChannelView).
+    /// Works before the Short's metadata has arrived when the feed already knows its
+    /// channel (the subscribe state then starts out as not subscribed).
     public func toggleSubscription(videoId: String, signedIn: Bool) async {
-        guard let current = metadata[videoId], let channelId = current.channelId else { return }
+        guard let video = videos.first(where: { $0.id == videoId }) else { return }
+        let current = displayMetadata(for: video)
+        guard let channelId = current.channelId else { return }
         let subscribe = !current.isSubscribed
         updateSubscription(channelId: channelId, to: subscribe)
         do {
@@ -183,7 +207,13 @@ public final class ShortsFeedViewModel {
     /// `channelId`, and keeps later pages from adding more of them. Shorts at or
     /// before `index` stay so the current position doesn't move.
     public func hideChannel(_ channelId: String, after index: Int) {
-        hiddenChannelIds.insert(channelId)
+        hideChannels([channelId], after: index)
+    }
+
+    /// `hideChannel(_:after:)` for several channels, e.g. the ones the user stopped
+    /// recommending earlier (`AppSettings.blockedChannels`) when a feed opens.
+    public func hideChannels(_ channelIds: some Sequence<String>, after index: Int) {
+        hiddenChannelIds.formUnion(channelIds)
         removeHiddenChannels(after: index)
     }
 
@@ -209,6 +239,7 @@ public final class ShortsFeedViewModel {
     private func fetchFirstPage(seedVideoId: String?) async {
         isFetchingMore = true
         defer { isFetchingMore = false }
+        let countBefore = videos.count
         do {
             let page = try await provider.fetchShortsFeed(seedVideoId: seedVideoId)
             if apply(page) == 0, let next = page.continuation { await followSequence(from: next) }
@@ -218,20 +249,21 @@ public final class ShortsFeedViewModel {
             )
             await startSearchFallback()
         }
-        await fallBackIfEmpty()
+        await fallBackIfNothingAdded(since: countBefore)
     }
 
-    /// The sequence (or the search) ran out without a single Short. Tries the search
-    /// if it hasn't run yet; if that has none either, reports the feed as failed, so
-    /// the empty state says so and the next `start()` retries instead of showing a
-    /// spinner that never ends.
-    private func fallBackIfEmpty() async {
-        guard videos.isEmpty, exhausted, loadError == nil else { return }
+    /// The sequence (or the search) ran out without adding a Short — the feed would
+    /// stay on the Shorts it has (a tapped Short, a channel's list) or on nothing.
+    /// Tries the search if it hasn't run yet. If an empty feed gets nothing from that
+    /// either, reports it as failed, so the empty state says so and the next
+    /// `start()` retries instead of showing a spinner that never ends.
+    private func fallBackIfNothingAdded(since countBefore: Int) async {
+        guard videos.count == countBefore, exhausted, loadError == nil else { return }
         if !usingSearchFallback {
-            feedLog.error("Shorts sequence came back empty — falling back to #shorts search")
+            feedLog.error("Shorts sequence added nothing — falling back to #shorts search")
             await startSearchFallback()
-            guard videos.isEmpty, exhausted, loadError == nil else { return }
         }
+        guard videos.isEmpty, exhausted, loadError == nil else { return }
         feedLog.error("Shorts feed came back empty")
         resetPaging()
         loadError = Self.emptyFeedMessage
@@ -350,9 +382,21 @@ public final class ShortsFeedViewModel {
         return fresh.count
     }
 
+    private func likeStatus(of videoId: String) -> LikeStatus {
+        metadata[videoId]?.likeStatus ?? likeChanges[videoId] ?? .none
+    }
+
+    private func applyLikeStatus(_ status: LikeStatus, to videoId: String) {
+        likeChanges[videoId] = status
+        metadata[videoId]?.likeStatus = status
+    }
+
+    /// Works before the Short's metadata has arrived (the status then starts out as
+    /// none; liking an already liked Short is harmless).
     private func setLikeStatus(videoId: String, to newStatus: LikeStatus) async {
-        guard let previous = metadata[videoId]?.likeStatus, previous != newStatus else { return }
-        metadata[videoId]?.likeStatus = newStatus
+        let previous = likeStatus(of: videoId)
+        guard previous != newStatus else { return }
+        applyLikeStatus(newStatus, to: videoId)
         do {
             switch newStatus {
             case .like: try await provider.like(videoId: videoId)
@@ -361,12 +405,13 @@ public final class ShortsFeedViewModel {
             }
         } catch {
             feedLog.error("like change failed: \(String(describing: error), privacy: .public)")
-            metadata[videoId]?.likeStatus = previous
+            applyLikeStatus(previous, to: videoId)
         }
     }
 
     /// Every Short from the same channel shares the subscribe state.
     private func updateSubscription(channelId: String, to subscribed: Bool) {
+        subscriptionChanges[channelId] = subscribed
         for (id, item) in metadata where item.channelId == channelId {
             metadata[id]?.isSubscribed = subscribed
         }

@@ -52,8 +52,9 @@ private final class FakeShortsProvider: ShortsFeedProviding, @unchecked Sendable
     }
     func dislike(videoId: String) throws { likeCalls.append("dislike") }
     func removeLike(videoId: String) throws { likeCalls.append("remove") }
-    func subscribe(channelId: String) throws {}
-    func unsubscribe(channelId: String) throws {}
+    private(set) var subscriptionCalls: [String] = []
+    func subscribe(channelId: String) throws { subscriptionCalls.append("subscribe \(channelId)") }
+    func unsubscribe(channelId: String) throws { subscriptionCalls.append("unsubscribe \(channelId)") }
 }
 
 @MainActor
@@ -182,6 +183,20 @@ struct ShortsFeedViewModelTests {
         #expect(vm.loadError == nil)
     }
 
+    @Test("A tapped Short whose sequence comes back empty continues with the search")
+    func seededEmptySequenceFallsBackToSearch() async {
+        let provider = FakeShortsProvider()
+        provider.firstPage = .success(ShortsFeedPage(videos: [short("t")], continuation: nil, isPersonalized: false))
+        provider.searchGroup = VideoGroup(title: "Shorts", videos: [short("s1")])
+        let vm = ShortsFeedViewModel(source: .algorithm(seed: short("t")), provider: provider)
+
+        await vm.start()
+
+        #expect(provider.searchCalls == 1)
+        #expect(vm.videos.map(\.id) == ["t", "s1"])
+        #expect(vm.loadError == nil)
+    }
+
     @Test("The search fallback after an empty sequence keeps paging")
     func searchFallbackPagesOn() async {
         let provider = FakeShortsProvider()
@@ -278,6 +293,61 @@ struct ShortsFeedViewModelTests {
         provider.likeShouldFail = true
         await vm.toggleLike(videoId: "a")
         #expect(vm.metadata["a"]?.likeStatus == LikeStatus.none)
+    }
+
+    @Test("Like works before the metadata arrives and survives its arrival")
+    func likeBeforeMetadata() async {
+        let provider = FakeShortsProvider()
+        let vm = ShortsFeedViewModel(source: .algorithm(seed: short("a")), provider: provider)
+
+        await vm.toggleLike(videoId: "a")
+        #expect(provider.likeCalls == ["like"])
+        #expect(vm.displayMetadata(for: short("a")).likeStatus == .like)
+
+        // Fetched before the like landed: still says not liked.
+        provider.metadataResult = .success(ShortMetadata(videoId: "a", title: "T", channelTitle: ""))
+        await vm.loadMetadata(for: "a", signedIn: true)
+        #expect(vm.metadata["a"]?.likeStatus == .like)
+
+        await vm.toggleDislike(videoId: "a")
+        #expect(provider.likeCalls == ["like", "dislike"])
+        #expect(vm.metadata["a"]?.likeStatus == .dislike)
+    }
+
+    @Test("Subscribe works before the metadata arrives when the feed knows the channel")
+    func subscribeBeforeMetadata() async {
+        let provider = FakeShortsProvider()
+        let seed = Video(id: "a", title: "", channelTitle: "@chan", channelId: "UC1", isShort: true)
+        let vm = ShortsFeedViewModel(source: .algorithm(seed: seed), provider: provider)
+
+        await vm.toggleSubscription(videoId: "a", signedIn: true)
+
+        #expect(provider.subscriptionCalls == ["subscribe UC1"])
+        #expect(vm.displayMetadata(for: seed).isSubscribed)
+
+        provider.metadataResult = .success(
+            ShortMetadata(videoId: "a", title: "", channelTitle: "@chan", channelId: "UC1", isSubscribed: false))
+        await vm.loadMetadata(for: "a", signedIn: true)
+        #expect(vm.metadata["a"]?.isSubscribed == true)
+    }
+
+    @Test("Channels blocked earlier are left out of a new feed, except the Short being watched")
+    func blockedChannelsApplyToNewFeeds() async {
+        func video(_ id: String, _ channel: String) -> Video {
+            Video(id: id, title: "", channelTitle: "", channelId: channel, isShort: true)
+        }
+        let provider = FakeShortsProvider()
+        provider.firstPage = .success(
+            ShortsFeedPage(videos: [video("b", "X"), video("c", "Y")], continuation: "C1", isPersonalized: true))
+        provider.morePages["C1"] = ShortsFeedPage(
+            videos: [video("d", "X"), video("e", "Z")], continuation: nil, isPersonalized: true)
+        let vm = ShortsFeedViewModel(source: .algorithm(seed: video("a", "X")), provider: provider)
+
+        vm.hideChannels(["X"], after: 0)
+        await vm.start()
+        await vm.loadMoreIfNeeded(currentIndex: 1)
+
+        #expect(vm.videos.map(\.id) == ["a", "c", "e"])
     }
 
     @Test("Don't recommend channel drops that channel's upcoming Shorts and filters later pages")

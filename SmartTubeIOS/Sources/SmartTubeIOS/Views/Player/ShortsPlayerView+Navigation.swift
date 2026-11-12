@@ -35,6 +35,8 @@ extension ShortsPlayerView {
                 loadVideo(at: currentIndex)
             }
         }
+        // Channels the user stopped recommending earlier (here or in another feed).
+        feed.hideChannels(store.settings.blockedChannels.keys, after: currentIndex)
         if ProcessInfo.processInfo.arguments.contains("--uitesting-show-controls") {
             vm.showControls()
             vm.cancelControlsHide()
@@ -64,7 +66,7 @@ extension ShortsPlayerView {
     /// Advances past a Short that ended (or failed) while auto-scroll had to wait —
     /// for the next page, or for a sheet over the player to close.
     func continueAutoScrollIfWaiting() {
-        guard vm.videoEnded,
+        guard vm.videoEnded || advancesWhenOverlayCloses,
             ShortsEndOfVideoDecision.advancesAfterWaiting(
                 settings: store.settings, failed: vm.playerError?.isFatal == true),
             currentIndex + 1 < videos.count, !isTransitioning, !isOverlayPresented
@@ -101,6 +103,9 @@ extension ShortsPlayerView {
         // On iOS the target Short is normally already preloaded in its own pool slot
         // and sitting on its first frame, so this just starts it (see ShortsPlayerPool).
         currentIndex = index
+        #if os(iOS)
+        advancesWhenOverlayCloses = false
+        #endif
         loadVideo(at: index)
 
         isTitleExpanded = false
@@ -190,7 +195,10 @@ extension ShortsPlayerView {
             vm.seekTo(0)
             vm.play()
         case .advance where isOverlayPresented:
-            // A sheet's actions target the current Short: loop it until the sheet closes.
+            // A sheet's actions target the current Short: loop it until the sheet
+            // closes, then advance (`continueAutoScrollIfWaiting()`). Not through
+            // `videoEnded`, which would turn a tap on the replaying Short into a restart.
+            advancesWhenOverlayCloses = true
             vm.seekTo(0)
             vm.play()
         case .advance(let next):

@@ -135,9 +135,7 @@ extension ShortsPlayerView {
     }
 
     private func metadata(for video: Video) -> ShortMetadata {
-        feed.metadata[video.id]
-            ?? ShortMetadata(
-                videoId: video.id, title: video.title, channelTitle: video.channelTitle, channelId: video.channelId)
+        feed.displayMetadata(for: video)
     }
 
     // MARK: Gesture

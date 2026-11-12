@@ -104,9 +104,7 @@ extension ShortsPlayerView {
     /// Current Short's metadata, falling back to what the feed already knows.
     var currentMetadata: ShortMetadata? {
         guard let video = currentVideo else { return nil }
-        return feed.metadata[video.id]
-            ?? ShortMetadata(
-                videoId: video.id, title: video.title, channelTitle: video.channelTitle, channelId: video.channelId)
+        return feed.displayMetadata(for: video)
     }
 
     // Official layout: top bar, then info panel (bottom-left) beside the action rail

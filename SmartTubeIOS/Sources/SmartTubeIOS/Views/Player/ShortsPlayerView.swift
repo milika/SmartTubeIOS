@@ -75,6 +75,11 @@ public struct ShortsPlayerView: View {
     /// Short confirmation shown over the player ("Saved to Watch Later").
     @State var toastMessage: String?
     #if os(iOS)
+    /// The Short ended under a sheet with auto-scroll on: it replays until the sheet
+    /// closes, then the feed moves on. Cleared when another Short is shown.
+    @State var advancesWhenOverlayCloses = false
+    #endif
+    #if os(iOS)
     @State var captions: ShortsCaptionsController
     #endif
 

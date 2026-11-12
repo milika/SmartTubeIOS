@@ -149,30 +149,39 @@ public struct ShortsPlayerView: View {
             Color.black.ignoresSafeArea()
 
             #if os(iOS)
-            // Size the embed to its natural 9:16 aspect ratio and center it.
+            // The video sits below the status bar and runs down to the progress bar
+            // (see ShortsVideoLayout).
             GeometryReader { geo in
-                let videoH = min(geo.size.height, geo.size.width * 16.0 / 9.0)
+                let layout = ShortsVideoLayout(pageFrame: geo.frame(in: .global), controlsFrame: playerFrame)
+                let scale = isVideoShrunk ? shrunkScale(height: layout.box.height) : 1
                 ZStack {
                     Color.clear.allowsHitTesting(false)
                     // One web view per pool slot, each fixed in place for its whole life;
                     // paging only moves them (see ShortsPlayerPool).
                     ForEach(pool.players.indices, id: \.self) { slot in
                         ShortsTOSWebView(vm: pool.players[slot])
-                            .frame(width: geo.size.width, height: videoH)
-                            .offset(y: slotOffset(for: pool.players[slot], pageHeight: geo.size.height))
+                            .frame(width: layout.videoSize.width, height: layout.videoSize.height)
+                            .frame(width: layout.box.width, height: layout.box.height)
+                            .clipped()
+                            .offset(
+                                y: layout.boxCenterOffset
+                                    + slotOffset(for: pool.players[slot], pageHeight: geo.size.height)
+                            )
                             .allowsHitTesting(false)
                             .accessibilityHidden(true)
                     }
                     // Posters over pages whose video has no frame on screen yet.
-                    pagePosters(size: geo.size, videoHeight: videoH)
-                    captionLayer(videoHeight: videoH)
+                    pagePosters(layout: layout)
+                    captionLayer(layout: layout)
                 }
                 // Neighbour pages sit just outside the page; in the Shorts tab the page
                 // ends above the tab bar, so without this the next Short's top edge
                 // shows under the tab bar.
                 .clipped()
-                .scaleEffect(isVideoShrunk ? shrunkScale(height: geo.size.height) : 1, anchor: .top)
-                .offset(y: isVideoShrunk ? shrunkTopInset : 0)
+                // Shrunk above a sheet, the video's top edge (not the page's, which
+                // runs under the status bar) lands at `shrunkTopInset`.
+                .scaleEffect(scale, anchor: .top)
+                .offset(y: isVideoShrunk ? shrunkTopInset - layout.box.minY * scale : 0)
                 .animation(ShortsPaging.shrinkAnimation, value: isVideoShrunk)
             }
             .onGeometryChange(for: CGFloat.self) {

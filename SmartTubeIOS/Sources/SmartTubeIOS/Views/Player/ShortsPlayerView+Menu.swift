@@ -117,7 +117,7 @@ extension ShortsPlayerView {
 
     /// The current caption cue, at the bottom of the live video above the info panel.
     @ViewBuilder
-    func captionLayer(videoHeight: CGFloat) -> some View {
+    func captionLayer(layout: ShortsVideoLayout) -> some View {
         #if os(iOS)
         if let text = captions.cueText {
             VStack {
@@ -128,8 +128,8 @@ extension ShortsPlayerView {
                     .padding(.trailing, controlsHidden ? 0 : ShortsPaging.captionRailClearance)
                     .padding(.bottom, controlsHidden ? 24 : ShortsPaging.captionBottomInset)
             }
-            .frame(height: videoHeight)
-            .offset(y: slideOffset)
+            .frame(height: layout.box.height)
+            .offset(y: layout.boxCenterOffset + slideOffset)
             .allowsHitTesting(false)
             .animation(.easeInOut(duration: 0.2), value: isScreenCleared)
         }
@@ -141,7 +141,7 @@ extension ShortsPlayerView {
     /// Space above the video while shrunk: the top safe area.
     var shrunkTopInset: CGFloat { max(playerFrame.minY, 12) }
 
-    /// Scale that fits a page of `height` between the top safe area and a
+    /// Scale that fits a video area of `height` between the top safe area and a
     /// medium-detent sheet.
     func shrunkScale(height: CGFloat) -> CGFloat {
         guard height > 0 else { return 1 }

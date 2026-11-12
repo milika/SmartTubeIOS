@@ -97,11 +97,12 @@ extension ShortsPlayerView {
 
     /// Thumbnails covering pages whose video has no frame yet, laid out in the
     /// video's coordinate space so they line up with the web views.
-    func pagePosters(size: CGSize, videoHeight: CGFloat) -> some View {
-        ForEach(pageWindow) { page in
+    func pagePosters(layout: ShortsVideoLayout) -> some View {
+        let size = layout.page
+        return ForEach(pageWindow) { page in
             let isLive = page.position == 0
             let covered = isCovered(page)
-            ShortsPosterView(video: page.video, width: size.width, videoHeight: videoHeight)
+            ShortsPosterView(video: page.video, layout: layout)
                 .frame(width: size.width, height: size.height)
                 .animation(ShortsPaging.coverFadeAnimation) { content in
                     content.opacity(covered ? 1 : 0)
@@ -216,11 +217,10 @@ struct ShortsPageBottomClip: Shape {
 
 // MARK: - Poster views
 
-/// A Short's portrait thumbnail, framed like the live video.
+/// A Short's portrait thumbnail on a black page, framed like the live video.
 struct ShortsPosterView: View {
     let video: Video
-    let width: CGFloat
-    let videoHeight: CGFloat
+    let layout: ShortsVideoLayout
 
     var body: some View {
         ZStack {
@@ -231,8 +231,10 @@ struct ShortsPosterView: View {
                 placeholder: .black,
                 showsProgress: false
             )
-            .frame(width: width, height: videoHeight)
+            .frame(width: layout.videoSize.width, height: layout.videoSize.height)
+            .frame(width: layout.box.width, height: layout.box.height)
             .clipped()
+            .offset(y: layout.boxCenterOffset)
         }
     }
 }

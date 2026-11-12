@@ -43,10 +43,11 @@ extension InnerTubeAPI {
             body["disablePlayerResponse"] = true
             let json = try await postReel(endpoint: "reel/reel_item_watch", body: body)
             let seedless = ShortsReelParser.parseSeedless(json)
-            guard let first = seedless.first, let params = seedless.sequenceParams else {
-                throw APIError.decodingError("Seedless Shorts response had no first Short")
+            guard let params = seedless.sequenceParams else {
+                throw APIError.decodingError("Seedless Shorts response had no sequence params")
             }
-            leading = [first]
+            // No first Short when it is an ad: the sequence still follows.
+            leading = seedless.first.map { [$0] } ?? []
             sequenceParams = params
         }
         var body = makeBody(client: tvClientContext)

@@ -41,6 +41,36 @@ struct ShortsReelParserTests {
         #expect(parsed.continuation == "NEXT")
     }
 
+    /// A sequence entry as YouTube marks an ad, from a 2026-11-12 capture.
+    private func adEntry(_ id: String, isAd: Bool = true, videoType: String = "REEL_VIDEO_TYPE_AD") -> [String: Any] {
+        var endpoint: [String: Any] = ["videoId": id, "videoType": videoType]
+        if isAd { endpoint["adClientParams"] = ["isAd": true] }
+        return ["command": ["reelWatchEndpoint": endpoint]]
+    }
+
+    @Test("Sequence leaves out Shorts ads, whichever of the two markers they carry")
+    func skipsAds() {
+        let json: [String: Any] = [
+            "entries": [
+                entry("aaa"), adEntry("ad1"), adEntry("ad2", isAd: false),
+                adEntry("ad3", videoType: "REEL_VIDEO_TYPE_VIDEO"), entry("bbb"),
+            ],
+            "continuation": "NEXT",
+        ]
+        #expect(ShortsReelParser.parseSequence(json).videos.map(\.id) == ["aaa", "bbb"])
+    }
+
+    @Test("A seedless start that is an ad gives no first Short but keeps the sequence")
+    func seedlessAd() throws {
+        let json: [String: Any] = [
+            "replacementEndpoint": try #require(adEntry("ad")["command"]),
+            "sequenceContinuation": "SEQ",
+        ]
+        let parsed = ShortsReelParser.parseSeedless(json)
+        #expect(parsed.first == nil)
+        #expect(parsed.sequenceParams == "SEQ")
+    }
+
     @Test("Sequence also reads the WEB continuationEndpoint shape")
     func parsesWebContinuation() {
         let json: [String: Any] = [

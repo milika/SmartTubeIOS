@@ -103,7 +103,8 @@ public enum ShortsSequenceParams {
 
 public enum ShortsReelParser {
 
-    /// `reel/reel_watch_sequence` → Shorts in order + next-page token.
+    /// `reel/reel_watch_sequence` → Shorts in order + next-page token. Ads are left out
+    /// (`isAd(reelWatchEndpoint:)`).
     public static func parseSequence(_ json: [String: Any]) -> (videos: [Video], continuation: String?) {
         let entries = json["entries"] as? [[String: Any]] ?? []
         var seen = Set<String>()
@@ -119,7 +120,8 @@ public enum ShortsReelParser {
         return (videos, continuationToken(json))
     }
 
-    /// Seedless `reel/reel_item_watch` → the first Short + `sequenceParams` for the rest.
+    /// Seedless `reel/reel_item_watch` → the first Short (nil if it is an ad) +
+    /// `sequenceParams` for the rest.
     public static func parseSeedless(_ json: [String: Any]) -> (first: Video?, sequenceParams: String?) {
         let replacement = json["replacementEndpoint"] as? [String: Any]
         let endpoint = replacement?["reelWatchEndpoint"] as? [String: Any]
@@ -182,8 +184,19 @@ public enum ShortsReelParser {
 
     // MARK: Helpers
 
+    /// Shorts ads come in the sequence as ordinary reelWatchEndpoints, even for a
+    /// YouTube Premium account, marked `adClientParams.isAd` and
+    /// `videoType: REEL_VIDEO_TYPE_AD` (a regular Short is `REEL_VIDEO_TYPE_VIDEO`).
+    /// Captured from a TVHTML5 `reel/reel_watch_sequence` on 2026-11-12.
+    static func isAd(reelWatchEndpoint endpoint: [String: Any]) -> Bool {
+        let adParams = endpoint["adClientParams"] as? [String: Any]
+        return adParams?["isAd"] as? Bool == true || endpoint["videoType"] as? String == "REEL_VIDEO_TYPE_AD"
+    }
+
+    /// The Short a reelWatchEndpoint opens; nil for an ad or an endpoint without an id.
     static func video(fromReelWatchEndpoint endpoint: [String: Any]) -> Video? {
-        guard let id = endpoint["videoId"] as? String, !id.isEmpty else { return nil }
+        guard let id = endpoint["videoId"] as? String, !id.isEmpty, !isAd(reelWatchEndpoint: endpoint)
+        else { return nil }
         return Video(
             id: id,
             title: "",

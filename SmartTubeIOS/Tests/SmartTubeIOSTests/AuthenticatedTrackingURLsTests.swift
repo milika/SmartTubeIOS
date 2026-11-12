@@ -125,7 +125,7 @@ struct AuthenticatedTrackingURLsTests {
 
     // MARK: - fetchHistoryTrackingURLs
 
-    @Test("history tracking request is the authenticated TVHTML5 /player on www.youtube.com")
+    @Test("history tracking request is Android's authenticated TV_DOWNGRADED /player on www.youtube.com")
     func historyRequestMatchesAndroid() async {
         StubURLProtocol.reset(responses: [
             Self.stsPage: (200, Data("\"STS\":12345".utf8)),
@@ -144,10 +144,17 @@ struct AuthenticatedTrackingURLsTests {
         #expect(!query.contains { $0.name == "key" }, "Bearer requests carry no API key")
         #expect(headers["Authorization"] == "Bearer fake-token")
         #expect(headers["X-YouTube-Client-Name"] == InnerTubeClients.TV.nameID)
-        #expect(headers["User-Agent"] == InnerTubeClients.TV.userAgent)
+        // The 7.x client answers UNPLAYABLE without a living-room BotGuard poToken; the
+        // downgraded 5.x client with the old Cobalt UA needs none (Android TV_DOWNGRADED).
+        #expect(headers["X-YouTube-Client-Version"] == InnerTubeClients.TVDowngraded.version)
+        #expect(headers["User-Agent"] == InnerTubeClients.TVDowngraded.userAgent)
         #expect(headers["Referer"] == InnerTubeClients.TV.referer)
         let client = (body["context"] as? [String: Any])?["client"] as? [String: Any]
         #expect(client?["clientName"] as? String == InnerTubeClients.TV.name)
+        #expect(client?["clientVersion"] as? String == InnerTubeClients.TVDowngraded.version)
+        #expect(client?["userAgent"] as? String == InnerTubeClients.TVDowngraded.userAgent)
+        #expect(client?["clientScreen"] as? String == "WATCH")
+        #expect(body["serviceIntegrityDimensions"] == nil, "TV_DOWNGRADED sends no poToken")
         #expect(body["videoId"] as? String == "testvid123")
         #expect(body["cpn"] as? String == "CPN123", "The pings reuse this cpn, so the request must carry it")
         let cpbc = (body["playbackContext"] as? [String: Any])?["contentPlaybackContext"] as? [String: Any]

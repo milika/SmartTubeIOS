@@ -303,7 +303,8 @@ extension InnerTubeAPI {
     /// Resolves the account-bound `playbackTracking` URLs for a watch session.
     ///
     /// Mirrors Android's `FormatInfoWrapper.syncWithAuthInfoIfNeeded` →
-    /// `VideoInfoService.getAuthVideoInfo`: an authenticated TVHTML5 `/player` request on
+    /// `VideoInfoService.getAuthVideoInfo`: an authenticated `/player` request with the
+    /// downgraded TVHTML5 client (`TVDowngraded`, which needs no BotGuard poToken) on
     /// www.youtube.com carrying the session's `cpn`. The `ei`/`vm`/`of` in the returned URLs
     /// are what tie the stats pings to the account. URLs from an unauthenticated player
     /// response (the iOS client used for streams) are bound to an anonymous visitor: YouTube
@@ -317,7 +318,8 @@ extension InnerTubeAPI {
             let host = onYouTubeHost ? "www" : "googleapis"
             do {
                 let data = try await postTVPlayerSeedingVisitorData(
-                    videoId: videoId, cpn: cpn, onYouTubeHost: onYouTubeHost)
+                    request: await tvHistoryPlayerRequest(videoId: videoId, cpn: cpn),
+                    onYouTubeHost: onYouTubeHost, downgraded: true)
                 // Read the tracking block directly: parsePlayerInfo throws for responses without
                 // playable formats (e.g. SABR-only TV answers) that still carry playbackTracking.
                 if let urls = Self.parseTrackingURLs(from: data), Self.trackingSession(from: urls) != nil {
@@ -326,9 +328,11 @@ extension InnerTubeAPI {
                     )
                     return urls
                 }
-                let status = (data["playabilityStatus"] as? [String: Any])?["status"] as? String ?? "?"
+                let playability = data["playabilityStatus"] as? [String: Any]
+                let status = playability?["status"] as? String ?? "?"
+                let reason = playability?["reason"] as? String ?? "nil"
                 tubeLog.notice(
-                    "fetchHistoryTrackingURLs: no playbackTracking for \(videoId, privacy: .public) via \(host, privacy: .public) (playability=\(status, privacy: .public))"
+                    "fetchHistoryTrackingURLs: no playbackTracking for \(videoId, privacy: .public) via \(host, privacy: .public) (playability=\(status, privacy: .public) reason=\(reason, privacy: .public))"
                 )
             } catch {
                 tubeLog.error(
@@ -382,16 +386,32 @@ extension InnerTubeAPI {
             attestationToken: await fetchAttestationToken(videoId: videoId))
     }
 
-    /// Posts the authenticated TV `/player` request. The first request without visitorData
+    /// The watch-history `/player` request: Android's `TV_DOWNGRADED` body (`QueryBuilder`
+    /// puts `clientScreen` and `userAgent` into the client context) with the session `cpn`.
+    /// It carries no poToken, like Android, since this client doesn't require one.
+    func tvHistoryPlayerRequest(videoId: String, cpn: String) async -> TVAuthPlayerRequest {
+        let sts = await fetchSignatureTimestampIfNeeded()
+        var cpbc: [String: Any] = ["html5Preference": "HTML5_PREF_WANTS"]
+        if let sts { cpbc["signatureTimestamp"] = sts }
+        var client = (tvClientContext["client"] as? [String: Any]) ?? [:]
+        client["clientVersion"] = InnerTubeClients.TVDowngraded.version
+        client["clientScreen"] = "WATCH"
+        client["userAgent"] = InnerTubeClients.TVDowngraded.userAgent
+        return TVAuthPlayerRequest(
+            clientContext: ["client": client], videoId: videoId, cpn: cpn,
+            contentPlaybackContext: cpbc, attestationToken: nil)
+    }
+
+    /// Posts an authenticated TV `/player` request. The first request without visitorData
     /// returns no playable data but carries `responseContext.visitorData`; that is cached and
     /// the request retried once, so the caller doesn't wait for background browse calls.
     private func postTVPlayerSeedingVisitorData(
-        videoId: String, cpn: String?, onYouTubeHost: Bool
+        request: TVAuthPlayerRequest, onYouTubeHost: Bool, downgraded: Bool
     ) async throws -> [String: Any] {
-        let request = await tvAuthPlayerRequest(videoId: videoId, cpn: cpn)
         let hadVisitorData = visitorData != nil
         let firstData = try await postTV(
-            endpoint: "player", body: request.body(visitorData: visitorData), onYouTubeHost: onYouTubeHost)
+            endpoint: "player", body: request.body(visitorData: visitorData),
+            onYouTubeHost: onYouTubeHost, downgraded: downgraded)
         guard !hadVisitorData,
             let rc = firstData["responseContext"] as? [String: Any],
             let newVD = rc["visitorData"] as? String, !newVD.isEmpty
@@ -399,7 +419,8 @@ extension InnerTubeAPI {
         tubeLog.notice("TVAuth: seeded visitorData from player response — retrying")
         visitorData = newVD
         return try await postTV(
-            endpoint: "player", body: request.body(visitorData: newVD), onYouTubeHost: onYouTubeHost)
+            endpoint: "player", body: request.body(visitorData: newVD),
+            onYouTubeHost: onYouTubeHost, downgraded: downgraded)
     }
 
     public func fetchPlayerInfoAuthenticated(videoId: String) async throws -> PlayerInfo {

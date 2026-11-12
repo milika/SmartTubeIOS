@@ -866,12 +866,15 @@ extension InnerTubeAPI {
     /// `onYouTubeHost` sends the request to www.youtube.com instead, with the TV user agent,
     /// `Referer: https://www.youtube.com/tv` and `X-Goog-Visitor-Id`. That is how Android's
     /// `VideoInfoService.getAuthVideoInfo` requests the account-bound watch-history data.
+    /// `downgraded` sends the `TVDowngraded` version and user agent; the body's client
+    /// context must match.
     func postTV(
         endpoint: String,
         body: [String: Any],
         useAuth: Bool = true,
         explicitBearerToken: String? = nil,
-        onYouTubeHost: Bool = false
+        onYouTubeHost: Bool = false,
+        downgraded: Bool = false
     ) async throws -> [String: Any] {
         guard
             var comps = URLComponents(
@@ -892,9 +895,15 @@ extension InnerTubeAPI {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(InnerTubeClients.TV.nameID, forHTTPHeaderField: "X-YouTube-Client-Name")
-        request.setValue(InnerTubeClients.TV.version, forHTTPHeaderField: "X-YouTube-Client-Version")
-        if onYouTubeHost {
+        request.setValue(
+            downgraded ? InnerTubeClients.TVDowngraded.version : InnerTubeClients.TV.version,
+            forHTTPHeaderField: "X-YouTube-Client-Version")
+        if downgraded {
+            request.setValue(InnerTubeClients.TVDowngraded.userAgent, forHTTPHeaderField: "User-Agent")
+        } else if onYouTubeHost {
             request.setValue(InnerTubeClients.TV.userAgent, forHTTPHeaderField: "User-Agent")
+        }
+        if onYouTubeHost {
             request.setValue(InnerTubeClients.TV.referer, forHTTPHeaderField: "Referer")
             if let vd = visitorData { request.setValue(vd, forHTTPHeaderField: "X-Goog-Visitor-Id") }
         }
@@ -905,8 +914,10 @@ extension InnerTubeAPI {
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         let authLabel = shouldAuthenticate ? "yes" : "no"
         let hostLabel = onYouTubeHost ? "www" : "googleapis"
+        let clientLabel = downgraded ? "TV-downgraded" : "TV"
         tubeLog.notice(
-            "POST /\(endpoint, privacy: .public) [TV] auth=\(authLabel, privacy: .public) host=\(hostLabel, privacy: .public)")
+            "POST /\(endpoint, privacy: .public) [\(clientLabel, privacy: .public)] auth=\(authLabel, privacy: .public) host=\(hostLabel, privacy: .public)"
+        )
         let (data, response) = try await session.data(for: request)
         let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {

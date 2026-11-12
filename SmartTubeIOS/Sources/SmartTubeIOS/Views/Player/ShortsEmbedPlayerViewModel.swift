@@ -485,12 +485,19 @@ final class ShortsEmbedPlayerViewModel: NSObject {
     /// duplicating the URL/HTML construction.
     private func startEmbed(videoId: String) {
         #if os(iOS)
-        do {
-            try AVAudioSession.sharedInstance().setActive(true)
-        } catch {
-            shortsLog.error(
-                "[\(self.logTag, privacy: .public)] [audioSession] setActive(true) failed: \(error.localizedDescription, privacy: .public)"
-            )
+        // Only for the Short on screen. A neighbour preloading held makes no sound,
+        // and activating the app's own session interrupts WebKit's (a separate
+        // session in its GPU process): the Short playing at that moment pauses. On a
+        // device that hit the first swipe after every launch, when the third slot
+        // loads its first Short.
+        if isLive {
+            do {
+                try AVAudioSession.sharedInstance().setActive(true)
+            } catch {
+                shortsLog.error(
+                    "[\(self.logTag, privacy: .public)] [audioSession] setActive(true) failed: \(error.localizedDescription, privacy: .public)"
+                )
+            }
         }
         #endif
         // Cookie sync happens in loadShort (the await syncYouTubeCookies runs

@@ -73,6 +73,18 @@ struct ShortsDescriptionParserTests {
         #expect(parsed.descriptionText.isEmpty)
     }
 
+    @Test("Empty runs in one description shape don't hide the text in the other")
+    func emptyRunsFallBackToAttributedText() throws {
+        let body: [String: Any] = [
+            "expandableVideoDescriptionBodyRenderer": [
+                "descriptionBodyText": ["runs": [[String: Any]]()],
+                "attributedDescriptionBodyText": ["content": "Credit: @someone"],
+            ]
+        ]
+        let parsed = try #require(ShortsDescriptionParser.parse(response(items: [header, body]), videoId: "v1"))
+        #expect(parsed.descriptionText == "Credit: @someone")
+    }
+
     @Test("No structured description panel → nil")
     func missingPanel() {
         #expect(ShortsDescriptionParser.parse(["engagementPanels": []], videoId: "v1") == nil)

@@ -69,8 +69,11 @@ public enum ShortsDescriptionParser {
                 result.channelAvatarURL = largestThumbnail(header["channelThumbnail"])
                 result.factoids = (header["factoid"] as? [[String: Any]] ?? []).compactMap(factoid)
             } else if let body = item["expandableVideoDescriptionBodyRenderer"] as? [String: Any] {
+                // The first of the two shapes that has text: an empty `runs` array
+                // in one mustn't hide the other.
                 result.descriptionText =
-                    text(body["descriptionBodyText"]) ?? text(body["attributedDescriptionBodyText"]) ?? ""
+                    [body["descriptionBodyText"], body["attributedDescriptionBodyText"]]
+                    .lazy.compactMap(text).first { !$0.isEmpty } ?? ""
             }
         }
         return foundHeader ? result : nil

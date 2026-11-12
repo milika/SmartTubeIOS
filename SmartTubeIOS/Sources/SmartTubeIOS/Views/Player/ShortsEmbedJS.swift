@@ -134,6 +134,7 @@ enum ShortsEmbedJS {
             var _prevState = -2;
             var _playAttempts = 0;
             var _autoUnmuted = false;
+            var _unmutes = 0;
             var _pausedCandidate = false;
             var _primed = false;
             var _frameReported = false;
@@ -160,6 +161,7 @@ enum ShortsEmbedJS {
                 var video = document.querySelector('video');
                 var p = ytPlayer();
                 if (_live) {
+                    _unmutes = 0;
                     if (video) {
                         // Unmute *before* playing, in this same call. If the Short
                         // started muted and unmuted only once play() resolved, there
@@ -304,12 +306,22 @@ enum ShortsEmbedJS {
                 if (_live) {
                     if (video.paused && t === 0 && _playAttempts < 20) {
                         _playAttempts++;
-                        video.muted = true;
+                        // Retry with sound once it was turned on (__stSetLive). An
+                        // audio interruption can pause the Short at 0 s; restarting it
+                        // muted left it playing silently for good.
+                        if (!_autoUnmuted) { video.muted = true; }
                         var p = video.play();
-                        if (p && p['catch']) { p['catch'](function() {}); }
+                        if (p && p['catch']) {
+                            p['catch'](function() { _autoUnmuted = false; video.muted = true; });
+                        }
                     }
 
-                    if (!_autoUnmuted && !video.paused && t > 0.1) {
+                    // The Short on screen always plays with sound (there is no mute
+                    // control): unmute it once it is playing, and again if anything —
+                    // YouTube's player, a muted restart — muted it since. Capped, in
+                    // case WebKit pauses it each time it gets sound.
+                    if ((!_autoUnmuted || video.muted) && !video.paused && t > 0.1 && _unmutes < 5) {
+                        _unmutes++;
                         _autoUnmuted = true;
                         video.muted = false;
                         var yt = ytPlayer();

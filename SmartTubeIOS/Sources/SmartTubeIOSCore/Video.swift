@@ -189,9 +189,26 @@ public extension Video {
         [URL(string: "https://i.ytimg.com/vi/\(id)/hq720.jpg")].compactMap { $0 } + thumbnailFallbackURLs
     }
 
-    /// Portrait (9:16) thumbnail used for Shorts cards.
-    /// YouTube generates `oardefault.jpg` (360×640) for every Short.
+    /// Portrait (9:16) thumbnail used for Shorts cards: the Short's cover image
+    /// (`oardefault.jpg`, 1080×1920). It is missing (404) for many Shorts — about a
+    /// third of a 30-Short sample in Nov 2026 — so pair it with
+    /// `portraitThumbnailFallbackURLs`.
     var portraitThumbnailURL: URL? {
         URL(string: "https://i.ytimg.com/vi/\(id)/oardefault.jpg")
+    }
+
+    /// Fallbacks for a Short's portrait thumbnail, best first, excluding `primary`:
+    /// the cover (`oardefault`), then the auto-generated portrait frame (`oar2.jpg`,
+    /// 1080×1920, present for every Short in the sample above even where `oardefault`
+    /// and `sardefault` 404), then the landscape `hqdefault` (always present).
+    /// `frame0.jpg` is left out: it is often a black first frame.
+    func portraitThumbnailFallbackURLs(excluding primary: URL?) -> [URL] {
+        [
+            portraitThumbnailURL,
+            URL(string: "https://i.ytimg.com/vi/\(id)/oar2.jpg"),
+            highQualityThumbnailURL,
+        ]
+        .compactMap { $0 }
+        .filter { $0 != primary }
     }
 }

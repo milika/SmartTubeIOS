@@ -570,7 +570,9 @@ public struct VideoCardView: View {
                 thumbnailFallbackIndex < 0
                 ? (deArrowThumbnailURL ?? (highRes ? video.maxResThumbnailURL : video.thumbnailURL) ?? fallbacks.first)
                 : (thumbnailFallbackIndex < fallbacks.count ? fallbacks[thumbnailFallbackIndex] : nil)
-            AsyncImage(url: url) { phase in
+            // CheckedAsyncImage, not AsyncImage: a missing maxresdefault/sddefault
+            // answers 404 with a grey placeholder JPEG that AsyncImage shows as success.
+            CheckedAsyncImage(url: url) { phase in
                 switch phase {
                 case .success(let img):
                     img.resizable().scaledToFill()

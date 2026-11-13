@@ -536,6 +536,15 @@ extension ShortsEmbedPlayerViewModelTests {
         #expect(vm.isLive == false)
         #expect(vm.readyTimeoutTask != nil)
     }
+
+    @Test("A Short requested while the first page is still loading goes into that load")
+    func requestDuringStartWaitsForPage() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: false)
+        vm.loadShort(video: short("b"), live: false)
+        #expect(vm.isStartingEmbed)
+        #expect(vm.videoId == "b")
+    }
 }
 
 #if os(iOS)

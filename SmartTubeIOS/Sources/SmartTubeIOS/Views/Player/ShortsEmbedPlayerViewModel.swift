@@ -156,6 +156,8 @@ final class ShortsEmbedPlayerViewModel: NSObject {
     /// performs the initial `loadHTMLString` (`startEmbed`) or an iframe-src swap
     /// (`swapEmbed`).
     private(set) var hasStarted = false
+    /// True while the first load waits for the cookie sync, before the wrapper exists.
+    private(set) var isStartingEmbed = false
     /// Strong reference to the WKWebView's navigation delegate (WKWebView retains it
     /// weakly).
     private var navigationDelegate: ShortsNavigationDelegate?
@@ -319,18 +321,21 @@ final class ShortsEmbedPlayerViewModel: NSObject {
             postLoadStarted()
         }
 
-        if hasStarted {
-            swapEmbed(to: video.id)
-        } else {
+        if !hasStarted {
             hasStarted = true
+            isStartingEmbed = true
             // Sync YouTube cookies from HTTPCookieStorage → WKWebsiteDataStore
             // BEFORE startEmbed's loadHTMLString. Mirrors TOSPlayerViewModel's
             // startIfNeeded fix (same root cause — see TOSPlayerViewModel.swift
-            // doc comment for syncYouTubeCookiesIntoWKWebView).
+            // doc comment for syncYouTubeCookiesIntoWKWebView). A Short requested
+            // meanwhile has no page to swap into; this load picks it up.
             Task { @MainActor in
                 await self.syncYouTubeCookiesIntoWKWebView()
-                self.startEmbed(videoId: video.id)
+                self.isStartingEmbed = false
+                self.startEmbed(videoId: self.videoId)
             }
+        } else if !isStartingEmbed {
+            swapEmbed(to: video.id)
         }
 
         startReadyTimeout(for: video.id)
@@ -540,16 +545,6 @@ final class ShortsEmbedPlayerViewModel: NSObject {
         shortsLog.notice("[\(self.logTag, privacy: .public)] [loadShort] cookie sync done")
     }
 
-    /// Every load after the first — swaps the already-loaded `<iframe id="yt">`'s
-    /// `src` to the new video's embed URL. This is the core mechanic validated by
-    /// Task 1's `ShortsEmbedSrcSwapSpikeViewModel.swapToNextVideo()`.
-    private func swapEmbed(to videoId: String) {
-        let url = ShortsEmbedURL.embedURL(videoId: videoId)
-        shortsLog.notice(
-            "[\(self.logTag, privacy: .public)] [loadShort] src swap — videoId=\(videoId, privacy: .public)")
-        eval("swap", "document.getElementById('yt').src = '\(url.absoluteString)';")
-    }
-
     /// Starts a 9s timeout for the in-flight `loadShort(video:)` call. Cancelled by
     /// the "ready" case in ShortsEmbedPlayerViewModel+WebBridge.swift once the new
     /// frame reports ready; if it fires first, sets `playerError =
@@ -713,6 +708,27 @@ extension ShortsEmbedPlayerViewModel {
         hasStarted = false
         guard let video else { return }
         loadShort(video: video, live: isLive)
+    }
+
+    /// Every load after the first — swaps the already-loaded `<iframe id="yt">`'s
+    /// `src` to the new video's embed URL. This is the core mechanic validated by
+    /// Task 1's `ShortsEmbedSrcSwapSpikeViewModel.swapToNextVideo()`.
+    ///
+    /// The swap throws when the main frame isn't the wrapper (still loading after
+    /// `webContentProcessDidTerminate()`, or replaced); then load the wrapper again
+    /// with this Short instead of waiting for the ready timeout.
+    fileprivate func swapEmbed(to videoId: String) {
+        let url = ShortsEmbedURL.embedURL(videoId: videoId)
+        shortsLog.notice(
+            "[\(self.logTag, privacy: .public)] [loadShort] src swap — videoId=\(videoId, privacy: .public)")
+        let js = "document.getElementById('yt').src = '\(url.absoluteString)';"
+        webView.evaluateJavaScript(js, in: nil, in: .page) { result in
+            guard case .failure(let error) = result, self.videoId == videoId else { return }
+            shortsLog.error(
+                "[\(self.logTag, privacy: .public)] [loadShort] swap failed (\(error.localizedDescription, privacy: .public)) — reloading the wrapper for videoId=\(videoId, privacy: .public)"
+            )
+            self.startEmbed(videoId: videoId)
+        }
     }
 }
 

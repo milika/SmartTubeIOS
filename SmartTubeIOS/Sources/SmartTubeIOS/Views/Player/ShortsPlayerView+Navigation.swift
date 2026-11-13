@@ -1,76 +1,115 @@
 import SmartTubeIOSCore
 import SwiftUI
-import os
 
 #if canImport(UIKit)
 import UIKit
 #endif
 
-private let shortsLog = Logger(subsystem: "com.void.smarttube.app", category: "ShortsPlayer")
-
 extension ShortsPlayerView {
+
+    // MARK: - Lifecycle
+
+    func handleAppear() {
+        let resumeOnReappear = resumeOnReappear
+        self.resumeOnReappear = false
+        isOffScreen = false
+        #if os(iOS)
+        // On screen again: Shorts that go live from now on play (see `vm.stop()`).
+        vm.endStop()
+        #endif
+        if let video = currentVideo {
+            if vm.currentVideoId == video.id {
+                // Back from a pushed channel page / another tab (e.g. Settings).
+                #if os(iOS)
+                pool.syncSettings(store.settings)
+                #else
+                vm.updateSettings(store.settings)
+                #endif
+                if mode == .tab {
+                    willResume()
+                    vm.resume()
+                } else if resumeOnReappear || vm.wasPlayingBeforeSuspend {
+                    vm.resume()
+                }
+            } else {
+                loadVideo(at: currentIndex)
+            }
+        }
+        // Channels the user stopped recommending earlier (here or in another feed).
+        feed.hideChannels(store.settings.blockedChannels.keys, after: currentIndex)
+        if ProcessInfo.processInfo.arguments.contains("--uitesting-show-controls") {
+            vm.showControls()
+            vm.cancelControlsHide()
+        }
+        guard allowsFeedFetching else { return }
+        Task { @MainActor in
+            await feed.start()
+            await feed.loadMoreIfNeeded(currentIndex: currentIndex)
+        }
+    }
+
+    /// The feed appended Shorts: start playback if this is the first one (seedless
+    /// feed), or continue an auto-scroll that was waiting at the end of the list.
+    func handleFeedGrew(from oldCount: Int, to newCount: Int) {
+        guard newCount > oldCount else { return }
+        if oldCount == 0 {
+            currentIndex = 0
+            loadVideo(at: 0)
+            return
+        }
+        #if os(iOS)
+        continueAutoScrollIfWaiting()
+        #endif
+    }
+
+    #if os(iOS)
+    /// Advances past a Short that ended (or failed) while auto-scroll had to wait —
+    /// for the next page, or for a sheet over the player to close.
+    func continueAutoScrollIfWaiting() {
+        guard vm.videoEnded || advancesWhenOverlayCloses,
+            ShortsEndOfVideoDecision.advancesAfterWaiting(
+                settings: store.settings, failed: vm.playerError?.isFatal == true),
+            currentIndex + 1 < videos.count, !isTransitioning, !isOverlayPresented
+        else { return }
+        performVerticalTransition(direction: -1) { goTo(currentIndex + 1) }
+    }
+    #endif
 
     // MARK: - Navigation
 
-    /// Animates the current content off-screen in `direction` (-1 = up, +1 = down),
-    /// runs `action` to switch to the new video, then slides the new content in
-    /// from the opposite side.
+    /// Swipe up (`toNext`) / down. At the top, springs back; at the bottom, springs
+    /// back while the feed fetches more.
+    func swipe(toNext: Bool) {
+        guard !isTransitioning else { return }
+        if let target = ShortsNavigation.targetIndex(
+            vertical: toNext ? -100 : 100, horizontal: 0, current: currentIndex, count: videos.count)
+        {
+            performVerticalTransition(direction: toNext ? -1 : 1) { goTo(target) }
+        } else {
+            cancelPageDrag()
+            if toNext { loadMoreIfNeeded() }
+        }
+    }
+
+    /// Programmatic page change (auto-scroll, error skip, tvOS remote): the same
+    /// slide as a committed swipe — see `commitPage(direction:velocity:action:)`.
     func performVerticalTransition(direction: CGFloat, action: @escaping () -> Void) {
-        #if os(iOS)
-        let screenHeight = UIScreen.main.bounds.height
-        #else
-        let screenHeight: CGFloat = 800
-        #endif
-        isTransitioning = true
-        withAnimation(.easeIn(duration: 0.2)) {
-            slideOffset = direction * screenHeight
-        }
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(220))
-            action()  // switch video, clears AVPlayer
-            slideOffset = -direction * screenHeight  // snap to opposite side (off-screen)
-            withAnimation(.easeOut(duration: 0.25)) {
-                slideOffset = 0  // slide new content in
-            }
-            try? await Task.sleep(for: .milliseconds(270))
-            isTransitioning = false
-        }
+        commitPage(direction: direction, action: action)
     }
 
     func goTo(_ index: Int) {
         guard index >= 0, index < videos.count else { return }
 
+        // On iOS the target Short is normally already preloaded in its own pool slot
+        // and sitting on its first frame, so this just starts it (see ShortsPlayerPool).
+        currentIndex = index
         #if os(iOS)
-        // The standby-swap/previous-swap "hot paths" (#271/#272/#274/#277) promoted a
-        // pre-warmed VM by moving its WKWebView from a hidden/off-screen container
-        // into the visible one (`vm = readyStandby` / `vm = readyPrevious`, which
-        // retargets ShortsTOSWebView and triggers a UIKit reparent). Confirmed on a
-        // physical device (#279): that reparent reliably leaves the screen solid
-        // black afterward — brightness=0 — even though decode is completely correct
-        // underneath (readyState=4, zero errors in the [diag] log) the whole time.
-        // Three independent fixes were tried (forcing a fresh layout + isHidden
-        // toggle nudge, positioning the hidden hosts off-screen at full opacity
-        // instead of near-zero opacity, explicitly deactivating stale Auto Layout
-        // constraints from the old superview before reparenting) — none changed the
-        // outcome. Isolated by temporarily disabling just this hot path: with every
-        // swipe forced through the plain loadVideo(at:) fallback below (same
-        // WKWebView, never reparented — just an iframe-src swap), all 4 checks in
-        // ShortsVisualPlaybackUITests.testHomeFirstShortPlaysAcrossThreeSwipes
-        // rendered correctly (real brightness, no black frames) with no measurable
-        // slowdown. Reparenting a WKWebView between view-hierarchy positions is not
-        // reliable here — disabled permanently rather than continuing to chase a
-        // UIKit/WebKit-level fix for a problem the simpler fallback path doesn't have.
-        currentIndex = index
-        loadVideo(at: index)
-        #else
-        currentIndex = index
-        loadVideo(at: index)
+        advancesWhenOverlayCloses = false
         #endif
+        loadVideo(at: index)
 
-        // Pre-fetch more Shorts when within 2 of the end.
-        if index >= videos.count - 2 {
-            loadMoreIfNeeded()
-        }
+        isTitleExpanded = false
+        loadMoreIfNeeded()
         // Pre-fetch the next 2 shorts so swiping is instant.
         let lookahead = videos[(index + 1)..<min(index + 3, videos.count)].map(\.id)
         if !lookahead.isEmpty {
@@ -87,112 +126,54 @@ extension ShortsPlayerView {
                 }
             }
         }
-        // prewarmStandby(for:) is no longer called — see the long comment above in
-        // the #if os(iOS) block of this function. Pre-warming a standby WKWebView
-        // that's never actually promoted (the promotion path is disabled) would
-        // just burn CPU/battery/memory decoding video nobody sees. The function and
-        // its supporting VM infrastructure (isStandby/activate/loadShortAsStandby)
-        // are left in place, unused, in case the underlying WKWebView-reparenting
-        // bug is ever fixed and this is revisited. See #279.
     }
 
     #if os(iOS)
-    /// Loads Short at `currentIndex + 1` into a background `ShortsEmbedPlayerViewModel`
-    /// so it reaches `isReady == true` before the user swipes. `goTo(_:)` checks the
-    /// standby and swaps it in immediately if ready — see Task #272.
-    private func prewarmStandby(for index: Int) {
-        let nextIndex = index + 1
-        guard nextIndex < videos.count else {
-            standbyVM = nil  // end of feed — no next Short to pre-warm
-            return
-        }
-        let nextVideo = videos[nextIndex]
-        // Defer construction to the next run loop turn. `ShortsEmbedPlayerViewModel
-        // .init()` synchronously builds a full WKWebView (config, content
-        // controller, 3 injected user scripts) — expensive enough on a physical
-        // device to measurably delay the JUST-promoted video's own resume (its
-        // webview reparenting + restarted JS poll loop), since `prewarmStandby`
-        // used to run inline in the same `goTo()` call stack as `vm.activate()`.
-        // Device-log confirmed: ~1.46s between "[goTo] standby swap" and the
-        // promoted video's first post-promotion tick — far more than the JS poll
-        // loop's 250ms interval alone would explain. See #276.
-        Task { @MainActor in
-            let standby = ShortsEmbedPlayerViewModel(api: api)
-            standby.updateSettings(store.settings)
-            // Attach to the view hierarchy immediately (ShortsPlayerView hosts
-            // standbyVM in a hidden ShortsTOSWebView) — an unattached WKWebView
-            // never progresses past readyState 0 (WebKit throttles media loading
-            // the same way it does for a backgrounded tab), so the embed must be
-            // mounted BEFORE loadShortAsStandby starts polling for isReady, not
-            // after. See #274.
-            standbyVM = standby
-            shortsLog.notice(
-                "[prewarm] starting — \(standby.logTag, privacy: .public) nextVideo=\(nextVideo.id, privacy: .public) forIndex=\(index, privacy: .public)"
-            )
-            await standby.loadShortAsStandby(video: nextVideo)
-            if currentIndex == index {
-                shortsLog.notice(
-                    "[prewarm] standby ready — \(standby.logTag, privacy: .public) nextVideo=\(nextVideo.id, privacy: .public) isReady=\(standby.isReady, privacy: .public)"
-                )
-            } else {
-                shortsLog.notice(
-                    "[prewarm] standby discarded — \(standby.logTag, privacy: .public) user already moved past index \(index, privacy: .public)"
-                )
-            }
-        }
+    /// The Shorts to keep preloaded around `index`: next first (the usual swipe), then
+    /// previous.
+    func neighbours(of index: Int) -> [Video] {
+        [index + 1, index - 1].compactMap { videos.indices.contains($0) ? videos[$0] : nil }
+    }
+
+    /// The feed changed around the live Short (more Shorts arrived, a hidden channel
+    /// was dropped): preload its current neighbours.
+    func preloadNeighbours() {
+        guard currentVideo != nil else { return }
+        pool.preload(neighbours: neighbours(of: currentIndex), settings: store.settings)
     }
     #endif
 
-    /// Fetches an additional batch of Shorts and appends them, deduplicating by id.
+    /// Asks the feed for the next page when the current Short is near the end.
     func loadMoreIfNeeded() {
-        guard !ProcessInfo.processInfo.arguments.contains("--uitesting") else { return }
-        guard !isFetchingMore else { return }
-        isFetchingMore = true
-        let existingIDs = Set(videos.map(\.id))
-        Task { @MainActor in
-            defer { isFetchingMore = false }
-            guard let group = try? await api.fetchShorts() else { return }
-            let newVideos = group.videos.filter { !existingIDs.contains($0.id) }
-            guard !newVideos.isEmpty else { return }
-            videos.append(contentsOf: newVideos)
-        }
+        guard allowsFeedFetching else { return }
+        let index = currentIndex
+        Task { @MainActor in await feed.loadMoreIfNeeded(currentIndex: index) }
     }
 
-    /// Fetches a batch of Shorts, prepends them before the current video, adjusts
-    /// `currentIndex` to keep the current video in place, then animates down into
-    /// the last prepended video — giving the user new content above.
-    func loadMoreAtStart() {
-        guard !ProcessInfo.processInfo.arguments.contains("--uitesting") else {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { slideOffset = 0 }
-            return
-        }
-        guard !isFetchingMore else {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { slideOffset = 0 }
-            return
-        }
-        isFetchingMore = true
-        // Spring back to centre while the fetch is in flight.
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { slideOffset = 0 }
-        let existingIDs = Set(videos.map(\.id))
+    /// Overlay metadata for the current Short and the next one (so the rail is
+    /// already filled in after a swipe).
+    func loadMetadata(around index: Int) {
+        guard allowsFeedFetching else { return }
+        let ids = videos[index..<min(index + 2, videos.count)].map(\.id)
+        let signedIn = authService.isSignedIn
         Task { @MainActor in
-            defer { isFetchingMore = false }
-            guard let group = try? await api.fetchShorts() else { return }
-            let newVideos = group.videos.filter { !existingIDs.contains($0.id) }
-            guard !newVideos.isEmpty else { return }
-            // Prepend the new videos; re-anchor currentIndex so the on-screen
-            // video doesn't change, then animate down to the last prepended video.
-            videos.insert(contentsOf: newVideos, at: 0)
-            currentIndex += newVideos.count
-            performVerticalTransition(direction: 1) { goTo(currentIndex - 1) }
+            for id in ids {
+                await feed.loadMetadata(for: id, signedIn: signedIn)
+                // Reel entries have no channel until their metadata arrives, so
+                // "Don't recommend channel" can only catch them now.
+                feed.removeHiddenChannels(after: currentIndex)
+            }
         }
     }
 
     func loadVideo(at index: Int) {
+        guard videos.indices.contains(index) else { return }
         let video = videos[index]
+        loadMetadata(around: index)
         CrashlyticsLogger.setIntendedVideo(id: video.id, title: video.title)
         #if os(iOS)
-        vm.updateSettings(store.settings)
-        vm.loadShort(video: video)
+        pool.show(live: video, neighbours: neighbours(of: index), settings: store.settings)
+        pool.updateChannelId(video.channelId, for: video.id)
         #else
         vm.load(video: video)
         vm.setPlaybackSpeed(store.settings.playbackSpeed)
@@ -204,10 +185,8 @@ extension ShortsPlayerView {
 
     // MARK: - End of video / error recovery (iOS)
 
-    /// Replicates `PlaybackViewModel.handlePlaybackEnd()`'s decision tree
-    /// (PlaybackViewModel+Navigation.swift:114-163) for Shorts, via
-    /// `ShortsEndOfVideoDecision` (Task 3) — called from `.onChange(of:
-    /// vm.playerState)` when the TOS embed's `"stateChange"` reports `.ended`.
+    /// Called from `.onChange(of: vm.playerState)` when the embed reports `.ended`:
+    /// loop or auto-scroll per `settings.shortsAutoScroll` (`ShortsEndOfVideoDecision`).
     func handleShortEnded() {
         switch ShortsEndOfVideoDecision.decide(
             settings: store.settings, currentIndex: currentIndex, count: videos.count)
@@ -215,10 +194,20 @@ extension ShortsPlayerView {
         case .replay:
             vm.seekTo(0)
             vm.play()
+        case .advance where isOverlayPresented:
+            // A sheet's actions target the current Short: loop it until the sheet
+            // closes, then advance (`continueAutoScrollIfWaiting()`). Not through
+            // `videoEnded`, which would turn a tap on the replaying Short into a restart.
+            advancesWhenOverlayCloses = true
+            vm.seekTo(0)
+            vm.play()
         case .advance(let next):
             performVerticalTransition(direction: -1) { goTo(next) }
         case .freeze:
+            // Auto-scroll is on but the feed hasn't delivered the next Short yet —
+            // handleFeedGrew(from:to:) advances as soon as it does.
             vm.videoEnded = true
+            loadMoreIfNeeded()
         }
     }
 
@@ -233,7 +222,10 @@ extension ShortsPlayerView {
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(1500))
             guard vm.currentVideoId == erroredVideoId, !isTransitioning else { return }
-            if let next = ShortsNavigation.targetIndex(
+            if isOverlayPresented {
+                // Skipped once the sheet closes (`continueAutoScrollIfWaiting()`).
+                vm.videoEnded = true
+            } else if let next = ShortsNavigation.targetIndex(
                 vertical: -100, horizontal: 0, current: currentIndex, count: videos.count)
             {
                 performVerticalTransition(direction: -1) { goTo(next) }

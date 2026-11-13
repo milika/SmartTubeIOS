@@ -8,31 +8,34 @@ import UIKit
 
 // MARK: - ShortsPlayerView
 //
-// Full-screen vertical-swipe player for YouTube Shorts.
-// Swipe up advances to the next short; swipe down goes to the previous one.
+// Full-screen vertical-swipe player for YouTube Shorts, styled after the official
+// app: action rail on the right, channel/title panel bottom-left, thin progress
+// bar at the bottom. Swipe up advances to the next Short; swipe down goes back.
+// The list comes from `ShortsFeedViewModel` — YouTube's own Shorts sequence,
+// personalised when signed in.
 //
-// AVPlayerViewController intercepts all UIKit touches before SwiftUI sees them,
-// so a plain SwiftUI DragGesture layered above VideoPlayer is never delivered.
-// Instead, a UIViewRepresentable installs a UIPanGestureRecognizer directly
-// into the window that is set to cancel the AVPlayer's own recognizers, giving
-// SwiftUI-side navigation full priority.
+// Touch routing: WKWebView swallows UIKit touches before SwiftUI sees them, so a
+// UIViewRepresentable (`SwipeGestureOverlay`) installs pan/tap recognizers on the
+// window. Those would also see touches on the overlay's buttons, so the overlay
+// reports its controls' frames (`ShortsInteractiveFramesKey`) and the recognizers
+// skip touches inside them, and are disabled while a sheet is up.
+
+/// Where the Shorts player lives.
+public enum ShortsPlayerMode: Sendable {
+    /// Full-screen cover over another screen: own NavigationStack, back button, no tab bar.
+    case presented
+    /// Root of the Shorts tab: the tab's NavigationStack, tab bar visible, no back button.
+    case tab
+}
 
 public struct ShortsPlayerView: View {
-    public let startIndex: Int
-    @State var videos: [Video]
+    let mode: ShortsPlayerMode
+    /// Tab mode only: true while another player covers the tab (pause the Short).
+    let isSuspended: Bool
+    @State var feed: ShortsFeedViewModel
     #if os(iOS)
-    @State var vm: ShortsEmbedPlayerViewModel
-    /// Pre-warmed VM for Short N+1. Loaded in the background while Short N plays
-    /// so swipe-to-next has no black-screen delay. Swapped into `vm` by `goTo(_:)`
-    /// when the user swipes up and the standby is ready.
-    @State var standbyVM: ShortsEmbedPlayerViewModel? = nil
-    /// The just-retired Short N-1, kept alive (paused, not stopped) instead of
-    /// torn down on every forward swipe — so swipe-DOWN (backward) is also
-    /// instant, mirroring `standbyVM`'s forward case. Without this, backward
-    /// navigation always cold-reloads; if the user swipes back faster than a
-    /// cold reload can finish, every swipe interrupts the last one before it
-    /// ever paints a frame, producing a run of black screens. See #277.
-    @State var previousVM: ShortsEmbedPlayerViewModel? = nil
+    /// The live Short's player plus its preloaded neighbours (see ShortsPlayerPool).
+    @State var pool: ShortsPlayerPool
     #else
     @State var vm: PlaybackViewModel
     #endif
@@ -41,316 +44,463 @@ public struct ShortsPlayerView: View {
     @Environment(\.scenePhase) var scenePhase
     @Environment(SettingsStore.self) var store
     @Environment(AuthService.self) var authService
+    @Environment(\.openURL) var openURL
+    /// Vertical drag/slide of the pager (0 = at rest). See ShortsPlayerView+Pager.
     @State var slideOffset: CGFloat = 0
+    @State var pageHeight: CGFloat = 0
     @State var isTransitioning = false
-    @State var isFetchingMore = false
     /// True while the app is backgrounded — guards onDisappear from calling stop()
     /// when iOS fires it as a side-effect of backgrounding rather than navigation.
     @State var isInBackground = false
-    let api: InnerTubeAPI
 
-    public init(videos: [Video], startIndex: Int = 0, api: InnerTubeAPI) {
-        self.startIndex = startIndex
+    // Overlay state
+    @State var activeSheet: ShortsSheet?
+    @State var isSharing = false
+    @State var showSignIn = false
+    @State var isTitleExpanded = false
+    @State var scrubProgress: Double?
+    @State var channelDestination: ChannelDestination?
+    @State var interactiveFrames: [CGRect] = []
+    @State var playerFrame: CGRect = .zero
+    /// "Clear Screen" from the ⋯ menu: overlay hidden until the next tap.
+    @State var isScreenCleared = false
+    @State var showSearch = false
+    /// The Short was playing when a pushed page (channel, search) covered the player;
+    /// it resumes on return. Not `vm.wasPlayingBeforeSuspend`, which
+    /// `handleForeground()` would act on while the pushed page is still on screen.
+    @State var resumeOnReappear = false
+    /// Another tab or a pushed page covers the player (set where it stops on
+    /// disappearing, cleared on appearing).
+    @State var isOffScreen = false
+    /// Short confirmation shown over the player ("Saved to Watch Later").
+    @State var toastMessage: String?
+    #if os(iOS)
+    /// The Short ended under a sheet with auto-scroll on: it replays until the sheet
+    /// closes, then the feed moves on. Cleared when another Short is shown.
+    @State var advancesWhenOverlayCloses = false
+    #endif
+    #if os(iOS)
+    @State var captions: ShortsCaptionsController
+    #endif
+
+    let api: InnerTubeAPI
+    /// Tab mode: runs right before the Short resumes on reappearing (back from a
+    /// pushed page or another tab), so the tab can close other players first.
+    let willResume: @MainActor () -> Void
+
+    public init(
+        source: ShortsFeedViewModel.Source,
+        api: InnerTubeAPI,
+        mode: ShortsPlayerMode = .presented,
+        isSuspended: Bool = false,
+        willResume: @escaping @MainActor () -> Void = {}
+    ) {
         self.api = api
-        self._videos = State(initialValue: videos)
-        self._currentIndex = State(initialValue: startIndex)
+        self.mode = mode
+        self.isSuspended = isSuspended
+        self.willResume = willResume
+        let feed = ShortsFeedViewModel(source: source, provider: api)
+        self._feed = State(initialValue: feed)
+        self._currentIndex = State(initialValue: feed.startIndex)
         #if os(iOS)
-        self._vm = State(initialValue: ShortsEmbedPlayerViewModel(api: api))
+        self._pool = State(initialValue: ShortsPlayerPool(api: api))
+        self._captions = State(initialValue: ShortsCaptionsController(api: api))
         #else
         self._vm = State(initialValue: PlaybackViewModel(api: api))
         #endif
     }
 
+    var videos: [Video] { feed.videos }
+
+    #if os(iOS)
+    /// The player showing the current Short.
+    var vm: ShortsEmbedPlayerViewModel { pool.live }
+    #endif
+
+    var currentVideo: Video? {
+        videos.indices.contains(currentIndex) ? videos[currentIndex] : nil
+    }
+
+    /// Hermetic UI tests page through fixed stub lists; never hit the network for more.
+    var allowsFeedFetching: Bool {
+        mode == .tab || !ProcessInfo.processInfo.arguments.contains("--uitesting")
+    }
+
+    /// The tab bar must stay usable in tab mode, so the player stops above it there.
+    private var ignoredEdges: Edge.Set { mode == .tab ? .top : .all }
+
+    /// A sheet, the share sheet or sign-in is up over the (still playing) Short. Their
+    /// actions target `currentVideo`, so auto-scroll and error skips hold until it closes.
+    var isOverlayPresented: Bool {
+        activeSheet != nil || isSharing || showSignIn
+    }
+
+    /// Window-level gestures are off while anything is presented over the player.
+    private var gesturesEnabled: Bool {
+        !isOverlayPresented && channelDestination == nil && !showSearch
+    }
+
+    /// The comments/description sheet is up: the video shrinks into the space above it.
+    var isVideoShrunk: Bool { activeSheet?.shrinksVideo == true }
+
     public var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.black.ignoresSafeArea()
+        switch mode {
+        case .presented:
+            NavigationStack { player }
+        case .tab:
+            player
+        }
+    }
 
-                #if os(iOS)
-                // Size the embed to its natural 9:16 aspect ratio and center it in the
-                // screen, so equal blank margins appear above and below the video. This
-                // moves the native HTML5 controls away from the very bottom edge.
-                GeometryReader { geo in
-                    let videoH = min(geo.size.height, geo.size.width * 16.0 / 9.0)
-                    ZStack {
-                        // Color.clear fills the ZStack to the full screen so the inner
-                        // views are centered; allowsHitTesting(false) keeps it passthrough.
-                        Color.clear.allowsHitTesting(false)
-                        ShortsTOSWebView(vm: vm)
-                            .frame(width: geo.size.width, height: videoH)
+    private var player: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            #if os(iOS)
+            // The video sits below the status bar (or, with Fill Screen, behind it)
+            // and runs down to the progress bar (see ShortsVideoLayout).
+            GeometryReader { geo in
+                let layout = ShortsVideoLayout(
+                    pageFrame: geo.frame(in: .global), controlsFrame: playerFrame,
+                    fillsScreen: store.settings.shortsFillScreen)
+                let scale = isVideoShrunk ? shrunkScale(height: layout.box.height) : 1
+                ZStack {
+                    Color.clear.allowsHitTesting(false)
+                    // One web view per pool slot, each fixed in place for its whole life;
+                    // paging only moves them (see ShortsPlayerPool).
+                    ForEach(pool.players.indices, id: \.self) { slot in
+                        ShortsTOSWebView(vm: pool.players[slot])
+                            .frame(width: layout.videoSize.width, height: layout.videoSize.height)
+                            .frame(width: layout.box.width, height: layout.box.height)
+                            .clipped()
+                            .offset(
+                                y: layout.boxCenterOffset
+                                    + slotOffset(for: pool.players[slot], pageHeight: geo.size.height)
+                            )
+                            .allowsHitTesting(false)
                             .accessibilityHidden(true)
-                        // Currently unreachable: goTo(_:) no longer ever promotes standbyVM
-                        // (the WKWebView-reparenting bug in #279 made that path unfixable
-                        // here), so prewarmStandby is never called and this never becomes
-                        // non-nil. Left in place, off-screen rather than near-zero-opacity
-                        // (an earlier attempt — opacity made WebKit deprioritize the video
-                        // compositor and never properly reinstate it after a reparent), in
-                        // case the underlying bug is fixed and this is revisited. See #279.
-                        if let standby = standbyVM {
-                            ShortsTOSWebView(vm: standby)
-                                .frame(width: geo.size.width, height: videoH)
-                                .offset(y: geo.size.height * 3)
-                                .allowsHitTesting(false)
-                                .accessibilityHidden(true)
-                        }
-                        // Host the retired-but-cached Short N-1's WKWebView the same way —
-                        // same constraints as standbyVM. See #277/#279.
-                        if let previous = previousVM {
-                            ShortsTOSWebView(vm: previous)
-                                .frame(width: geo.size.width, height: videoH)
-                                .offset(y: geo.size.height * 3)
-                                .allowsHitTesting(false)
-                                .accessibilityHidden(true)
-                        }
-                        // Cover the video area (not the margins) while the new embed loads.
-                        if !vm.isReady {
-                            Color.black
-                                .frame(width: geo.size.width, height: videoH)
-                                .allowsHitTesting(false)
-                                .accessibilityHidden(true)
-                                .accessibilityIdentifier("shorts.loadingCover")
-                        }
                     }
+                    // Posters over pages whose video has no frame on screen yet.
+                    pagePosters(layout: layout)
+                    captionLayer(layout: layout)
                 }
-                .ignoresSafeArea()
-                #else
-                if ProcessInfo.processInfo.arguments.contains("--uitesting") {
-                    Color.black.ignoresSafeArea()
-                } else {
-                    #if os(tvOS)
-                    // PlayerAVLayerView instead of VideoPlayer/AVPlayerViewController.
-                    // Using AVPlayerViewController (VideoPlayer) causes it to dominate
-                    // the entire UIKit accessibility tree, hiding all overlaid SwiftUI
-                    // elements (index badge, controls). A bare AVPlayerLayer renders
-                    // video without any UIKit accessibility interference.
-                    PlayerAVLayerView(player: vm.player, videoGravity: .resizeAspectFill)
-                        .ignoresSafeArea()
-                        .accessibilityHidden(true)
-                    #else
-                    Color.black.ignoresSafeArea()
-                    #endif
-                }
-                #endif
-
-                // Gesture capture layer — a UIViewRepresentable that installs a
-                // UIPanGestureRecognizer at the UIKit level so it fires even when
-                // AVPlayerViewController is absorbing touches below.
-                #if os(iOS)
-                SwipeGestureOverlay(
-                    onSwipeUp: {
-                        guard !isTransitioning else { return }
-                        if let next = ShortsNavigation.targetIndex(
-                            vertical: -100, horizontal: 0, current: currentIndex, count: videos.count)
-                        {
-                            performVerticalTransition(direction: -1) { goTo(next) }
-                        } else {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { slideOffset = 0 }
-                        }
-                    },
-                    onSwipeDown: {
-                        guard !isTransitioning else { return }
-                        if let prev = ShortsNavigation.targetIndex(
-                            vertical: 100, horizontal: 0, current: currentIndex, count: videos.count)
-                        {
-                            performVerticalTransition(direction: 1) { goTo(prev) }
-                        } else {
-                            loadMoreAtStart()
-                        }
-                    },
-                    onTap: { point in
-                        // Native controls occupy the bottom ~12% of the screen (the HTML5
-                        // controls bar at the bottom of the 9:16 embed). Taps there are
-                        // passed through to WKWebView when paused so native controls work.
-                        // Taps anywhere above that: toggle play/pause regardless of state.
-                        let screenH = UIScreen.main.bounds.height
-                        let inNativeControlsArea = point.y / screenH > 0.88
-                        if vm.playerState == .paused && inNativeControlsArea { return }
-                        vm.togglePlayPause()
-                    },
-                    onTwoFingerTap: {},
-                    onPanChanged: { dy in
-                        guard !isTransitioning else { return }
-                        let canGoUp =
-                            ShortsNavigation.targetIndex(
-                                vertical: -100, horizontal: 0, current: currentIndex, count: videos.count) != nil
-                        let canGoDown =
-                            ShortsNavigation.targetIndex(
-                                vertical: 100, horizontal: 0, current: currentIndex, count: videos.count) != nil
-                        if (dy < 0 && canGoUp) || (dy > 0 && canGoDown) {
-                            slideOffset = dy
-                        } else {
-                            slideOffset = dy * 0.15  // rubber-band resistance at boundaries
-                        }
-                    },
-                    onSwipeCancelled: {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { slideOffset = 0 }
-                    }
-                )
-                .ignoresSafeArea()
-                .accessibilityHidden(true)
-                #endif
-
-                #if !os(iOS)
-                if vm.isLoading {
-                    VStack(spacing: 12) {
-                        ProgressView()
-                            .progressViewStyle(.circular)
-                            .tint(.white)
-                            .scaleEffect(1.5)
-                        if let msg = vm.retryStatusMessage {
-                            Text(msg)
-                                .font(.caption)
-                                .foregroundStyle(.white.opacity(0.75))
-                                .transition(.opacity)
-                                .animation(.easeInOut(duration: 0.3), value: vm.retryStatusMessage)
-                        }
-                    }
-                    .transition(.opacity)
-                    .animation(.easeInOut(duration: 0.2), value: vm.isLoading)
-                }
-
-                // Stats for Nerds overlay (toggled by two-finger tap)
-                if vm.statsForNerdsVisible {
-                    StatsForNerdsOverlay(snapshot: vm.statsSnapshot)
-                        .transition(.opacity)
-                        .animation(.easeInOut(duration: 0.2), value: vm.statsForNerdsVisible)
-                }
-                #endif
+                // Neighbour pages sit just outside the page; in the Shorts tab the page
+                // ends above the tab bar, so without this the next Short's top edge
+                // shows under the tab bar.
+                .clipped()
+                // Shrunk above a sheet, the video's top edge (not the page's, which
+                // runs under the status bar) lands at `shrunkTopInset`.
+                .scaleEffect(scale, anchor: .top)
+                .offset(y: isVideoShrunk ? shrunkTopInset - layout.box.minY * scale : 0)
+                .animation(ShortsPaging.shrinkAnimation, value: isVideoShrunk)
             }
-            // Single-tap always toggles play/pause via the UIKit window-level tap
-            // recognizer inside SwipeGestureOverlay (onTap above). WKWebView absorbs
-            // UIKit touches before this SwiftUI view sees them, so .onTapGesture here
-            // would never fire — the window-level path is the only reliable one.
-            .offset(y: slideOffset)
-            .background(Color.black.ignoresSafeArea())
-            #if os(tvOS)
-            // Siri Remote D-pad: up/down navigate prev/next short.
-            .onMoveCommand { direction in
-                guard !isTransitioning else { return }
-                switch direction {
-                case .up:
-                    if let next = ShortsNavigation.targetIndex(
-                        vertical: -100, horizontal: 0, current: currentIndex, count: videos.count)
-                    {
-                        performVerticalTransition(direction: -1) { goTo(next) }
-                    }
-                case .down:
-                    if let prev = ShortsNavigation.targetIndex(
-                        vertical: 100, horizontal: 0, current: currentIndex, count: videos.count)
-                    {
-                        performVerticalTransition(direction: 1) { goTo(prev) }
-                    }
-                default:
-                    vm.toggleControls()
-                }
+            .onGeometryChange(for: CGFloat.self) {
+                $0.size.height
+            } action: {
+                pageHeight = $0
+            }
+            .ignoresSafeArea(.all, edges: ignoredEdges)
+            #else
+            if ProcessInfo.processInfo.arguments.contains("--uitesting") {
+                Color.black.ignoresSafeArea()
+            } else {
+                #if os(tvOS)
+                // A bare AVPlayerLayer (not VideoPlayer) so UIKit accessibility doesn't
+                // hide the overlaid SwiftUI elements.
+                PlayerAVLayerView(player: vm.player, videoGravity: .resizeAspectFill)
+                    .offset(y: slideOffset)
+                    .ignoresSafeArea()
+                    .accessibilityHidden(true)
+                #else
+                Color.black.ignoresSafeArea()
+                #endif
             }
             #endif
-            // indexBadge, controls overlay, and error banner are placed OUTSIDE the
-            // ZStack as overlays so UIViewRepresentable elements (SwipeGestureOverlay)
-            // inside the ZStack cannot absorb them from the accessibility tree.
-            .overlay(alignment: .topTrailing) {
-                indexBadge
+
+            #if os(iOS)
+            SwipeGestureOverlay(
+                onSwipeUp: { swipe(toNext: true) },
+                onSwipeDown: { swipe(toNext: false) },
+                onTap: { _ in
+                    if isScreenCleared {
+                        withAnimation(.easeInOut(duration: 0.2)) { isScreenCleared = false }
+                    } else if isTitleExpanded {
+                        withAnimation(.easeInOut(duration: 0.2)) { isTitleExpanded = false }
+                    } else {
+                        vm.togglePlayPause()
+                    }
+                },
+                onTwoFingerTap: {},
+                onPanChanged: { dy in handlePanChanged(dy) },
+                onSwipeCancelled: { cancelPageDrag() },
+                onPanEnded: { dy, velocity in handlePanEnded(translation: dy, velocity: velocity) },
+                isEnabled: gesturesEnabled,
+                shouldHandleTouch: { point in shouldHandleTouch(at: point) }
+            )
+            .ignoresSafeArea(.all, edges: ignoredEdges)
+            .accessibilityHidden(true)
+            #endif
+
+            if videos.isEmpty {
+                emptyState
             }
-            .overlay {
-                if shouldShowControlsOverlay {
-                    shortsOverlay
-                        .accessibilityElement(children: .contain)
-                        .accessibilityIdentifier("shorts.controlsOverlay")
-                        .transition(.opacity)
-                        .animation(.easeInOut(duration: 0.2), value: shouldShowControlsOverlay)
-                }
-            }
-            .overlay {
-                #if os(iOS)
-                if let msg = vm.errorMessage {
-                    Text(msg)
-                        .font(.caption)
-                        .foregroundStyle(.white)
-                        .padding(12)
-                        .background(.black.opacity(0.6))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .accessibilityIdentifier("shorts.errorBanner")
-                }
-                #else
-                if let err = vm.error {
-                    Text(err.localizedDescription)
-                        .font(.caption)
-                        .foregroundStyle(.white)
-                        .padding(12)
-                        .background(.black.opacity(0.6))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .accessibilityIdentifier("shorts.errorBanner")
-                }
-                #endif
-            }
-            .overlay(alignment: .bottomTrailing) {
-                if isFetchingMore {
+
+            #if !os(iOS)
+            if vm.isLoading {
+                VStack(spacing: 12) {
                     ProgressView()
                         .progressViewStyle(.circular)
                         .tint(.white)
-                        .padding(12)
-                        .background(.black.opacity(0.4))
-                        .clipShape(Circle())
-                        .padding(.bottom, 60)
-                        .padding(.trailing, 20)
-                        .transition(.opacity)
+                        .scaleEffect(1.5)
+                    if let msg = vm.retryStatusMessage {
+                        Text(msg)
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.75))
+                    }
                 }
             }
-            #if os(iOS)
-            .navigationBarHidden(true)
-            .statusBarHidden(true)
-            .toolbar(.hidden, for: .tabBar)
+            if vm.statsForNerdsVisible {
+                StatsForNerdsOverlay(snapshot: vm.statsSnapshot)
+            }
             #endif
-            .ignoresSafeArea()
-            .onAppear {
-                if vm.currentVideoId == videos[currentIndex].id {
-                    if vm.wasPlayingBeforeSuspend { vm.resume() }
-                } else {
-                    loadVideo(at: currentIndex)
+        }
+        .background(Color.black.ignoresSafeArea())
+        .onGeometryChange(for: CGRect.self) {
+            $0.frame(in: .global)
+        } action: {
+            playerFrame = $0
+        }
+        #if os(tvOS)
+        // Siri Remote D-pad: up/down navigate prev/next short.
+        .onMoveCommand { direction in
+            switch direction {
+            case .up: swipe(toNext: true)
+            case .down: swipe(toNext: false)
+            default: vm.toggleControls()
+            }
+        }
+        #endif
+        // Overlays sit outside the ZStack so the UIViewRepresentable gesture layer
+        // can't absorb them from the accessibility tree.
+        .overlay(alignment: .topTrailing) { indexBadge }
+        .overlay {
+            if !isScreenCleared && !isVideoShrunk {
+                neighbourInfoPanels
+                    .clipShape(ShortsPageBottomClip())
+            }
+        }
+        .overlay {
+            if shouldShowControlsOverlay {
+                shortsOverlay
+                    .offset(y: slideOffset)
+                    .ignoresSafeArea(.keyboard)
+                    .clipShape(ShortsPageBottomClip())
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier(AccessibilityID.Shorts.controlsOverlay)
+            }
+        }
+        .overlay { errorBanner }
+        #if !os(tvOS)
+        .overlay(alignment: .top) { toast }
+        #endif
+        .onPreferenceChange(ShortsInteractiveFramesKey.self) { interactiveFrames = $0 }
+        #if os(iOS)
+        .navigationBarHidden(true)
+        .statusBarHidden(mode == .presented)
+        .modifier(ShortsTabBarStyle(mode: mode))
+        #endif
+        .navigationDestination(item: $channelDestination) { destination in
+            ChannelView(channelId: destination.channelId)
+        }
+        .navigationDestination(isPresented: $showSearch) { SearchView() }
+        #if !os(tvOS)
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .comments:
+                if let video = currentVideo {
+                    ShortsCommentsSheet(
+                        videoId: video.id,
+                        commentCountText: feed.metadata[video.id]?.commentCountText,
+                        api: api)
                 }
-                if ProcessInfo.processInfo.arguments.contains("--uitesting-show-controls") {
-                    vm.showControls()
-                    vm.cancelControlsHide()
+            case .more:
+                ShortsMoreSheet(
+                    isSignedIn: authService.isSignedIn, hasChannel: currentMetadata?.channelId != nil
+                ) { action in
+                    handleMenuAction(action)
+                }
+            case .description:
+                if let video = currentVideo {
+                    ShortsDescriptionSheet(videoId: video.id, fallback: currentMetadata, api: api) { channelId in
+                        activeSheet = nil
+                        openChannel(channelId)
+                    }
+                }
+            case .saveToPlaylist:
+                if let video = currentVideo {
+                    PlaylistPickerSheet(
+                        mode: .save, video: video, sourcePlaylistId: nil, api: api,
+                        onFinished: handleSavedToPlaylist)
                 }
             }
-            .onDisappear {
-                guard !isInBackground else { return }
+        }
+        #endif
+        .sheet(isPresented: $showSignIn) { SignInView() }
+        .onAppear(perform: handleAppear)
+        .onDisappear {
+            // Sheets and the share sheet keep the Short playing, like the official app.
+            guard !isInBackground, !isOverlayPresented else { return }
+            #if os(iOS)
+            // A Short still loading would have started on its own.
+            resumeOnReappear = vm.isPlaying || vm.isStarting
+            #else
+            resumeOnReappear = vm.isPlaying
+            #endif
+            isOffScreen = true
+            vm.stop()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .background:
+                isInBackground = true
+                vm.handleBackground()
+            case .active:
+                isInBackground = false
+                vm.handleForeground()
+            default:
+                break
+            }
+        }
+        .onChange(of: feed.videos.count) { oldCount, newCount in
+            handleFeedGrew(from: oldCount, to: newCount)
+        }
+        .onChange(of: isSuspended) { _, suspended in
+            if suspended {
                 vm.stop()
+            } else if !isOffScreen {
                 #if os(iOS)
-                previousVM?.stop()
+                vm.endStop()
                 #endif
             }
-            .onChange(of: scenePhase) { _, phase in
-                switch phase {
-                case .background:
-                    isInBackground = true
-                    vm.handleBackground()
-                case .active:
-                    isInBackground = false
-                    vm.handleForeground()
-                default:
-                    break
-                }
+        }
+        #if os(iOS)
+        .onChange(of: vm.playerState) { _, newState in
+            if newState == .ended {
+                handleShortEnded()
             }
-            #if os(iOS)
-            .onChange(of: vm.playerState) { _, newState in
-                if newState == .ended {
-                    handleShortEnded()
-                } else if newState == .playing {
-                    // Restart auto-hide timer so controls fade out 3s after playback resumes.
-                    vm.showControls()
-                }
+        }
+        // Keyed by video too: a swipe onto a preloaded Short that failed with the
+        // same error as the previous one must still skip it.
+        .onChange(of: LiveShortError(videoId: vm.currentVideoId, error: vm.playerError)) { _, new in
+            if new.error != nil {
+                advanceAfterError()
             }
-            .onChange(of: vm.playerError) { _, newError in
-                if newError != nil {
-                    advanceAfterError()
-                }
-            }
-            #endif
-        }  // NavigationStack
+        }
+        .onChange(of: isOverlayPresented) { _, presented in
+            if !presented { continueAutoScrollIfWaiting() }
+        }
+        .onChange(of: pageWindow.map(\.id)) { preloadNeighbours() }
+        .onChange(of: vm.currentTime) { _, time in captions.update(time: time) }
+        // Reel entries load before their metadata names the channel; hand it to the
+        // player so SponsorBlock's channel exclusions apply.
+        .onChange(of: currentVideo?.channelId) { _, channelId in
+            guard let video = currentVideo else { return }
+            pool.updateChannelId(channelId, for: video.id)
+        }
+        .onChange(of: currentVideo?.id, initial: true) { applyCaptions() }
+        .onChange(of: store.settings.shortsCaptions) { applyCaptions() }
+        .onChange(of: store.settings.playbackSpeed) { _, speed in
+            pool.updateSettings(store.settings)
+            vm.setPlaybackRate(speed)
+        }
+        #endif
     }
 
     private var shouldShowControlsOverlay: Bool {
+        #if os(tvOS)
         vm.controlsVisible
+        #else
+        // Always visible like the official app, except in Clear Screen mode and while
+        // the video is shrunk above a sheet.
+        !videos.isEmpty && !isScreenCleared && !isVideoShrunk
+        #endif
+    }
+
+    @ViewBuilder
+    private var errorBanner: some View {
+        #if os(iOS)
+        if let msg = vm.errorMessage {
+            bannerText(msg)
+        }
+        #else
+        if let err = vm.error {
+            bannerText(err.localizedDescription)
+        }
+        #endif
+    }
+
+    private func bannerText(_ message: String) -> some View {
+        Text(message)
+            .font(.caption)
+            .foregroundStyle(.white)
+            .padding(12)
+            .background(.black.opacity(0.6))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .accessibilityIdentifier(AccessibilityID.Shorts.errorBanner)
+    }
+
+    /// Seedless feed still loading, or nothing could be loaded.
+    @ViewBuilder
+    private var emptyState: some View {
+        VStack(spacing: 16) {
+            if let error = feed.loadError {
+                Text("Couldn't load Shorts")
+                    .font(.headline)
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+            } else {
+                ProgressView().tint(.white).scaleEffect(1.4)
+            }
+            if mode == .presented {
+                backButton
+            }
+        }
+        .foregroundStyle(.white)
+        .padding(32)
+        .accessibilityIdentifier(AccessibilityID.Shorts.emptyState)
+    }
+
+    /// `false` for touches the window-level recognizers must leave alone: outside the
+    /// player (tab bar, sheets) or on an overlay control.
+    private func shouldHandleTouch(at point: CGPoint) -> Bool {
+        guard playerFrame == .zero || playerFrame.contains(point) else { return false }
+        return !interactiveFrames.contains { $0.insetBy(dx: -6, dy: -6).contains(point) }
     }
 }
+
+#if os(iOS)
+/// The live Short's error, tagged with the Short it belongs to.
+private struct LiveShortError: Equatable {
+    let videoId: String
+    let error: TOSPlayerError?
+}
+
+/// Dark, always-visible tab bar while the Shorts tab is showing (official look).
+private struct ShortsTabBarStyle: ViewModifier {
+    let mode: ShortsPlayerMode
+
+    func body(content: Content) -> some View {
+        switch mode {
+        case .presented:
+            content.toolbar(.hidden, for: .tabBar)
+        case .tab:
+            content
+                .toolbarBackground(.visible, for: .tabBar)
+                .toolbarBackground(Color.black, for: .tabBar)
+                .toolbarColorScheme(.dark, for: .tabBar)
+        }
+    }
+}
+#endif

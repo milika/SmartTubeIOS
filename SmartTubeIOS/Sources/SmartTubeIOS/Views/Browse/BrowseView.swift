@@ -61,7 +61,7 @@ public struct BrowseView: View {
         }
         #if !os(macOS)
         .fullScreenCover(item: $shortsPresentation) { target in
-            ShortsPlayerView(videos: target.videos, startIndex: target.startIndex, api: api)
+            ShortsPlayerView(source: target.source, api: api)
         }
         #endif
         .sheet(isPresented: $showSignIn) { SignInView() }
@@ -112,7 +112,7 @@ public struct BrowseView: View {
         } else if video.isShort {
             let shorts = groupVideos.filter { $0.isShort }
             let idx = shorts.firstIndex(where: { $0.id == video.id }) ?? 0
-            shortsPresentation = ShortsPresentation(videos: shorts, startIndex: idx)
+            shortsPresentation = ShortsPresentation(shelf: shorts, startIndex: idx)
         } else {
             #if os(iOS)
             playerRouter.open(video: video, api: api)

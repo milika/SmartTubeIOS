@@ -55,6 +55,7 @@ public struct BrowseSection {
 - `fetchHome(continuationToken)` - Single VideoGroup (flat parse)
 - `fetchHomeRows(continuationToken)` - **[VideoGroup]** - Multiple horizontal shelves
 - `fetchShorts()` - Browse ID: `"FEshorts"` 
+- `fetchShortsFeed(seedVideoId:)` / `fetchShortsFeedMore(continuation:)` - the Shorts *player* feed (Shorts tab, tapped shelf Shorts). Uses YouTube's reel sequence on TVHTML5 (`reel/reel_item_watch` for a seedless start, `reel/reel_watch_sequence` for pages; follow-up pages must send `continuation`, not `sequenceParams`), so it is personalised when signed in. `fetchShorts()` is only its last-resort fallback. See `ShortsFeedViewModel`.
 - `fetchSubscriptions()` - Browse ID: `"FEsubscriptions"`
 - `fetchHistory()` - Browse ID: `"FEhistory"`
 - `fetchMusic()` - Browse ID: `"FEmusic_home"`

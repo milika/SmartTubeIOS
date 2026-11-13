@@ -93,13 +93,12 @@ struct CaptionsManagerTests {
 
     // MARK: - Task #131: autoApplyCaptionPreference matching logic
 
-    /// Mirrors the matching logic in PlaybackViewModel.autoApplyCaptionPreference(tracks:).
-    /// Tests cover exact match, BCP-47 prefix match, no match, and nil preference.
+    /// PlaybackViewModel.autoApplyCaptionPreference(tracks:)'s guard around the shared
+    /// `CaptionTrack.matching(_:in:)`. Tests cover exact match, base-language match, no
+    /// match, and nil preference.
     private func autoApply(tracks: [CaptionTrack], preferred: String?) -> CaptionTrack? {
         guard let code = preferred, !code.isEmpty, !tracks.isEmpty else { return nil }
-        let base = code.components(separatedBy: "-").first ?? code
-        return tracks.first(where: { $0.languageCode == code })
-            ?? tracks.first(where: { $0.languageCode.hasPrefix(base) })
+        return CaptionTrack.matching(code, in: tracks)
     }
 
     private func captionTrack(_ code: String) -> CaptionTrack {
@@ -120,6 +119,14 @@ struct CaptionsManagerTests {
         let tracks = [captionTrack("en-US"), captionTrack("es")]
         let result = autoApply(tracks: tracks, preferred: "en")
         #expect(result?.languageCode == "en-US", "Prefix match 'en' must return 'en-US'")
+    }
+
+    @Test("A base-language match needs the whole language: 'fi' picks fi-FI, not fil")
+    func captionAutoApply_baseLanguageNotPrefix() {
+        let tracks = [captionTrack("fil"), captionTrack("fi-FI")]
+        #expect(autoApply(tracks: tracks, preferred: "fi")?.languageCode == "fi-FI")
+        #expect(autoApply(tracks: [captionTrack("fil")], preferred: "fi") == nil)
+        #expect(autoApply(tracks: [captionTrack("pt-PT")], preferred: "pt-BR")?.languageCode == "pt-PT")
     }
 
     @Test("autoApplyCaptionPreference no match returns nil")

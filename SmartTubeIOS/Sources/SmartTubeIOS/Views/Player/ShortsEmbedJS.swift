@@ -96,21 +96,110 @@ enum ShortsEmbedJS {
         })();
         """
 
-    /// Injected at `.atDocumentEnd` into every frame — verbatim copy of
-    /// `TOSPlayerViewModel.stateDetectionJS` (TOSPlayerViewModel.swift:480-587). Polls
-    /// the `<video>` element every 250ms and relays `ping`/`ready`/`tick`/`stateChange`/
-    /// `autoUnmuted`/`error` via `window.__nativeYTCallback.postMessage`.
-    static let stateDetectionJS: String = """
+    /// Injected at `.atDocumentEnd` into every frame — the Task 1 spike's copy of
+    /// `TOSPlayerViewModel.stateDetectionJS`, starting live (see
+    /// `makeStateDetectionJS(startsHeld:)`).
+    static let stateDetectionJS: String = makeStateDetectionJS(startsHeld: false)
+
+    /// The Shorts player's version: every embed starts *held* until Swift calls
+    /// `window.__stSetLive(true)` — see `ShortsEmbedPlayerViewModel.applyPlaybackMode()`.
+    static let pooledStateDetectionJS: String = makeStateDetectionJS(startsHeld: true)
+
+    /// Polls the `<video>` element every 250ms and relays `ping`/`ready`/`frame`/`tick`/
+    /// `stateChange`/`autoUnmuted`/`error` via `window.__nativeYTCallback.postMessage`.
+    ///
+    /// Two modes, switched from Swift with `window.__stSetLive(bool)`:
+    /// - **live**: the Short on screen. A fresh live embed autoplays muted and unmutes
+    ///   as soon as playback starts (mirrors `TOSPlayerViewModel.stateDetectionJS`);
+    ///   a held Short going live is unmuted before it plays.
+    /// - **held**: a neighbour preloading off screen. Lets YouTube's autoplay decode
+    ///   the first frames muted, then pauses on frame 0 and keeps it paused, so the
+    ///   Short slides in showing its real first frame with its stream already
+    ///   buffered, and starts the instant it goes live.
+    ///
+    /// `frame` is posted once per document when a decoded frame is on screen (held:
+    /// paused on frame 0; live: playback has advanced), so the poster cover can drop.
+    static func makeStateDetectionJS(startsHeld: Bool) -> String {
+        stateDetectionJSTemplate.replacingOccurrences(
+            of: initialLivePlaceholder, with: startsHeld ? "false" : "true")
+    }
+
+    private static let initialLivePlaceholder = "__ST_INITIAL_LIVE__"
+
+    /// `makeStateDetectionJS(startsHeld:)`'s script, with `initialLivePlaceholder`
+    /// standing in for the starting mode.
+    private static let stateDetectionJSTemplate = """
         (function() {
+            var _live = __ST_INITIAL_LIVE__;
+            var _prevState = -2;
+            var _playAttempts = 0;
+            var _autoUnmuted = false;
+            var _unmutes = 0;
+            var _pausedCandidate = false;
+            var _primed = false;
+            var _frameReported = false;
+
+            function ytPlayer() { return document.getElementById('movie_player'); }
+
+            function pauseNow(video) {
+                var p = ytPlayer();
+                if (p && typeof p.pauseVideo === 'function') { p.pauseVideo(); }
+                if (video) { video.pause(); }
+            }
+
+            window.__stSetLive = function(live) {
+                var wasLive = _live;
+                _live = !!live;
+                // A fresh held embed must be left alone: pausing YouTube's player
+                // before its autoplay has loaded the stream cancels the load. The
+                // poll pauses it once a frame is decoded.
+                if (!_live && !wasLive) {
+                    var fresh = document.querySelector('video');
+                    if (fresh) { fresh.muted = true; }
+                    return {live: false, found: !!fresh, paused: fresh ? fresh.paused : null};
+                }
+                var video = document.querySelector('video');
+                var p = ytPlayer();
+                if (_live) {
+                    _unmutes = 0;
+                    if (video) {
+                        // Unmute *before* playing, in this same call. If the Short
+                        // started muted and unmuted only once play() resolved, there
+                        // was a moment with no audible video in any slot (the old Short
+                        // is muted right after this): WebKit then deactivates the audio
+                        // session, and on a device the new Short's audio stays dead
+                        // until the next pause/play (no sound, then a frozen picture).
+                        _autoUnmuted = true;
+                        video.muted = false;
+                        if (p && typeof p.unMute === 'function') { p.unMute(); }
+                        if (p && typeof p.playVideo === 'function') { p.playVideo(); }
+                        var started = video.play();
+                        if (started && started.catch) {
+                            started.catch(function() {
+                                // Unmuted playback refused: start muted; the poll
+                                // unmutes once it is playing.
+                                _autoUnmuted = false;
+                                video.muted = true;
+                                video.play();
+                            });
+                        }
+                    }
+                } else {
+                    _autoUnmuted = false;
+                    _playAttempts = 0;
+                    _primed = false;
+                    if (p && typeof p.mute === 'function') { p.mute(); }
+                    if (video) { video.muted = true; }
+                    pauseNow(video);
+                    if (video && video.currentTime > 0) { video.currentTime = 0; }
+                }
+                return {live: _live, found: !!video, paused: video ? video.paused : null};
+            };
+
             try {
                 var _cb = window.__nativeYTCallback;
                 if (_cb) _cb.postMessage('{"type":"ping"}');
             } catch(e) {}
-
-            var _prevState = -2;
-            var _playAttempts = 0;
-            var _autoUnmuted = false;
-            var _pausedCandidate = false;
 
             function postMsg(obj) {
                 try {
@@ -214,19 +303,57 @@ enum ShortsEmbedJS {
                              readyState: video.readyState, buffered: video.buffered.length});
                 }
 
-                if (video.paused && t === 0 && _playAttempts < 20) {
-                    _playAttempts++;
-                    video.muted = true;
-                    var p = video.play();
-                    if (p && p['catch']) { p['catch'](function() {}); }
+                if (_live) {
+                    if (video.paused && t === 0 && _playAttempts < 20) {
+                        _playAttempts++;
+                        // Retry with sound once it was turned on (__stSetLive). An
+                        // audio interruption can pause the Short at 0 s; restarting it
+                        // muted left it playing silently for good.
+                        if (!_autoUnmuted) { video.muted = true; }
+                        var p = video.play();
+                        if (p && p['catch']) {
+                            p['catch'](function() { _autoUnmuted = false; video.muted = true; });
+                        }
+                    }
+
+                    // The Short on screen always plays with sound (there is no mute
+                    // control): unmute it once it is playing, and again if anything —
+                    // YouTube's player, a muted restart — muted it since. Capped, in
+                    // case WebKit pauses it each time it gets sound.
+                    if ((!_autoUnmuted || video.muted) && !video.paused && t > 0.1 && _unmutes < 5) {
+                        _unmutes++;
+                        _autoUnmuted = true;
+                        video.muted = false;
+                        var yt = ytPlayer();
+                        if (yt && typeof yt.unMute === 'function') { yt.unMute(); }
+                        postMsg({type: 'autoUnmuted', t: t, muted: video.muted});
+                    }
+                } else {
+                    // Held: decode the first frames muted, then sit paused on frame 0.
+                    if (!video.muted) { video.muted = true; }
+                    if (_primed) {
+                        if (!video.paused) { pauseNow(video); }
+                    } else if (!video.paused) {
+                        if (t > 0 && video.readyState >= 2) {
+                            pauseNow(video);
+                            video.currentTime = 0;
+                            _primed = true;
+                        }
+                    } else if (t > 0) {
+                        video.currentTime = 0;
+                    } else if (video.readyState >= 2 && !video.seeking) {
+                        _primed = true;
+                    } else if (_playAttempts < 20) {
+                        _playAttempts++;
+                        var hp = video.play();
+                        if (hp && hp['catch']) { hp['catch'](function() {}); }
+                    }
                 }
 
-                if (!_autoUnmuted && !video.paused && t > 0.1) {
-                    _autoUnmuted = true;
-                    video.muted = false;
-                    var ytPlayer = document.getElementById('movie_player');
-                    if (ytPlayer && typeof ytPlayer.unMute === 'function') { ytPlayer.unMute(); }
-                    postMsg({type: 'autoUnmuted', t: t, muted: video.muted});
+                if (!_frameReported && video.readyState >= 2 && !video.seeking
+                    && (_live ? (t > 0 && !video.paused) : (_primed && video.paused && t === 0))) {
+                    _frameReported = true;
+                    postMsg({type: 'frame', live: _live});
                 }
 
                 postMsg({type: 'tick', t: t, state: s});

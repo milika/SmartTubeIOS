@@ -11,6 +11,9 @@ struct PlaylistPickerSheet: View {
     enum Mode: Identifiable {
         case copy
         case move
+        /// Plain "Save to Playlist" (the Shorts ⋯ menu): an add, worded for a video
+        /// that isn't being browsed from a playlist.
+        case save
 
         var id: Self { self }
     }
@@ -63,11 +66,7 @@ struct PlaylistPickerSheet: View {
                     }
                 }
             }
-            .navigationTitle(
-                mode == .copy
-                    ? String(localized: "Copy to Playlist", bundle: .module)
-                    : String(localized: "Move to Playlist", bundle: .module)
-            )
+            .navigationTitle(title)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -81,6 +80,14 @@ struct PlaylistPickerSheet: View {
     }
 
     @State private var isSubmitting = false
+
+    private var title: String {
+        switch mode {
+        case .copy: String(localized: "Copy to Playlist", bundle: .module)
+        case .move: String(localized: "Move to Playlist", bundle: .module)
+        case .save: String(localized: "Save to Playlist", bundle: .module)
+        }
+    }
 
     private func load() async {
         do {

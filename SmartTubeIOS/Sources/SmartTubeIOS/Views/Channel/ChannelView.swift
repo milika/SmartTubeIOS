@@ -68,7 +68,7 @@ public struct ChannelView: View {
         }
         #if !os(macOS)
         .fullScreenCover(item: $shortsPresentation) { target in
-            ShortsPlayerView(videos: target.videos, startIndex: target.startIndex, api: api)
+            ShortsPlayerView(source: target.source, api: api)
         }
         #endif
         .alert("Error", isPresented: .constant(vm.error != nil), presenting: vm.error) { _ in
@@ -247,7 +247,7 @@ public struct ChannelView: View {
 
     private func selectShort(_ video: Video, from videos: [Video]) {
         let idx = videos.firstIndex(where: { $0.id == video.id }) ?? 0
-        shortsPresentation = ShortsPresentation(videos: videos, startIndex: idx)
+        shortsPresentation = ShortsPresentation(list: videos, startIndex: idx)
     }
 
     private func toggleSponsorBlockExclusion(for channel: Channel) {

@@ -42,6 +42,9 @@ public struct SettingsView: View {
         Form {
             accountSection
             playerSection
+            #if os(iOS)
+            ShortsSettingsSection()
+            #endif
             generalSection
             uiSection
             sponsorBlockSection
@@ -310,8 +313,12 @@ public struct SettingsView: View {
             .disabled(store.settings.compactThumbnails)
             .accessibilityIdentifier("settings.gridColumnsLandscapePicker")
             #endif
-            Toggle("Hide Shorts", isOn: $store.settings.hideShorts)
+            Toggle(isOn: $store.settings.hideShorts) { Text("Hide Shorts in Feeds", bundle: .module) }
                 .accessibilityIdentifier("settings.hideShortsToggle")
+            #if os(iOS)
+            Toggle(isOn: $store.settings.hideShortsTab) { Text("Hide Shorts Tab", bundle: .module) }
+                .accessibilityIdentifier(AccessibilityID.Settings.hideShortsTabToggle)
+            #endif
             Toggle("Hide Live Shorts", isOn: $store.settings.hideLiveShorts)
                 .accessibilityIdentifier("settings.hideLiveShortsToggle")
             Toggle("Hide Video Premieres", isOn: $store.settings.hideVideoPremieres)

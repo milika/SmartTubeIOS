@@ -113,7 +113,7 @@ public struct HomeView: View {
         // Player cover is centralised in MainTabView; deep-link handled there too.
         .toolbar(.hidden, for: .navigationBar)
         .fullScreenCover(item: $shortsPresentation) { target in
-            ShortsPlayerView(videos: target.videos, startIndex: target.startIndex, api: api)
+            ShortsPlayerView(source: target.source, api: api)
         }
         #endif
         .sheet(isPresented: $showSignIn) { SignInView() }
@@ -367,6 +367,8 @@ public struct HomeView: View {
                         #if os(tvOS)
                         .focusSection()
                         #endif
+                    } else if !hideShorts && !homeVM.hasLoadedShortsShelf {
+                        ShortsRowPlaceholder()
                     }
                     ScrollView {
                         VStack(alignment: .leading, spacing: 0) {
@@ -795,7 +797,7 @@ public struct HomeView: View {
             #if os(iOS)
             let shorts = groupVideos.filter { $0.isShort }
             let idx = shorts.firstIndex(where: { $0.id == video.id }) ?? 0
-            shortsPresentation = ShortsPresentation(videos: shorts, startIndex: idx)
+            shortsPresentation = ShortsPresentation(shelf: shorts, startIndex: idx)
             #else
             selectedVideo = video
             #endif

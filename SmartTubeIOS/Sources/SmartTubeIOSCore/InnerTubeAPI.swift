@@ -30,6 +30,9 @@ public actor InnerTubeAPI {
     var sapisid: String?
     /// Selected Brand Account, sent as `X-Goog-Pageid` on authenticated requests.
     let activeChannel: ActiveChannel
+    /// The Shorts shelf's seedless first page, waiting for the Shorts tab
+    /// (`InnerTubeAPI+Shorts.swift`).
+    var shortsFirstPageShare = ShortsFirstPageShare()
 
     // MARK: - signatureTimestamp (STS) cache
     //

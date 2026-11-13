@@ -71,6 +71,23 @@ public struct AppSettings: Codable {
     public var settingsPINHash: String?
     public var hideShorts: Bool
     public var hideLiveShorts: Bool
+    /// Shorts player: when `true`, advance to the next Short when one ends; when `false`
+    /// (default, matching the official app) the Short loops. Independent of `loopEnabled`.
+    public var shortsAutoScroll: Bool
+    /// When `true`, the Shorts tab is removed from the tab bar / sidebar (iOS only).
+    public var hideShortsTab: Bool
+    /// Shorts player: show captions (the preferred caption language when the Short has
+    /// it, otherwise the Short's own track). Separate from the main player's choice
+    /// because Shorts come in every language.
+    public var shortsCaptions: Bool
+    /// Shorts player: skip SponsorBlock segments (default on). Only applies while
+    /// `sponsorBlockEnabled` is on, with the same categories as the main player.
+    public var shortsSponsorBlock: Bool
+    /// Shorts player: zoom the video in so its top reaches the top of the screen
+    /// (behind the status bar) while its bottom stays at the progress bar, cropping
+    /// the sides, like the official app. Off (default): the video starts below the
+    /// status bar.
+    public var shortsFillScreen: Bool
     public var hideVideoPremieres: Bool
     /// When `true` (default), a per-device `visitorData` token is included in home-feed
     /// requests so YouTube tailors recommendations to this device.
@@ -128,6 +145,12 @@ public struct AppSettings: Codable {
     /// Passed to `SponsorBlockService.fetchSegments` so we only fetch relevant segments.
     public var activeSponsorCategories: Set<SponsorSegment.Category> {
         Set(sponsorBlockActions.compactMap { $0.value != .nothing ? $0.key : nil })
+    }
+
+    /// Whether Shorts skip SponsorBlock segments: needs SponsorBlock itself on. While
+    /// it is off, `shortsSponsorBlock` keeps its value for when it comes back on.
+    public var shortsSponsorBlockActive: Bool {
+        sponsorBlockEnabled && shortsSponsorBlock
     }
 
     /// Returns the action for a given category (`.nothing` if not configured).
@@ -281,6 +304,11 @@ public struct AppSettings: Codable {
         settingsPINHash = nil
         hideShorts = false
         hideLiveShorts = false
+        shortsAutoScroll = false
+        hideShortsTab = false
+        shortsCaptions = false
+        shortsSponsorBlock = true
+        shortsFillScreen = false
         hideVideoPremieres = false
         perDeviceRecommendationsEnabled = true
         themeName = .system
@@ -370,6 +398,11 @@ extension AppSettings {
         case settingsPINHash
         case hideShorts
         case hideLiveShorts
+        case shortsAutoScroll
+        case hideShortsTab
+        case shortsCaptions
+        case shortsSponsorBlock
+        case shortsFillScreen
         case hideVideoPremieres
         case perDeviceRecommendationsEnabled
         case themeName
@@ -424,6 +457,11 @@ extension AppSettings {
         settingsPINHash = c.safeDecode(String?.self, forKey: .settingsPINHash, default: d.settingsPINHash)
         hideShorts = c.safeDecode(Bool.self, forKey: .hideShorts, default: d.hideShorts)
         hideLiveShorts = c.safeDecode(Bool.self, forKey: .hideLiveShorts, default: d.hideLiveShorts)
+        shortsAutoScroll = c.safeDecode(Bool.self, forKey: .shortsAutoScroll, default: d.shortsAutoScroll)
+        hideShortsTab = c.safeDecode(Bool.self, forKey: .hideShortsTab, default: d.hideShortsTab)
+        shortsCaptions = c.safeDecode(Bool.self, forKey: .shortsCaptions, default: d.shortsCaptions)
+        shortsSponsorBlock = c.safeDecode(Bool.self, forKey: .shortsSponsorBlock, default: d.shortsSponsorBlock)
+        shortsFillScreen = c.safeDecode(Bool.self, forKey: .shortsFillScreen, default: d.shortsFillScreen)
         hideVideoPremieres = c.safeDecode(Bool.self, forKey: .hideVideoPremieres, default: d.hideVideoPremieres)
         perDeviceRecommendationsEnabled = c.safeDecode(
             Bool.self, forKey: .perDeviceRecommendationsEnabled, default: d.perDeviceRecommendationsEnabled)
@@ -431,10 +469,14 @@ extension AppSettings {
         accentColor = c.safeDecode(AccentColorChoice.self, forKey: .accentColor, default: d.accentColor)
         let columns = Self.availableGridColumnCounts
         gridColumnsPortrait = min(
-            max(c.safeDecode(Int.self, forKey: .gridColumnsPortrait, default: d.gridColumnsPortrait), columns.lowerBound),
+            max(
+                c.safeDecode(Int.self, forKey: .gridColumnsPortrait, default: d.gridColumnsPortrait), columns.lowerBound
+            ),
             columns.upperBound)
         gridColumnsLandscape = min(
-            max(c.safeDecode(Int.self, forKey: .gridColumnsLandscape, default: d.gridColumnsLandscape), columns.lowerBound),
+            max(
+                c.safeDecode(Int.self, forKey: .gridColumnsLandscape, default: d.gridColumnsLandscape),
+                columns.lowerBound),
             columns.upperBound)
         enabledSections = c.safeDecode(
             [BrowseSection.SectionType].self, forKey: .enabledSections, default: d.enabledSections)

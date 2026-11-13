@@ -22,16 +22,17 @@ struct ShortsCardView: View {
     #endif
 
     /// Primary thumbnail URL: portrait oardefault.jpg when the API provided one
-    /// (reelItemRenderer), landscape thumbnailURL otherwise.
-    /// YouTube returns HTTP 200 with a blank black image for oardefault.jpg when
-    /// no portrait thumbnail exists, so we skip it for non-reelItemRenderer Shorts.
+    /// (reelItemRenderer), the API's thumbnailURL otherwise. oardefault.jpg 404s for
+    /// many Shorts; the portrait fallback chain then takes over.
     private var primaryURL: URL? {
         video.hasPortraitThumbnail ? video.portraitThumbnailURL : video.thumbnailURL
     }
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            ThumbnailFillView(primaryURL: primaryURL, fallbackURLs: video.thumbnailFallbackURLs)
+            ThumbnailFillView(
+                primaryURL: primaryURL,
+                fallbackURLs: video.portraitThumbnailFallbackURLs(excluding: primaryURL))
 
             // Dark gradient + title overlay at the bottom.
             LinearGradient(

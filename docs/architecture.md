@@ -51,7 +51,7 @@ Dependency direction: `SmartTubeIOSCore` must never import `SmartTubeIOS`, Swift
 | `SmartTubeIOS` (views/view models/services) | `SmartTubeIOS/Sources/SmartTubeIOS/` | WS7 (UI/composition), WS4/WS5 (player) | |
 | Playback (`PlaybackViewModel` + AVPlayer path) | `SmartTubeIOS/Sources/SmartTubeIOS/ViewModels/PlaybackViewModel*.swift` | WS4 (seams/pipeline), WS5 (session) | The critical path — see below |
 | TOS player (WKWebView embed) | `SmartTubeIOS/Sources/SmartTubeIOS/Views/Player/TOSPlayer*.swift` | WS5 | Default player on iOS (ADR pending, WS2-T2.3) |
-| Shorts embed player | `SmartTubeIOS/Sources/SmartTubeIOS/Views/Player/ShortsEmbed*.swift` | WS5 | |
+| Shorts (embed player, Shorts tab, feed) | `SmartTubeIOS/Sources/SmartTubeIOS/Views/Player/Shorts*.swift`, `SmartTubeIOSCore/ShortsFeedViewModel.swift`, `ShortsSequence.swift`, `ShortsDescription.swift`, `InnerTubeAPI+Shorts.swift`, `ViewModels/ShortsCaptionsController.swift` | WS5 | Feed = YouTube's own Shorts sequence (TVHTML5 `reel/reel_item_watch` + `reel/reel_watch_sequence`, personalised when signed in); `#shorts` search is only the fallback. End of a Short: loop, or advance when `shortsAutoScroll` is on. Captions are rendered natively from the iOS-client caption tracks (the embed's own controls are hidden). Shorts tab is iOS/iPadOS/Catalyst only |
 | Stream resolution (JS extractors, descramblers) | `SmartTubeIOS/Sources/SmartTubeIOS/Services/YouTube*.swift`, `BotGuardWebViewRunner.swift` | WS4 | New `StreamResolver` target planned (WS8) |
 | App targets, composition roots | `SmartTubeApp/Sources/`, `SmartTubeApp/Smart Tube/` | WS7, WS1 | |
 | Tests | `SmartTubeIOS/Tests/`, `SmartTubeApp/UITests/` | WS3 | |

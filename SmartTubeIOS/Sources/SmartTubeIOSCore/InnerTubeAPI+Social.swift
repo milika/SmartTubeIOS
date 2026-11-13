@@ -127,7 +127,7 @@ extension InnerTubeAPI {
         var body = makeBody(client: webClientContext)
         body["videoId"] = videoId
         let nextData = try await post(endpoint: "next", body: body)
-        guard let token = parseFeedbackToken(iconType: iconType, from: nextData) else {
+        guard let token = Self.feedbackToken(iconType: iconType, videoId: videoId, in: nextData) else {
             tubeLog.warning(
                 "sendFeedbackForVideo: no \(iconType, privacy: .public) token in /next for videoId=\(videoId, privacy: .public)"
             )
@@ -136,28 +136,35 @@ extension InnerTubeAPI {
         try await sendFeedback(token: token)
     }
 
-    /// Walks a `/next` (WEB) response and returns the first `feedbackEndpoint` token
+    /// Walks a `/next` (WEB) response for the `feedbackEndpoint` token of `videoId`
     /// whose `menuServiceItemRenderer.icon.iconType` matches `iconType`.
-    private func parseFeedbackToken(iconType: String, from json: [String: Any]) -> String? {
-        var found: String? = nil
-        func walk(_ obj: Any, depth: Int = 0) {
+    ///
+    /// A `/next` response is mostly *other* videos (recommendations), each with its own
+    /// menu; the first matching token anywhere usually belongs to one of them, and
+    /// sending it would tell YouTube "not interested" in — or block the channel of — the
+    /// wrong video. So a token only counts inside a renderer that names `videoId`
+    /// (`videoId`, or a lockup's `contentId`); one whose owner can't be told is skipped.
+    static func feedbackToken(iconType: String, videoId: String, in json: [String: Any]) -> String? {
+        var found: String?
+        func walk(_ obj: Any, owner: String?, depth: Int) {
             guard found == nil, depth < 50 else { return }
             if let dict = obj as? [String: Any] {
-                if let svc = dict["menuServiceItemRenderer"] as? [String: Any],
+                let owner = dict["videoId"] as? String ?? dict["contentId"] as? String ?? owner
+                if owner == videoId,
+                    let svc = dict["menuServiceItemRenderer"] as? [String: Any],
                     let endpoint = svc["serviceEndpoint"] as? [String: Any],
                     let token = (endpoint["feedbackEndpoint"] as? [String: Any])?["feedbackToken"] as? String,
-                    let type = (svc["icon"] as? [String: Any])?["iconType"] as? String,
-                    type == iconType
+                    (svc["icon"] as? [String: Any])?["iconType"] as? String == iconType
                 {
                     found = token
                     return
                 }
-                for value in dict.values { walk(value, depth: depth + 1) }
-            } else if let arr = obj as? [Any] {
-                for item in arr { walk(item, depth: depth + 1) }
+                for value in dict.values { walk(value, owner: owner, depth: depth + 1) }
+            } else if let array = obj as? [Any] {
+                for item in array { walk(item, owner: owner, depth: depth + 1) }
             }
         }
-        walk(json)
+        walk(json, owner: nil, depth: 0)
         return found
     }
 

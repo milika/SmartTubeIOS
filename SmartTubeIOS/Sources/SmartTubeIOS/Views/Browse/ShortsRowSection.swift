@@ -22,10 +22,10 @@ struct ShortsRowSection: View {
     // MARK: - Constants
 
     #if os(tvOS)
-    private let cardWidth: CGFloat = 200
+    static let cardWidth: CGFloat = 200
     #else
     /// Card width on iOS/iPadOS: ~120 pt gives roughly 3 cards on an iPhone screen.
-    private let cardWidth: CGFloat = 120
+    static let cardWidth: CGFloat = 120
     #endif
 
     /// Maximum cards shown on tvOS in horizontal mode. A 1920-pt screen holds
@@ -56,7 +56,7 @@ struct ShortsRowSection: View {
                     onSelect(video)
                 } label: {
                     ShortsCardView(video: video, onTap: { onSelect(video) })
-                        .frame(width: cardWidth, height: cardWidth * 16 / 9)
+                        .frame(width: Self.cardWidth, height: Self.cardWidth * 16 / 9)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("shorts.card.\(video.id)")
@@ -76,7 +76,7 @@ struct ShortsRowSection: View {
             HStack(alignment: .top, spacing: videoGridRowSpacing) {
                 ForEach(videos) { video in
                     ShortsCardView(video: video, onTap: { onSelect(video) })
-                        .frame(width: cardWidth, height: cardWidth * 16 / 9)
+                        .frame(width: Self.cardWidth, height: Self.cardWidth * 16 / 9)
                         .accessibilityIdentifier("shorts.card.\(video.id)")
                 }
             }
@@ -102,7 +102,7 @@ struct ShortsRowSection: View {
         if #available(iOS 18, macOS 15, tvOS 18, *) {
             scrollView.onScrollGeometryChange(for: Bool.self) { geometry in
                 let distanceToEnd = geometry.contentSize.width - geometry.visibleRect.maxX
-                return distanceToEnd <= cardWidth * 2
+                return distanceToEnd <= Self.cardWidth * 2
             } action: { _, isNearEnd in
                 if isNearEnd { loadMore?() }
             }
@@ -157,7 +157,7 @@ struct ShortsRowSection: View {
         if #available(iOS 18, macOS 15, tvOS 18, *) {
             scrollView.onScrollGeometryChange(for: Bool.self) { geometry in
                 let distanceToEnd = geometry.contentSize.height - geometry.visibleRect.maxY
-                return distanceToEnd <= cardWidth * 8
+                return distanceToEnd <= Self.cardWidth * 8
             } action: { _, isNearEnd in
                 if isNearEnd { loadMore?() }
             }
@@ -165,5 +165,44 @@ struct ShortsRowSection: View {
             scrollView
         }
         #endif
+    }
+}
+
+// MARK: - ShortsRowPlaceholder
+
+/// Stand-in for the horizontal Shorts row while its Shorts are still loading, so the
+/// grid below doesn't jump down when they arrive. Same card size and padding.
+///
+/// The cards are an overlay on a frame of the offered width: an HStack of fixed-size
+/// cards wider than the screen would otherwise make Home's whole stack (chips, grid)
+/// that wide, zooming and off-centring every video card until the Shorts arrived.
+struct ShortsRowPlaceholder: View {
+    private let cardCount = 9
+    private let cardHeight = ShortsRowSection.cardWidth * 16 / 9
+    #if os(tvOS)
+    private let bottomPadding: CGFloat = 4
+    #else
+    private let bottomPadding: CGFloat = 12
+    #endif
+
+    var body: some View {
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: cardHeight)
+            .overlay(alignment: .topLeading) {
+                HStack(alignment: .top, spacing: videoGridRowSpacing) {
+                    ForEach(0..<cardCount, id: \.self) { _ in
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.secondary.opacity(0.15))
+                            .frame(width: ShortsRowSection.cardWidth, height: cardHeight)
+                    }
+                }
+                .padding(.horizontal)
+                .fixedSize()
+            }
+            .clipped()
+            .padding(.top, 4)
+            .padding(.bottom, bottomPadding)
+            .accessibilityHidden(true)
     }
 }

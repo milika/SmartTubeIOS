@@ -3,7 +3,7 @@ import Foundation
 import os
 import SmartTubeIOSCore
 
-private let shortsLog = Logger(subsystem: "com.void.smarttube.app", category: "ShortsPlayer")
+private let shortsLog = Logger(subsystem: appSubsystem, category: "ShortsPlayer")
 
 // MARK: - View State
 //
@@ -82,10 +82,10 @@ extension ShortsEmbedPlayerViewModel {
     }
 
     func handleBackground() {
-        guard !settings.backgroundPlaybackEnabled else { return }
-        guard isPlaying else { return }
+        guard !settings.backgroundPlaybackEnabled, !isStopped else { return }
+        guard isPlaying || isStarting else { return }
         wasPlayingBeforeSuspend = true
-        pause()
+        suspendPlayback()
     }
 
     func handleForeground() {
@@ -99,11 +99,21 @@ extension ShortsEmbedPlayerViewModel {
         play()
     }
 
+    /// The live Short has been told to play but hasn't got past its start yet: still
+    /// loading, or ticking at 0 s while it buffers. The embed keeps retrying its
+    /// autoplay (and then unmutes) while the video sits at 0, so a plain pause doesn't
+    /// hold it there — see `suspendPlayback()`.
+    var isStarting: Bool { isLive && (!hasReceivedFirstTick || currentTime <= 0) }
+
+    /// The player went out of sight (tab left, page pushed over it, another player
+    /// full screen). Stays stopped until the next `play()`.
+    ///
+    /// A Short still loading keeps its ready timeout: firing while stopped it marks
+    /// the Short to reload on the next `play()` (`timedOut()`). Cancelled here, a
+    /// stalled load would never be retried.
     func stop() {
-        pause()
+        suspendPlayback()
         cancelControlsHide()
-        readyTimeoutTask?.cancel()
-        readyTimeoutTask = nil
         sponsorTask?.cancel()
         sponsorTask = nil
         saveProgress()

@@ -207,7 +207,24 @@ extension InnerTubeAPI {
 
     // MARK: - Shorts
 
+    /// Shorts for the Home/Browse Shorts shelves: YouTube's own Shorts sequence
+    /// (personalised when signed in), falling back to the `#shorts` search.
     public func fetchShorts() async throws -> VideoGroup {
+        do {
+            let shelf = try await fetchShortsShelf(continuation: nil)
+            if !shelf.videos.isEmpty { return shelf }
+            tubeLog.notice("fetchShorts: reel sequence returned no Shorts — using #shorts search")
+        } catch {
+            tubeLog.error(
+                "fetchShorts: reel sequence failed (\(String(describing: error), privacy: .public)) — using #shorts search"
+            )
+        }
+        return try await searchShorts()
+    }
+
+    /// The `#shorts` search (not personalised). Fallback for `fetchShorts()` and for
+    /// the Shorts player when the reel endpoints fail.
+    public func searchShorts() async throws -> VideoGroup {
         // NOTE (2026-05-24): Strategies 1–3 (FEshorts via postTV, postTVCategory, WEB)
         // were removed because YouTube deprecated the FEshorts browseId — all three
         // returned HTTP 400 on every client (TV+auth, TV-category, WEB). Confirmed via
@@ -256,7 +273,12 @@ extension InnerTubeAPI {
         // "stvc:" postTVCategory no
         // "web:"  WEB browse     no
         // "srch:" search         no
+        // "reel:" reel sequence  optional (personalised when signed in)
         // ""      legacy         try-all (backward compat)
+        let shelfPrefix = ShortsSequenceParams.shelfTokenPrefix
+        if continuationToken.hasPrefix(shelfPrefix) {
+            return try await fetchShortsShelf(continuation: String(continuationToken.dropFirst(shelfPrefix.count)))
+        }
         let (source, rawToken): (String, String) = {
             let tagged: [(String, String)] = [
                 ("stv:", "stv"), ("stvc:", "stvc"), ("web:", "web"), ("srch:", "srch"),

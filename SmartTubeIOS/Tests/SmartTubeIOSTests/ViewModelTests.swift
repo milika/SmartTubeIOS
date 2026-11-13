@@ -32,6 +32,10 @@ final class MockInnerTubeAPI: InnerTubeAPIProtocol {
     /// `fetchShortsMore` invocation — lets tests vary the response per call
     /// (e.g. to simulate a multi-page continuation sequence).
     var shortsMoreHandler: ((String) -> VideoGroup)? = nil
+    /// While true, `fetchShorts` waits until `releaseShorts()` — lets a test look at
+    /// the Home row before the Shorts shelf has answered.
+    var holdsShorts = false
+    private var shortsWaiters: [CheckedContinuation<Void, Never>] = []
     var musicResult: VideoGroup = VideoGroup(title: "Music", videos: [])
     var gamingResult: VideoGroup = VideoGroup(title: "Gaming", videos: [])
     var newsResult: VideoGroup = VideoGroup(title: "News", videos: [])
@@ -85,8 +89,15 @@ final class MockInnerTubeAPI: InnerTubeAPIProtocol {
         return historyResult
     }
 
+    func releaseShorts() {
+        holdsShorts = false
+        shortsWaiters.forEach { $0.resume() }
+        shortsWaiters = []
+    }
+
     func fetchShorts() async throws -> VideoGroup {
         calls.append(Call(method: "fetchShorts", args: []))
+        if holdsShorts { await withCheckedContinuation { shortsWaiters.append($0) } }
         if let e = errorToThrow { throw e }
         return shortsResult
     }
@@ -381,6 +392,51 @@ struct HomeViewModelTests {
         #expect(vm.homeShortsVideos.map(\.id).contains("srt0_BBBB"))
     }
 
+    @Test("the Shorts row stays empty until the shelf answers, then shows only the shelf's Shorts")
+    func shortsRowShowsOnlyTheShelf() async {
+        let mock = MockInnerTubeAPI()
+        let feedShort = Video(id: "feedShort01", title: "Feed Short", channelTitle: "Ch", isShort: true)
+        let subsShort = Video(id: "subsShort01", title: "Subs Short", channelTitle: "Ch", isShort: true)
+        let shelfShort = Video(id: "algoShort01", title: "Shelf Short", channelTitle: "Ch", isShort: true)
+        mock.homeRowsResult = [VideoGroup(title: "Rec", videos: [makeVideo("reg0_AAAA"), feedShort])]
+        mock.subscriptionsResult = VideoGroup(title: "Subs", videos: [subsShort])
+        mock.shortsResult = VideoGroup(title: "Shorts", videos: [shelfShort])
+        mock.holdsShorts = true
+
+        let vm = HomeViewModel(api: mock)
+        defer { vm.cancel() }
+        vm.load()
+        await waitForTasks(until: { !vm.isLoadingAny && !vm.mergedVideos.isEmpty })
+
+        // The feeds are on screen and hold Shorts, but none may flash in the row.
+        #expect(!vm.isLoadingAny)
+        #expect(!vm.hasLoadedShortsShelf)
+        #expect(vm.homeShortsVideos.isEmpty)
+
+        mock.releaseShorts()
+        await waitForTasks(until: { vm.hasLoadedShortsShelf })
+        await waitForShortPreloadCompletion(vm)
+        #expect(vm.homeShortsVideos.map(\.id) == ["algoShort01"])
+    }
+
+    @Test("with a shelf, the Subscriptions feed is never paged for Shorts")
+    func shelfDoesNotPageSubscriptions() async {
+        let mock = MockInnerTubeAPI()
+        let shelf = (0..<2).map { Video(id: "algo\($0)_KKKKK", title: "S\($0)", channelTitle: "Ch", isShort: true) }
+        mock.shortsResult = VideoGroup(title: "Shorts", videos: shelf, nextPageToken: nil)
+        mock.subscriptionsResult = VideoGroup(
+            title: "Subs", videos: [makeVideo("sub0_KKKKK")], nextPageToken: "subs_tok")
+
+        let vm = HomeViewModel(api: mock)
+        defer { vm.cancel() }
+        vm.load()
+        await waitForTasks(until: { vm.hasLoadedShortsShelf && !vm.isRefreshing })
+        await waitForShortPreloadCompletion(vm)
+
+        #expect(vm.homeShortsVideos.count == 2)
+        #expect(mock.calls.filter { $0.method == "fetchSubscriptions" }.map(\.args) == [["nil"]])
+    }
+
     @Test("loadMoreShortsIfNeeded auto-fetches next page when shorts < 6")
     func loadMoreShortsAutoFetchWhenBelowThreshold() async {
         let mock = MockInnerTubeAPI()
@@ -543,6 +599,39 @@ struct BrowseViewModelTests {
         #expect(mock.calls.contains { $0.method == "fetchSubscriptions" })
         #expect(!vm.videoGroups.isEmpty)
         #expect(vm.videoGroups[0].videos[0].id == "subvid_AAAA")
+    }
+
+    @Test("Recommended's Shorts row shows the Shorts shelf only, without fetching subscriptions")
+    func recommendedShortsAreTheShelf() async {
+        let mock = MockInnerTubeAPI()
+        let feedShort = Video(id: "feedShort02", title: "Feed Short", channelTitle: "Ch", isShort: true)
+        mock.homeResult = VideoGroup(title: "Rec", videos: [makeVideo("reg1_AAAA"), feedShort])
+        mock.subscriptionsResult = VideoGroup(
+            title: "Subs", videos: [Video(id: "subsShort02", title: "S", channelTitle: "Ch", isShort: true)])
+        mock.shortsResult = VideoGroup(
+            title: "Shorts", videos: [Video(id: "algoShort02", title: "A", channelTitle: "Ch", isShort: true)])
+        let section = BrowseSection(id: "recommended", title: "Recommended", type: .recommended)
+        let vm = BrowseViewModel(api: mock, initialSection: section)
+        vm.loadContent(for: section, refresh: true, source: "test")
+        await waitForTasks(until: { !vm.videoGroups.isEmpty })
+
+        #expect(vm.recommendedShortsVideos.map(\.id) == ["algoShort02"])
+        #expect(!mock.calls.contains { $0.method == "fetchSubscriptions" })
+    }
+
+    @Test("Recommended's Shorts row falls back to subscription and feed Shorts when the shelf is empty")
+    func recommendedShortsFallBackWithoutShelf() async {
+        let mock = MockInnerTubeAPI()
+        let feedShort = Video(id: "feedShort03", title: "Feed Short", channelTitle: "Ch", isShort: true)
+        mock.homeResult = VideoGroup(title: "Rec", videos: [makeVideo("reg2_AAAA"), feedShort])
+        mock.subscriptionsResult = VideoGroup(
+            title: "Subs", videos: [Video(id: "subsShort03", title: "S", channelTitle: "Ch", isShort: true)])
+        let section = BrowseSection(id: "recommended", title: "Recommended", type: .recommended)
+        let vm = BrowseViewModel(api: mock, initialSection: section)
+        vm.loadContent(for: section, refresh: true, source: "test")
+        await waitForTasks(until: { !vm.videoGroups.isEmpty })
+
+        #expect(vm.recommendedShortsVideos.map(\.id) == ["subsShort03", "feedShort03"])
     }
 
     @Test("Home load hands its videos to onHomeLoaded (#353 widget)")

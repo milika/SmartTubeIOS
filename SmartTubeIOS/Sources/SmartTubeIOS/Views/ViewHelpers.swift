@@ -3,13 +3,29 @@ import SwiftUI
 
 // MARK: - ShortsPresentation
 //
-// Shared Identifiable wrapper used by BrowseView and ChannelView to present
+// Shared Identifiable wrapper used by HomeView, BrowseView and ChannelView to present
 // ShortsPlayerView via .fullScreenCover(item:).
 
 struct ShortsPresentation: Identifiable {
     let id = UUID()
-    let videos: [Video]
-    let startIndex: Int
+    let source: ShortsFeedViewModel.Source
+
+    /// A Short tapped in a feed shelf: like the official app, play it and continue
+    /// with YouTube's Shorts sequence seeded from it (not the rest of the shelf).
+    /// Hermetic UI tests (`--uitesting`) keep paging the shelf's stub list instead.
+    init(shelf videos: [Video], startIndex: Int) {
+        if ProcessInfo.processInfo.arguments.contains("--uitesting") || !videos.indices.contains(startIndex) {
+            source = .list(videos, startIndex: startIndex)
+        } else {
+            source = .algorithm(seed: videos[startIndex])
+        }
+    }
+
+    /// A Short tapped in a fixed list (a channel's Shorts): page through that list,
+    /// then continue with YouTube's sequence.
+    init(list videos: [Video], startIndex: Int) {
+        source = .list(videos, startIndex: startIndex)
+    }
 }
 
 // MARK: - ChannelDestination
@@ -170,4 +186,21 @@ enum AppSymbol {
     static let stackLayers = "square.stack"
     static let tvMediabox = "tv.and.mediabox"
     static let tvPlay = "play.tv"
+
+    // MARK: - Shorts
+    static let shortsTab = "play.square.stack.fill"
+    static let thumbsUpFill = "hand.thumbsup.fill"
+    static let thumbsDownFill = "hand.thumbsdown.fill"
+    static let commentsFill = "text.bubble.fill"
+    static let shareForward = "arrowshape.turn.up.right.fill"
+    static let ellipsis = "ellipsis"
+    static let playFill = "play.fill"
+    static let autoScroll = "arrow.down.circle"
+    static let description = "text.alignleft"
+    static let saveToPlaylist = "text.badge.plus"
+    static let clearScreen = "rectangle.dashed"
+    static let captions = "captions.bubble"
+    static let playbackSpeed = "gauge.with.dots.needle.67percent"
+    static let dontRecommendChannel = "person.slash"
+    static let report = "flag"
 }

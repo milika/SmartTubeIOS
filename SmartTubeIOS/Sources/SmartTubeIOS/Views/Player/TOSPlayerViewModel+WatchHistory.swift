@@ -19,47 +19,16 @@ private let tosLog = Logger(subsystem: "com.void.smarttube.app", category: "TOSP
 // instance is scoped to exactly one video — there is no in-place video switch):
 //   "ready"      → beginWatchtimeTracking(): tracker.transition(...) opens the
 //                  session (the returned flush closure is a no-op — no prior video
-//                  in this instance's lifetime), then resolves cached tracking URLs.
+//                  in this instance's lifetime). The tracker resolves the account-bound
+//                  tracking URLs itself on the first checkpoint.
 //   onDisappear  → saveProgress(): single checkpoint with the final position/duration,
 //                  mirroring stop()'s "save on close" semantics.
 
 extension TOSPlayerViewModel {
 
-    /// How long to wait after a failed tracking-URL resolution before trying again.
-    static let trackingResolveRetryInterval: TimeInterval = 300
-
-    func ensureTrackingSession() async {
-        guard !tracker.hasTrackingSession else { return }
-        if let task = trackingSessionTask {
-            await task.value
-            return
-        }
-        // This runs on every playing tick (4×/s). Without a back-off, a failed resolution —
-        // the common case when no authenticated client returns account-bound URLs — would
-        // immediately start another round of up to three authenticated player requests,
-        // continuously, for the whole video.
-        if let failedAt = lastTrackingResolveFailureAt,
-            Date().timeIntervalSince(failedAt) < Self.trackingResolveRetryInterval
-        {
-            return
-        }
-        let videoId = videoId
-        let task = Task { @MainActor [weak self] in
-            guard let self else { return }
-            defer { self.trackingSessionTask = nil }
-            let urls = await self.api.fetchHistoryTrackingURLs(videoId: videoId)
-            self.tracker.setTrackingURLs(urls)
-            self.lastTrackingResolveFailureAt = self.tracker.hasTrackingSession ? nil : Date()
-        }
-        trackingSessionTask = task
-        await task.value
-    }
-
     /// Opens a WatchtimeTracker session for this video once playback is ready (duration
-    /// known) and resolves any cached account-bound tracking URLs. Mirrors the
-    /// `tracker.transition(...)` + `tracker.setTrackingURLs(...)` calls in
-    /// `PlaybackViewModel+Loading.swift`'s load()/prefetch path, collapsed into one
-    /// step since this view model never switches videos in place.
+    /// known). Mirrors the `tracker.transition(...)` call in `PlaybackViewModel+Loading.swift`'s
+    /// load(), done once since this view model never switches videos in place.
     func beginWatchtimeTracking() {
         guard !isIncognito else {
             tosLog.debug("[watchtime] incognito — skipping tracker session for \(self.videoId)")
@@ -86,15 +55,7 @@ extension TOSPlayerViewModel {
         Task { await flush() }
         tosLog.notice("[watchtime] session opened for \(self.videoId)")
 
-        // Deliberately NOT [weak self]: unlike the SponsorBlock background-revalidation
-        // task above (whose result only matters if the player is still on screen), this
-        // result feeds the checkpoint that fires on dismissal — it must survive even if
-        // `self` would otherwise be released the instant the view disappears. Capturing
-        // `self` strongly here simply keeps the view model alive until this short
-        // in-memory cache lookup resolves; it cannot create a retain cycle (Task does
-        // not hold a strong reference back to its creator).
-        //
-        // Single consume() also seeds `likeStatus` from any cached `nextInfo` — mirrors
+        // consume() seeds `likeStatus` from any cached `nextInfo` — mirrors
         // `if let status = nextInfo?.likeStatus { likeStatus = status }` in
         // PlaybackViewModel+Loading. Cache-only (no live nextInfo fetch): a miss simply
         // leaves likeStatus at .none, which is still functionally correct — like()/
@@ -106,15 +67,6 @@ extension TOSPlayerViewModel {
         let videoId = videoId
         Task {
             let cached = await VideoPreloadCache.shared.consume(videoId: videoId)
-            // Outer nil = not cached (treat as "no URLs yet"); inner nil = cached "no URLs".
-            // `?? nil` flattens PlaybackTrackingURLs?? → PlaybackTrackingURLs? either way.
-            if let cachedURLs = cached.trackingURLs ?? nil {
-                self.tracker.setTrackingURLs(cachedURLs)
-            } else {
-                // Same deduplicated, backed-off path the per-tick checkpoints use, so a cache
-                // miss doesn't race a second identical resolution started by the first tick.
-                await self.ensureTrackingSession()
-            }
             if let status = cached.nextInfo?.likeStatus {
                 self.likeDislike.setLikeStatus(status)
                 tosLog.notice(
@@ -131,7 +83,6 @@ extension TOSPlayerViewModel {
         let pos = currentTime
         let dur = duration
         Task {
-            await self.ensureTrackingSession()
             await self.tracker.checkpointIfDue(position: pos, duration: dur)
         }
     }
@@ -140,7 +91,6 @@ extension TOSPlayerViewModel {
         guard !isIncognito, settings.historyState == .enabled, duration > 0 else { return }
         let dur = duration
         Task {
-            await self.ensureTrackingSession()
             await self.tracker.recordSeek(to: target, from: position, duration: dur)
         }
     }
@@ -164,7 +114,6 @@ extension TOSPlayerViewModel {
         // `Task { await self.tracker.checkpoint(...) }` (also a strong capture, for
         // the same reason: the checkpoint must outlive the call site).
         Task {
-            await self.ensureTrackingSession()
             await self.tracker.checkpoint(position: pos, duration: dur)
         }
     }

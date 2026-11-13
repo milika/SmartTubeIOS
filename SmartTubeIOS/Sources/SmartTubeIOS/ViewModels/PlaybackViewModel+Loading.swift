@@ -589,7 +589,7 @@ extension PlaybackViewModel {
             // Log the full cache verdict as a single breadcrumb so wrong-video / prefetch-race
             // scenarios are immediately visible in Firebase reports.
             let cacheVerdict =
-                "playerInfo=\(cached.playerInfo != nil) nextInfo=\(cached.nextInfo != nil) sponsor=\(cached.sponsorSegments != nil) endCards=\(cached.endCards != nil) tracking=\(cached.trackingURLs != nil) complete=\(cached.isComplete)"
+                "playerInfo=\(cached.playerInfo != nil) nextInfo=\(cached.nextInfo != nil) sponsor=\(cached.sponsorSegments != nil) endCards=\(cached.endCards != nil) complete=\(cached.isComplete)"
             if cached.playerInfo != nil {
                 playerLog.notice("PREFETCH_HIT: \(video.id) — \(cacheVerdict)")
             } else {
@@ -608,20 +608,8 @@ extension PlaybackViewModel {
             }
 
             // --- Player info (stream URLs + metadata) ---
-            // Kick off an authenticated TV-client player request in parallel with the
-            // primary iOS player fetch when the cache doesn't already have tracking URLs.
-            // cached.trackingURLs is PlaybackTrackingURLs?? — .some(nil) means the prefetch
-            // ran before auth was ready; treat that as a miss so we still get live URLs.
-            let cachedTrackingURLs: PlaybackTrackingURLs? = cached.trackingURLs.flatMap { $0 }
-            let authTrackingTask: Task<PlaybackTrackingURLs?, Never>?
-            if cachedTrackingURLs != nil {
-                // Tracking URLs came from the cache; no need for a parallel TV-client call.
-                authTrackingTask = nil
-            } else {
-                authTrackingTask = Task<PlaybackTrackingURLs?, Never> { [api = self.api] in
-                    await api.fetchAuthenticatedTrackingURLs(videoId: video.id)
-                }
-            }
+            // Watch-history tracking URLs are not taken from here: WatchtimeTracker resolves
+            // account-bound ones on its first checkpoint (the iOS response is anonymous).
 
             // Fetch player info using the iOS client (unauthenticated).
             // If YouTube returns UNPLAYABLE/LOGIN_REQUIRED and the user is signed in,
@@ -1105,8 +1093,6 @@ extension PlaybackViewModel {
             // or stop() so stale network callbacks never write to a new video's state.
             let p2Cached = cached
             let p2Info = info
-            let p2CachedTracking = cachedTrackingURLs
-            let p2AuthTask = authTrackingTask
             let p2SponsorCached = sponsorCached
             let p2Video = video
             phase2Task = Task(priority: .utility) { [weak self] in
@@ -1114,8 +1100,6 @@ extension PlaybackViewModel {
                     video: p2Video,
                     cached: p2Cached,
                     info: p2Info,
-                    cachedTrackingURLs: p2CachedTracking,
-                    authTrackingTask: p2AuthTask,
                     sponsorCached: p2SponsorCached
                 )
             }
@@ -1285,14 +1269,12 @@ extension PlaybackViewModel {
 
     /// Runs concurrently with playback after Phase 1 completes.
     /// Fetches data that is not needed to start AVPlayer: related videos, end cards,
-    /// SponsorBlock segments (cache miss only), tracking URLs, and neighbour prefetch.
+    /// SponsorBlock segments (cache miss only), and neighbour prefetch.
     /// All property assignments happen on @MainActor because PlaybackViewModel is @MainActor.
     func loadAsyncPhase2(
         video: Video,
         cached: CachedVideoData,
         info: PlayerInfo,
-        cachedTrackingURLs: PlaybackTrackingURLs?,
-        authTrackingTask: Task<PlaybackTrackingURLs?, Never>?,
         sponsorCached: Bool
     ) async {
         guard !Task.isCancelled else { return }
@@ -1457,19 +1439,6 @@ extension PlaybackViewModel {
         }
 
         guard !Task.isCancelled else { return }
-
-        // --- Tracking URLs ---
-        let resolvedTrackingURLs: PlaybackTrackingURLs?
-        if let cachedTracking = cachedTrackingURLs {
-            resolvedTrackingURLs = cachedTracking
-            playerLog.notice("cache HIT: trackingURLs")
-        } else {
-            resolvedTrackingURLs = await authTrackingTask?.value ?? info.trackingURLs
-            await VideoPreloadCache.shared.store(trackingURLs: resolvedTrackingURLs, for: video.id)
-        }
-        guard !Task.isCancelled else { return }
-        tracker.setTrackingURLs(resolvedTrackingURLs)
-        playerLog.notice("activeTrackingURLs resolved: \(resolvedTrackingURLs != nil ? "account-bound" : "none")")
 
         // BUG-015 fix: read currentAuthToken per-prefetch-call so a token refresh mid-loop
         // uses the fresh token rather than a stale snapshot captured before the loop starts.

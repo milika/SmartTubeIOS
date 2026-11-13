@@ -1718,13 +1718,12 @@ extension PlaybackViewModel {
             let p2Cached =
                 cached
                 ?? CachedVideoData(
-                    playerInfo: nil, trackingURLs: nil, nextInfo: nil,
+                    playerInfo: nil, nextInfo: nil,
                     endCards: nil, sponsorSegments: nil, deArrowBranding: nil,
                     staleFields: []
                 )
             await self?.loadAsyncPhase2(
                 video: video, cached: p2Cached, info: info,
-                cachedTrackingURLs: cached?.trackingURLs ?? nil, authTrackingTask: nil,
                 sponsorCached: cached?.sponsorSegments != nil
             )
         }

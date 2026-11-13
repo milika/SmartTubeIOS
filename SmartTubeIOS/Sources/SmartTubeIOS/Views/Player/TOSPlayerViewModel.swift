@@ -73,11 +73,6 @@ final class TOSPlayerViewModel: NSObject {
     var currentTime: Double = 0
     var duration: Double = 0
     var isReady: Bool = false
-    /// Single in-flight history-session resolution; tick callbacks can arrive rapidly.
-    var trackingSessionTask: Task<Void, Never>?
-    /// Last time tracking-URL resolution came back empty; gates retries in
-    /// `ensureTrackingSession()` so a failure doesn't re-fire on every tick.
-    var lastTrackingResolveFailureAt: Date?
     /// Non-nil when the player encounters an error that requires falling back.
     var playerError: TOSPlayerError? = nil
     /// A revision lets repeated requests refresh the native controls' hide timer,
@@ -539,7 +534,6 @@ final class TOSPlayerViewModel: NSObject {
         let durationBefore = duration
         Task {
             guard !isIncognito, settings.historyState == .enabled, durationBefore > 0 else { return }
-            await self.ensureTrackingSession()
             await self.tracker.checkpoint(position: timeBefore, duration: durationBefore)
         }
         tosLog.notice(

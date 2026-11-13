@@ -129,9 +129,25 @@ package enum InnerTubeClients {
         // Version 7.x (standard Cobalt TV client) — used for browse AND authenticated player.
         // Tested yt-dlp tv_downgraded 5.20260114 for player: returns HLS=false (same as 7.x),
         // and 5.x breaks the /browse home-feed endpoint (HTTP 400). No benefit to 5.x here.
+        // Watch-history tracking is the exception: see `TVDowngraded`.
         package static let version = "7.20260707.07.00"
         package static let userAgent =
             "Mozilla/5.0 (ChromiumStylePlatform) Cobalt/25.lts.30.1034943-gold (unlike Gecko), Unknown_TV_Unknown_0/Unknown (Unknown, Unknown)"
+        /// Android `CLIENTS.TV.REFERER`, sent with TV requests to www.youtube.com.
+        package static let referer = "https://www.youtube.com/tv"
+    }
+
+    /// Android `AppClient.TV_DOWNGRADED` (`CLIENTS.TV_DOWNGRADED`): TVHTML5 5.x with an old
+    /// Cobalt user agent, which gets the non-TCL player. Unlike the 7.x client it needs no
+    /// living-room BotGuard poToken (Android: `isTvPotRequired` is only `TV`); without that
+    /// token an authenticated 7.x `/player` request answers UNPLAYABLE with no
+    /// `playbackTracking`. Android's `VideoInfoService.getAuthVideoInfo` uses this client
+    /// for the account-bound watch-history data.
+    package enum TVDowngraded {
+        package static let version = "5.20260901"
+        /// Android `DefaultHeaders.USER_AGENT_COBALT_1`.
+        package static let userAgent =
+            "Mozilla/5.0 (DirectFB; Linux x86_64) Cobalt/4.13031-qa (unlike Gecko) Starboard/1"
     }
 
     /// Maximum number of videos fetched per shelf/related-videos request.

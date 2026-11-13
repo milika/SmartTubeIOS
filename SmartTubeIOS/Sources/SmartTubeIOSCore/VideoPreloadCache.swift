@@ -68,8 +68,6 @@ public actor VideoPreloadCache {
 
     /// iOS-client CDN stream URLs expire after ~6 h; use 5 h 30 m to be safe.
     public static let playerInfoTTL: TimeInterval = 5.5 * 3600
-    /// Tracking URLs are account-bound; token lifetime is typically 1 h.
-    public static let trackingTTL: TimeInterval = 3600
     /// Related-video list can change; 20-min window covers typical session length.
     public static let nextInfoTTL: TimeInterval = 20 * 60
     /// End cards and SponsorBlock/DeArrow data are stable for hours.
@@ -94,7 +92,6 @@ public actor VideoPreloadCache {
     // MARK: - Sub-caches (keyed by videoId)
 
     private var playerInfoCache: [String: CacheEntry<PlayerInfo>] = [:]
-    private var trackingCache: [String: CacheEntry<PlaybackTrackingURLs?>] = [:]
     private var nextInfoCache: [String: CacheEntry<NextInfo>] = [:]
     private var endCardsCache: [String: CacheEntry<[EndCard]>] = [:]
     private var sponsorCache: [String: CacheEntry<[SponsorSegment]>] = [:]
@@ -185,7 +182,7 @@ public actor VideoPreloadCache {
     /// Requests are sorted by `priority`; the queue is bounded at `maxQueueDepth`
     /// and evicts the lowest-priority item on overflow (enqueue-not-drop pattern).
     /// Pass the actual `authToken` value (not just a Bool) so the cache can
-    /// sync it to its internal API before the tracking URL fetch fires —
+    /// sync it to its internal API before the prefetch requests fire —
     /// eliminating a race where prefetch starts before `setAuthToken` runs.
     public func prefetch(
         videoId: String,
@@ -339,7 +336,7 @@ public actor VideoPreloadCache {
         if DebugFlags.cachingDisabled {
             cacheLog.notice("[consume] caching disabled — returning empty for \(videoId, privacy: .public)")
             return CachedVideoData(
-                playerInfo: nil, trackingURLs: nil, nextInfo: nil,
+                playerInfo: nil, nextInfo: nil,
                 endCards: nil, sponsorSegments: nil, deArrowBranding: nil,
                 staleFields: [])
         }
@@ -370,7 +367,6 @@ public actor VideoPreloadCache {
         var staleFields = Set<CachedVideoData.DataType>()
         let data = CachedVideoData(
             playerInfo: fresh(playerInfoCache[videoId]),
-            trackingURLs: trackingCache[videoId].flatMap { $0.isExpired ? nil : $0.value },
             nextInfo: staleOrFresh(nextInfoCache[videoId], dataType: .nextInfo, into: &staleFields),
             endCards: staleOrFresh(endCardsCache[videoId], dataType: .endCards, into: &staleFields),
             sponsorSegments: staleOrFresh(sponsorCache[videoId], dataType: .sponsorSegments, into: &staleFields),
@@ -378,7 +374,7 @@ public actor VideoPreloadCache {
             staleFields: staleFields
         )
         cacheLog.notice(
-            "[consume] \(videoId, privacy: .public) — player=\(data.playerInfo != nil, privacy: .public) tracking=\(data.trackingURLs != nil, privacy: .public) next=\(data.nextInfo != nil, privacy: .public) endCards=\(data.endCards != nil, privacy: .public) sponsor=\(data.sponsorSegments != nil, privacy: .public) deArrow=\(data.deArrowBranding != nil, privacy: .public) stale=\(staleFields.count, privacy: .public) complete=\(data.isComplete, privacy: .public)"
+            "[consume] \(videoId, privacy: .public) — player=\(data.playerInfo != nil, privacy: .public) next=\(data.nextInfo != nil, privacy: .public) endCards=\(data.endCards != nil, privacy: .public) sponsor=\(data.sponsorSegments != nil, privacy: .public) deArrow=\(data.deArrowBranding != nil, privacy: .public) stale=\(staleFields.count, privacy: .public) complete=\(data.isComplete, privacy: .public)"
         )
         return data
     }
@@ -390,13 +386,6 @@ public actor VideoPreloadCache {
             "[store] playerInfo \(videoId, privacy: .public) formats=\(playerInfo.formats.count, privacy: .public) hls=\(playerInfo.hlsURL != nil, privacy: .public) adaptive=\(playerInfo.bestAdaptiveVideoURL != nil, privacy: .public)"
         )
         playerInfoCache[videoId] = CacheEntry(value: playerInfo, storedAt: .init(), ttl: Self.playerInfoTTL)
-        touch(videoId)
-    }
-
-    public func store(trackingURLs: PlaybackTrackingURLs?, for videoId: String) {
-        cacheLog.debug(
-            "[store] trackingURLs \(videoId, privacy: .public) present=\(trackingURLs != nil, privacy: .public)")
-        trackingCache[videoId] = CacheEntry(value: trackingURLs, storedAt: .init(), ttl: Self.trackingTTL)
         touch(videoId)
     }
 
@@ -490,22 +479,14 @@ public actor VideoPreloadCache {
 
     // MARK: - Public: auth invalidation
 
-    /// Call on sign-out: tracking URLs and like-status in nextInfo are account-bound.
+    /// Call on sign-out: like-status in nextInfo is account-bound.
     public func evictAuthSensitiveData() {
         cacheLog.notice(
-            "[evict] auth sign-out — clearing trackingCache (\(self.trackingCache.count, privacy: .public) entries) + nextInfoCache (\(self.nextInfoCache.count, privacy: .public) entries)"
+            "[evict] auth sign-out — clearing nextInfoCache (\(self.nextInfoCache.count, privacy: .public) entries)"
         )
-        trackingCache.removeAll()
         nextInfoCache.removeAll()
         // BUG-013 fix: also purge disk so nextInfo (likeStatus) cannot be read back after sign-out.
         disk.removeAll()
-    }
-
-    /// Call after a token refresh: tracking URLs bound to the old token are stale.
-    public func evictTrackingURLs() {
-        cacheLog.notice(
-            "[evict] token refresh — clearing trackingCache (\(self.trackingCache.count, privacy: .public) entries)")
-        trackingCache.removeAll()
     }
 
     /// Call when a 403 is received for a cached player-info URL.
@@ -551,25 +532,6 @@ public actor VideoPreloadCache {
         async let deArrowResult =
             allowed.contains("deArrowBranding") ? await deArrow.fetchBranding(videoId: videoId) : nil
 
-        // Pass the caller-supplied token directly — no dependency on api.authToken being set —
-        // eliminating the actor-timing race that caused tracking=false on browse-phase prefetch.
-        // This runs concurrently with the 5 child tasks above (all are in flight by this point).
-        //
-        // Tracking URLs: prefer the `playbackTracking` URLs from the iOS-client player
-        // response (which `getOrFetchPlayerInfo` already obtained) over a separate dedicated
-        // fetch. The previous approach (a separate `fetchAuthenticatedTrackingURLs` call hitting
-        // a separate endpoint) failed for device-code-signed-in users because YouTube's web
-        // client rejects the TV device-code Bearer with HTTP 400, and the cookie-exchange paths
-        // (OAuthLogin + Multilogin) are blocked by Google policy (INVALID_TOKENS / RECOVERABLE).
-        // The iOS client's response reliably includes `playbackTracking` URLs in
-        // `PlayerInfo.trackingURLs` — they are the right shape (full c=IOS, cver=, plid=, etc.
-        // params from a real YouTube response). Previously these URLs were thrown away
-        // (replaced by a nil from the failing dedicated call), forcing the pings onto the
-        // constructed fallback URLs which return 200 but are not credited. The dedicated
-        // `fetchAuthenticatedTrackingURLs` call is no longer used here; it remains in the API
-        // for callers that have a working web-session auth context (SAPISID or web OAuth
-        // Bearer) where it can return real account-bound URLs.
-
         let (next, cards, sponsor, dearrow) =
             await (nextResult, endCardsResult, sponsorResult, deArrowResult)
         let player = await playerFetchTask.value
@@ -579,15 +541,13 @@ public actor VideoPreloadCache {
         let elapsed = String(format: "%.2fs", Date().timeIntervalSince(startedAt))
 
         if let player { store(playerInfo: player, for: videoId) }
-        let tracking: PlaybackTrackingURLs? = player?.trackingURLs
-        store(trackingURLs: tracking, for: videoId)
         if let next { store(nextInfo: next, for: videoId) }
         if let cards { store(endCards: cards, for: videoId) }
         store(sponsorSegments: sponsor, for: videoId)
         if let dearrow { store(deArrowBranding: dearrow, for: videoId) }
 
         cacheLog.notice(
-            "[prefetch] DONE \(videoId, privacy: .public) elapsed=\(elapsed, privacy: .public) playerInfo=\(player != nil, privacy: .public) tracking=\(tracking != nil, privacy: .public) next=\(next != nil, privacy: .public) endCards=\(cards != nil, privacy: .public) sponsor=\(sponsor.count, privacy: .public) deArrow=\(dearrow != nil, privacy: .public)"
+            "[prefetch] DONE \(videoId, privacy: .public) elapsed=\(elapsed, privacy: .public) playerInfo=\(player != nil, privacy: .public) next=\(next != nil, privacy: .public) endCards=\(cards != nil, privacy: .public) sponsor=\(sponsor.count, privacy: .public) deArrow=\(dearrow != nil, privacy: .public)"
         )
         prefetchTasks.removeValue(forKey: videoId)
     }
@@ -603,7 +563,6 @@ public actor VideoPreloadCache {
                 "[lru] EVICT \(evict, privacy: .public) — cache full (\(Self.maxVideoEntries, privacy: .public) entries)"
             )
             playerInfoCache.removeValue(forKey: evict)
-            trackingCache.removeValue(forKey: evict)
             nextInfoCache.removeValue(forKey: evict)
             endCardsCache.removeValue(forKey: evict)
             sponsorCache.removeValue(forKey: evict)
@@ -639,14 +598,13 @@ public actor VideoPreloadCache {
 /// value immediately and revalidate in the background (stale-while-revalidate pattern).
 public struct CachedVideoData: Sendable {
 
-    /// SWR-eligible data types. `playerInfo` and `trackingURLs` are NOT SWR-eligible
-    /// (CDN/token-bound — stale stream URLs cause 403; stale tokens cause auth failures).
+    /// SWR-eligible data types. `playerInfo` is NOT SWR-eligible
+    /// (CDN-bound — stale stream URLs cause 403).
     public enum DataType: CaseIterable, Sendable {
         case nextInfo, endCards, sponsorSegments, deArrowBranding
     }
 
     public let playerInfo: PlayerInfo?
-    public let trackingURLs: PlaybackTrackingURLs??  // outer nil = not cached, inner nil = cached as "no URLs"
     public let nextInfo: NextInfo?
     public let endCards: [EndCard]?
     public let sponsorSegments: [SponsorSegment]?
@@ -662,7 +620,6 @@ public struct CachedVideoData: Sendable {
 
     public init(
         playerInfo: PlayerInfo?,
-        trackingURLs: PlaybackTrackingURLs??,
         nextInfo: NextInfo?,
         endCards: [EndCard]?,
         sponsorSegments: [SponsorSegment]?,
@@ -670,7 +627,6 @@ public struct CachedVideoData: Sendable {
         staleFields: Set<DataType>
     ) {
         self.playerInfo = playerInfo
-        self.trackingURLs = trackingURLs
         self.nextInfo = nextInfo
         self.endCards = endCards
         self.sponsorSegments = sponsorSegments

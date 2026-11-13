@@ -150,8 +150,7 @@ extension InnerTubeAPI {
     /// Returns nil silently on any failure so callers are unaffected.
     func fetchAttestationToken(videoId: String) async -> String? {
         guard let token = authToken else { return nil }
-        // Use playerBaseURL (googleapis.com) — www.youtube.com rejects Bearer tokens
-        // with 400, same as all other authenticated requests (see postTV).
+        // Use playerBaseURL (googleapis.com), like the default postTV host.
         guard let url = playerBaseURL.appendingPathComponent("att/get") as URL? else { return nil }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -678,7 +677,7 @@ extension InnerTubeAPI {
     /// videos. Uses the same www.youtube.com endpoint as postMWEB; no Bearer auth
     /// (cookie-based auth in yt-dlp, but HLS manifest works without auth for VOD).
     func postWebSafari(
-        body: [String: Any], visitorIdOverride: String? = nil, allowBearerFallback: Bool = false
+        body: [String: Any], visitorIdOverride: String? = nil
     ) async throws -> [String: Any] {
         guard
             var comps = URLComponents(
@@ -702,19 +701,13 @@ extension InnerTubeAPI {
         // adaptive stream URLs that the CDN serves without pot= enforcement.
         // Without auth, YouTube returns rqh=1 URLs that require pot= and still 403 on the
         // CDN probe when match=false (webVD ≠ apiVD). With SAPISID, Path A wins reliably.
-        // Bearer is opt-in: for playback, www.youtube.com is documented throughout this file as
-        // rejecting the TV device-code Bearer token with HTTP 400, and PR #129 removed an
-        // unconditional Bearer fallback here while fixing playback. Only the tracking-URL fetch
-        // opts in, where a 400 just means no account-bound URLs rather than broken playback.
+        // No Bearer: the WEB client rejects the TV device-code token with HTTP 400, and
+        // PR #129 removed a Bearer fallback here while fixing playback.
         let authStatus: String
         if let sid = sapisid {
             request.setValue(InnerTubeAPI.sapisidhash(sapisid: sid), forHTTPHeaderField: "Authorization")
             request.setValue("1", forHTTPHeaderField: "X-Origin")
             authStatus = "SAPISIDHASH"
-        } else if allowBearerFallback, let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            request.setValue("0", forHTTPHeaderField: "X-Goog-AuthUser")
-            authStatus = "Bearer"
         } else {
             authStatus = "unauthenticated"
         }
@@ -869,15 +862,23 @@ extension InnerTubeAPI {
     /// Android alignment: when Bearer token is present, no ?key= param is sent
     /// (mirrors RetrofitOkHttpHelper — authHeaders non-empty → skip key, apply Bearer headers).
     /// When unauthenticated, the WEB key is used as on all other clients.
+    ///
+    /// `onYouTubeHost` sends the request to www.youtube.com instead, with the TV user agent,
+    /// `Referer: https://www.youtube.com/tv` and `X-Goog-Visitor-Id`. That is how Android's
+    /// `VideoInfoService.getAuthVideoInfo` requests the account-bound watch-history data.
+    /// `downgraded` sends the `TVDowngraded` version and user agent; the body's client
+    /// context must match.
     func postTV(
         endpoint: String,
         body: [String: Any],
         useAuth: Bool = true,
-        explicitBearerToken: String? = nil
+        explicitBearerToken: String? = nil,
+        onYouTubeHost: Bool = false,
+        downgraded: Bool = false
     ) async throws -> [String: Any] {
         guard
             var comps = URLComponents(
-                url: playerBaseURL.appendingPathComponent(endpoint),
+                url: (onYouTubeHost ? baseURL : playerBaseURL).appendingPathComponent(endpoint),
                 resolvingAgainstBaseURL: false)
         else {
             throw APIError.invalidURL(endpoint)
@@ -894,14 +895,29 @@ extension InnerTubeAPI {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(InnerTubeClients.TV.nameID, forHTTPHeaderField: "X-YouTube-Client-Name")
-        request.setValue(InnerTubeClients.TV.version, forHTTPHeaderField: "X-YouTube-Client-Version")
+        request.setValue(
+            downgraded ? InnerTubeClients.TVDowngraded.version : InnerTubeClients.TV.version,
+            forHTTPHeaderField: "X-YouTube-Client-Version")
+        if downgraded {
+            request.setValue(InnerTubeClients.TVDowngraded.userAgent, forHTTPHeaderField: "User-Agent")
+        } else if onYouTubeHost {
+            request.setValue(InnerTubeClients.TV.userAgent, forHTTPHeaderField: "User-Agent")
+        }
+        if onYouTubeHost {
+            request.setValue(InnerTubeClients.TV.referer, forHTTPHeaderField: "Referer")
+            if let vd = visitorData { request.setValue(vd, forHTTPHeaderField: "X-Goog-Visitor-Id") }
+        }
         if let token = resolvedToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             activeChannel.apply(to: &request)
         }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         let authLabel = shouldAuthenticate ? "yes" : "no"
-        tubeLog.notice("POST /\(endpoint, privacy: .public) [TV] auth=\(authLabel, privacy: .public)")
+        let hostLabel = onYouTubeHost ? "www" : "googleapis"
+        let clientLabel = downgraded ? "TV-downgraded" : "TV"
+        tubeLog.notice(
+            "POST /\(endpoint, privacy: .public) [\(clientLabel, privacy: .public)] auth=\(authLabel, privacy: .public) host=\(hostLabel, privacy: .public)"
+        )
         let (data, response) = try await session.data(for: request)
         let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {

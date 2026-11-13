@@ -520,6 +520,22 @@ extension ShortsEmbedPlayerViewModelTests {
         #expect(vm.playerError == .webViewLoadFailed)
         #expect(vm.reloadsOnPlay == false)
     }
+
+    @Test("A terminated web process reloads the current Short into a fresh wrapper page")
+    func terminatedProcessReloadsWrapper() {
+        let vm = ShortsEmbedPlayerViewModel(api: InnerTubeAPI())
+        vm.loadShort(video: short("a"), live: false)
+        vm.loadShort(video: short("b"), live: false)
+        vm.isReady = true
+
+        vm.webContentProcessDidTerminate()
+
+        #expect(vm.hasStarted)
+        #expect(vm.videoId == "b")
+        #expect(vm.isReady == false)
+        #expect(vm.isLive == false)
+        #expect(vm.readyTimeoutTask != nil)
+    }
 }
 
 #if os(iOS)

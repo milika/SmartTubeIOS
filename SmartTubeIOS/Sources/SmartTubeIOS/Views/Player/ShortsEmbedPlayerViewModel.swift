@@ -155,7 +155,7 @@ final class ShortsEmbedPlayerViewModel: NSObject {
     /// `false` until the first `loadShort(video:)` call — gates whether `loadShort`
     /// performs the initial `loadHTMLString` (`startEmbed`) or an iframe-src swap
     /// (`swapEmbed`).
-    private var hasStarted = false
+    private(set) var hasStarted = false
     /// Strong reference to the WKWebView's navigation delegate (WKWebView retains it
     /// weakly).
     private var navigationDelegate: ShortsNavigationDelegate?
@@ -240,7 +240,7 @@ final class ShortsEmbedPlayerViewModel: NSObject {
 
         proxyHandler.target = self
 
-        let navDel = ShortsNavigationDelegate()
+        let navDel = ShortsNavigationDelegate(target: self)
         self.webView.navigationDelegate = navDel
         self.navigationDelegate = navDel
     }
@@ -698,15 +698,48 @@ final class ShortsEmbedPlayerViewModel: NSObject {
     }
 }
 
+// MARK: - Web content process termination
+
+extension ShortsEmbedPlayerViewModel {
+    /// WebKit terminated this web view's content process (on a device: the GPU process
+    /// asks for it under media pressure). Left alone, WebKit reloads the page as the
+    /// bare embed URL, without the wrapper's `<iframe id="yt">`, so every later
+    /// `swapEmbed` throws and each Short loaded here times out. Load the wrapper again
+    /// with the current Short instead.
+    func webContentProcessDidTerminate() {
+        shortsLog.error(
+            "[\(self.logTag, privacy: .public)] [nav] web content process terminated — reloading the wrapper for videoId=\(self.videoId, privacy: .public)"
+        )
+        hasStarted = false
+        guard let video else { return }
+        loadShort(video: video, live: isLive)
+    }
+}
+
 // MARK: - ShortsNavigationDelegate
 
-/// Minimal navigation delegate — logs provisional-navigation failures only. Modeled
-/// on Task 1's `SpikeNavigationDelegate`; per-Short "ready"/"tick" notifications
-/// (Task 5) already give Task 10's UI test what it needs without porting
-/// `TOSNavigationDelegate`'s full set of diagnostic notifications.
+/// Minimal navigation delegate — logs provisional-navigation failures and recovers
+/// from a terminated web content process. Modeled on Task 1's
+/// `SpikeNavigationDelegate`; per-Short "ready"/"tick" notifications (Task 5) already
+/// give Task 10's UI test what it needs without porting `TOSNavigationDelegate`'s full
+/// set of diagnostic notifications.
 private final class ShortsNavigationDelegate: NSObject, WKNavigationDelegate {
+    weak var target: ShortsEmbedPlayerViewModel?
+
+    init(target: ShortsEmbedPlayerViewModel) {
+        self.target = target
+    }
+
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         shortsLog.error("[nav] provisional navigation failed: \(error)")
+    }
+
+    /// Implementing this also stops WebKit's own reload, which would leave the bare
+    /// embed page as the main frame — see `webContentProcessDidTerminate()`.
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        MainActor.assumeIsolated { [weak target] in
+            target?.webContentProcessDidTerminate()
+        }
     }
 }
 

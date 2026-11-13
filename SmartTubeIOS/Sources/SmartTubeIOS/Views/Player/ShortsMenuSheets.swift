@@ -47,6 +47,8 @@ struct ShortsMoreSheet: View {
                         Image(systemName: AppSymbol.captions)
                     }
                 }
+                // The sheet's `.tint(.primary)` would make the ON track white, hiding the knob.
+                .tint(.green)
                 .accessibilityIdentifier(AccessibilityID.Shorts.captionsAction)
                 Picker(selection: $store.settings.playbackSpeed) {
                     ForEach(AppSettings.availableSpeeds, id: \.self) { speed in
@@ -68,6 +70,7 @@ struct ShortsMoreSheet: View {
                         Image(systemName: AppSymbol.autoScroll)
                     }
                 }
+                .tint(.green)
                 .accessibilityIdentifier(AccessibilityID.Shorts.autoScrollToggle)
             }
             Section {

@@ -192,6 +192,9 @@ extension ShortsPlayerView {
                         } placeholder: {
                             Circle().fill(.white.opacity(0.25))
                         }
+                        // The overlay outlives a swipe; without a new identity AsyncImage
+                        // can keep the previous channel's avatar.
+                        .id(metadata.channelAvatarURL)
                         .frame(width: 32, height: 32)
                         .clipShape(Circle())
                         Text(metadata.channelTitle)

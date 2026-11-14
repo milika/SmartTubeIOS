@@ -12,7 +12,7 @@ public enum BrowseError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .timeout:
-            return "The feed took too long to load. Check your connection and try again."
+            return L10n.string("The feed took too long to load. Check your connection and try again.")
         }
     }
 }
@@ -452,7 +452,9 @@ public final class BrowseViewModel {
                     isAuthRequired = false
                     let deduped = deduplicated(videos)
                         .sorted { ($0.publishedAt ?? .distantPast) > ($1.publishedAt ?? .distantPast) }
-                    videoGroups = deduped.isEmpty ? [] : [VideoGroup(title: "Subscriptions", videos: deduped)]
+                    videoGroups =
+                        deduped.isEmpty
+                        ? [] : [VideoGroup(title: L10n.string("Subscriptions"), videos: deduped)]
                 }
             }
 
@@ -471,7 +473,7 @@ public final class BrowseViewModel {
             let remote: VideoGroup? = try? await api.fetchHistory()
             if !Task.isCancelled {
                 let localIds = Set(local.map(\.id))
-                var group = remote ?? VideoGroup(title: "History", videos: [])
+                var group = remote ?? VideoGroup(title: L10n.string("History"), videos: [])
                 group.videos = local + group.videos.filter { !localIds.contains($0.id) }
                 isAuthRequired = group.videos.isEmpty
                 videoGroups = group.videos.isEmpty ? [] : [group]
@@ -483,11 +485,15 @@ public final class BrowseViewModel {
                 isAuthRequired = playlists.isEmpty
                 // Convert PlaylistInfo list into a VideoGroup of placeholder videos
                 let videos = playlists.map { pl -> Video in
-                    Video(
-                        id: pl.id, title: pl.title, channelTitle: pl.videoCount.map { "\($0) videos" } ?? "",
+                    let videoCountLabel = pl.videoCount.map { count in
+                        L10n.string("\(count) video\(count == 1 ? "" : "s")")
+                    }
+                    return Video(
+                        id: pl.id, title: pl.title, channelTitle: videoCountLabel ?? "",
                         thumbnailURL: pl.thumbnailURL, playlistId: pl.id)
                 }
-                videoGroups = videos.isEmpty ? [] : [VideoGroup(title: "Playlists", videos: videos)]
+                videoGroups =
+                    videos.isEmpty ? [] : [VideoGroup(title: L10n.string("Playlists"), videos: videos)]
             }
 
         case .channels:

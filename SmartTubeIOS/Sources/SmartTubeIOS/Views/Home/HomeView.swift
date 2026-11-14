@@ -330,10 +330,10 @@ public struct HomeView: View {
             Image(systemName: AppSymbol.personCircleQuestion)
                 .font(.system(size: 60))
                 .foregroundStyle(.secondary)
-            Text("Sign in to see your feed")
+            Text("Sign in to see your feed", bundle: L10n.bundle)
                 .font(.headline)
                 .foregroundStyle(.secondary)
-            Button("Sign In") { showSignIn = true }
+            Button(L10n.string("Sign In")) { showSignIn = true }
                 .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -499,9 +499,9 @@ public struct HomeView: View {
                             subscriptionsChannelFilter = nil
                         } label: {
                             if subscriptionsChannelFilter == nil {
-                                Label("All Channels", systemImage: "checkmark")
+                                Label(L10n.string("All Channels"), systemImage: "checkmark")
                             } else {
-                                Text("All Channels")
+                                Text("All Channels", bundle: L10n.bundle)
                             }
                         }
                         Divider()
@@ -519,7 +519,7 @@ public struct HomeView: View {
                     } label: {
                         Label(
                             availableChannels.first(where: { $0.id == subscriptionsChannelFilter })?.title
-                                ?? "All Channels",
+                                ?? L10n.string("All Channels"),
                             systemImage: "line.3.horizontal.decrease.circle"
                         )
                         .font(.subheadline)
@@ -712,11 +712,11 @@ public struct HomeView: View {
                 .frame(width: 44, height: 44)
                 .foregroundStyle(Color.accentColor)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Current Queue")
+                Text("Current Queue", bundle: L10n.bundle)
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundStyle(.primary)
-                Text("\(queueVideosCount) video\(queueVideosCount == 1 ? "" : "s")")
+                Text("\(queueVideosCount) video\(queueVideosCount == 1 ? "" : "s")", bundle: L10n.bundle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -731,7 +731,7 @@ public struct HomeView: View {
         .onTapGesture {
             selectedPlaylist = Video(
                 id: CurrentQueueStore.playlistID,
-                title: "Current Queue",
+                title: L10n.string("Current Queue"),
                 channelTitle: ""
             )
         }
@@ -745,26 +745,26 @@ public struct HomeView: View {
                 Image(systemName: AppSymbol.personCircleWarning)
                     .font(.system(size: 60))
                     .foregroundStyle(.secondary)
-                Text("Sign in to see this section")
+                Text("Sign in to see this section", bundle: L10n.bundle)
                     .font(.title3)
-                Text("Your Google account is required.")
+                Text("Your Google account is required.", bundle: L10n.bundle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                Button("Sign In") { showSignIn = true }
+                Button(L10n.string("Sign In")) { showSignIn = true }
                     .buttonStyle(.borderedProminent)
             } else if !auth.isSignedIn && (selectedSection.type == .subscriptions || selectedSection.type == .channels)
             {
                 Image(systemName: "person.badge.plus")
                     .font(.system(size: 60))
                     .foregroundStyle(.secondary)
-                Text("Follow channels to see their latest videos here")
+                Text("Follow channels to see their latest videos here", bundle: L10n.bundle)
                     .font(.title3)
                     .multilineTextAlignment(.center)
-                Text("Search for a channel and tap Follow.")
+                Text("Search for a channel and tap Follow.", bundle: L10n.bundle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Button("Search") {
+                Button(L10n.string("Search")) {
                     NotificationCenter.default.post(name: .navigateToSearch, object: nil)
                 }
                 .buttonStyle(.borderedProminent)
@@ -772,10 +772,10 @@ public struct HomeView: View {
                 Image(systemName: AppSymbol.tvPlay)
                     .font(.system(size: 60))
                     .foregroundStyle(.secondary)
-                Text("Nothing here yet")
+                Text("Nothing here yet", bundle: L10n.bundle)
                     .font(.title3)
                     .foregroundStyle(.secondary)
-                Button("Refresh") { sectionVM.loadContent(refresh: true) }
+                Button(L10n.string("Refresh")) { sectionVM.loadContent(refresh: true) }
                     .buttonStyle(.borderedProminent)
             }
         }

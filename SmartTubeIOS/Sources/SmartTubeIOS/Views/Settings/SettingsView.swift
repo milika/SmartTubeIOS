@@ -76,25 +76,26 @@ public struct SettingsView: View {
     private var parentalControlsSection: some View {
         Section {
             if store.settings.settingsPINHash == nil {
-                Button("Set PIN") { parentalControlsSheetMode = .set }
+                Button(L10n.string("Set PIN")) { parentalControlsSheetMode = .set }
                     .accessibilityIdentifier("settings.setPINButton")
             } else {
-                Button("Change PIN") { parentalControlsSheetMode = .change }
+                Button(L10n.string("Change PIN")) { parentalControlsSheetMode = .change }
                     .accessibilityIdentifier("settings.changePINButton")
-                Button("Remove PIN", role: .destructive) { parentalControlsSheetMode = .remove }
+                Button(L10n.string("Remove PIN"), role: .destructive) { parentalControlsSheetMode = .remove }
                     .accessibilityIdentifier("settings.removePINButton")
             }
         } header: {
-            Text("Parental Controls")
+            Text("Parental Controls", bundle: L10n.bundle)
         } footer: {
-            Text("When a PIN is set, it must be entered every time this Settings screen is opened.")
+            Text(
+                "When a PIN is set, it must be entered every time this Settings screen is opened.", bundle: L10n.bundle)
         }
     }
 
     // MARK: - Account
 
     private var accountSection: some View {
-        Section("Account") {
+        Section(L10n.string("Account")) {
             if auth.isSignedIn {
                 HStack {
                     #if os(tvOS)
@@ -115,17 +116,17 @@ public struct SettingsView: View {
                     }
                     .frame(width: avatarSize, height: avatarSize)
                     .clipShape(Circle())
-                    Text(auth.accountName ?? "Unknown")
+                    Text(auth.accountName ?? L10n.string("Unknown"))
                 }
                 NavigationLink {
                     ChannelSwitcherView()
                 } label: {
-                    LabeledContent("Channel", value: auth.activeChannel?.name ?? "")
+                    LabeledContent(L10n.string("Channel"), value: auth.activeChannel?.name ?? "")
                 }
                 .accessibilityIdentifier("settings.channelLink")
-                Button("Sign Out", role: .destructive) { auth.signOut() }
+                Button(L10n.string("Sign Out"), role: .destructive) { auth.signOut() }
             } else {
-                Button("Sign in with Google") { showSignIn = true }
+                Button(L10n.string("Sign in with Google")) { showSignIn = true }
                     .accessibilityIdentifier("settings.signInButton")
                     .sheet(isPresented: $showSignIn) { SignInView() }
             }
@@ -136,61 +137,61 @@ public struct SettingsView: View {
 
     private var playerSection: some View {
         @Bindable var store = store
-        return Section("Player") {
-            Picker("Playback Speed", selection: $store.settings.playbackSpeed) {
+        return Section(L10n.string("Player")) {
+            Picker(L10n.string("Playback Speed"), selection: $store.settings.playbackSpeed) {
                 ForEach(AppSettings.availableSpeeds, id: \.self) { s in
-                    Text(s == 1.0 ? "Normal" : "\(s, specifier: "%.2g")×").tag(s)
+                    Text(s == 1.0 ? "Normal" : "\(s, specifier: "%.2g")×", bundle: L10n.bundle).tag(s)
                 }
             }
 
             #if !os(iOS)
-            Picker("Default Quality", selection: $store.settings.preferredQuality) {
+            Picker(L10n.string("Default Quality"), selection: $store.settings.preferredQuality) {
                 ForEach(AppSettings.VideoQuality.allCases, id: \.self) { q in
-                    Text(q.rawValue.capitalized).tag(q)
+                    Text(q.displayName).tag(q)
                 }
             }
             .accessibilityIdentifier("settings.preferredQualityPicker")
 
-            Picker("Preferred Audio Language", selection: $store.settings.preferredAudioLanguage) {
-                Text("System Default").tag(nil as String?)
+            Picker(L10n.string("Preferred Audio Language"), selection: $store.settings.preferredAudioLanguage) {
+                Text("System Default", bundle: L10n.bundle).tag(nil as String?)
                 Divider()
-                Text("English").tag("en" as String?)
-                Text("Spanish").tag("es" as String?)
-                Text("French").tag("fr" as String?)
-                Text("German").tag("de" as String?)
-                Text("Japanese").tag("ja" as String?)
-                Text("Korean").tag("ko" as String?)
-                Text("Portuguese (Brazil)").tag("pt-BR" as String?)
-                Text("Chinese (Simplified)").tag("zh-Hans" as String?)
+                Text("English", bundle: L10n.bundle).tag("en" as String?)
+                Text("Spanish", bundle: L10n.bundle).tag("es" as String?)
+                Text("French", bundle: L10n.bundle).tag("fr" as String?)
+                Text("German", bundle: L10n.bundle).tag("de" as String?)
+                Text("Japanese", bundle: L10n.bundle).tag("ja" as String?)
+                Text("Korean", bundle: L10n.bundle).tag("ko" as String?)
+                Text("Portuguese (Brazil)", bundle: L10n.bundle).tag("pt-BR" as String?)
+                Text("Chinese (Simplified)", bundle: L10n.bundle).tag("zh-Hans" as String?)
                 Divider()
-                Text("Original Track Only").tag("original" as String?)
+                Text("Original Track Only", bundle: L10n.bundle).tag("original" as String?)
             }
             .accessibilityIdentifier("settings.preferredAudioLanguageRow")
             #endif
 
             #if os(tvOS)
-            Picker("Seek Back", selection: $store.settings.seekBackSeconds) {
+            Picker(L10n.string("Seek Back"), selection: $store.settings.seekBackSeconds) {
                 ForEach(AppSettings.availableSeekOptions, id: \.self) { s in
-                    Text("\(s) s").tag(s)
+                    Text("\(s) s", bundle: L10n.bundle).tag(s)
                 }
             }
             .accessibilityIdentifier("settings.seekBackRow")
-            Picker("Seek Forward", selection: $store.settings.seekForwardSeconds) {
+            Picker(L10n.string("Seek Forward"), selection: $store.settings.seekForwardSeconds) {
                 ForEach(AppSettings.availableSeekOptions, id: \.self) { s in
-                    Text("\(s) s").tag(s)
+                    Text("\(s) s", bundle: L10n.bundle).tag(s)
                 }
             }
             .accessibilityIdentifier("settings.seekForwardRow")
             #elseif os(macOS)
             Stepper(
-                "Seek Back: \(store.settings.seekBackSeconds) s",
+                L10n.string("Seek Back: \(store.settings.seekBackSeconds) s"),
                 value: $store.settings.seekBackSeconds,
                 in: 5...60,
                 step: 5
             )
             .accessibilityIdentifier("settings.seekBackRow")
             Stepper(
-                "Seek Forward: \(store.settings.seekForwardSeconds) s",
+                L10n.string("Seek Forward: \(store.settings.seekForwardSeconds) s"),
                 value: $store.settings.seekForwardSeconds,
                 in: 5...60,
                 step: 5
@@ -199,28 +200,28 @@ public struct SettingsView: View {
             #endif
 
             #if !os(iOS)
-            Picker("Hide Controls After", selection: $store.settings.controlsHideTimeout) {
-                Text("2s").tag(2)
-                Text("3s").tag(3)
-                Text("4s").tag(4)
-                Text("5s").tag(5)
-                Text("8s").tag(8)
-                Text("10s").tag(10)
+            Picker(L10n.string("Hide Controls After"), selection: $store.settings.controlsHideTimeout) {
+                Text("2s", bundle: L10n.bundle).tag(2)
+                Text("3s", bundle: L10n.bundle).tag(3)
+                Text("4s", bundle: L10n.bundle).tag(4)
+                Text("5s", bundle: L10n.bundle).tag(5)
+                Text("8s", bundle: L10n.bundle).tag(8)
+                Text("10s", bundle: L10n.bundle).tag(10)
             }
 
-            Picker("Video Fit", selection: $store.settings.videoGravityMode) {
-                Text("Fit (letterbox)").tag(AppSettings.VideoGravityMode.fit)
-                Text("Fill (crop)").tag(AppSettings.VideoGravityMode.fill)
+            Picker(L10n.string("Video Fit"), selection: $store.settings.videoGravityMode) {
+                Text("Fit (letterbox)", bundle: L10n.bundle).tag(AppSettings.VideoGravityMode.fit)
+                Text("Fill (crop)", bundle: L10n.bundle).tag(AppSettings.VideoGravityMode.fill)
             }
             #endif
 
-            Toggle("Loop Video", isOn: $store.settings.loopEnabled)
-            Toggle("Shuffle", isOn: $store.settings.shuffleEnabled)
+            Toggle(L10n.string("Loop Video"), isOn: $store.settings.loopEnabled)
+            Toggle(L10n.string("Shuffle"), isOn: $store.settings.shuffleEnabled)
 
-            Toggle("Autoplay next video", isOn: $store.settings.autoplayEnabled)
-            Toggle("Background Playback", isOn: $store.settings.backgroundPlaybackEnabled)
+            Toggle(L10n.string("Autoplay next video"), isOn: $store.settings.autoplayEnabled)
+            Toggle(L10n.string("Background Playback"), isOn: $store.settings.backgroundPlaybackEnabled)
             #if !os(iOS)
-            Toggle("Prefer H.264 Codec", isOn: $store.settings.preferH264)
+            Toggle(L10n.string("Prefer H.264 Codec"), isOn: $store.settings.preferH264)
                 .accessibilityIdentifier("settings.preferH264Toggle")
             #endif
         }
@@ -231,23 +232,24 @@ public struct SettingsView: View {
     private var generalSection: some View {
         @Bindable var store = store
         return Section {
-            Picker("Watch History", selection: $store.settings.historyState) {
-                Text("Enabled").tag(AppSettings.HistoryState.enabled)
-                Text("Disabled").tag(AppSettings.HistoryState.disabled)
+            Picker(L10n.string("Watch History"), selection: $store.settings.historyState) {
+                Text("Enabled", bundle: L10n.bundle).tag(AppSettings.HistoryState.enabled)
+                Text("Disabled", bundle: L10n.bundle).tag(AppSettings.HistoryState.disabled)
             }
             if !LocalWatchHistoryStore.shared.entries.isEmpty {
-                Button("Clear Watch History on This Device", role: .destructive) {
+                Button(L10n.string("Clear Watch History on This Device"), role: .destructive) {
                     LocalWatchHistoryStore.shared.clear()
                 }
                 .accessibilityIdentifier("settings.clearLocalHistoryButton")
             }
-            Toggle("Sync to iCloud", isOn: $store.settings.iCloudSyncEnabled)
+            Toggle(L10n.string("Sync to iCloud"), isOn: $store.settings.iCloudSyncEnabled)
                 .accessibilityIdentifier("settings.iCloudSyncToggle")
         } header: {
-            Text("General")
+            Text("General", bundle: L10n.bundle)
         } footer: {
             Text(
-                "Watch history is saved on this device. SmartTube also tries to report watches to your YouTube account, but YouTube may not always record them."
+                "Watch history is saved on this device. SmartTube also tries to report watches to your YouTube account, but YouTube may not always record them.",
+                bundle: L10n.bundle
             )
         }
     }
@@ -274,14 +276,14 @@ public struct SettingsView: View {
 
     private var uiSection: some View {
         @Bindable var store = store
-        return Section("Interface") {
-            Picker("Theme", selection: $store.settings.themeName) {
+        return Section(L10n.string("Interface")) {
+            Picker(L10n.string("Theme"), selection: $store.settings.themeName) {
                 ForEach(AppSettings.ThemeName.allCases, id: \.self) { t in
-                    Text(t.rawValue).tag(t)
+                    Text(t.displayName).tag(t)
                 }
             }
             .accessibilityIdentifier("settings.themeRow")
-            Picker("Accent Color", selection: $store.settings.accentColor) {
+            Picker(L10n.string("Accent Color"), selection: $store.settings.accentColor) {
                 ForEach(AppSettings.AccentColorChoice.allCases, id: \.self) { choice in
                     Label {
                         Text(choice.displayName)
@@ -292,46 +294,50 @@ public struct SettingsView: View {
                 }
             }
             .accessibilityIdentifier("settings.accentColorPicker")
-            Picker("Thumbnails", selection: thumbnailStyle) {
-                Text("Standard").tag(ThumbnailStyle.standard)
-                Text("High Resolution").tag(ThumbnailStyle.highResolution)
-                Text("Compact").tag(ThumbnailStyle.compact)
+            Picker(L10n.string("Thumbnails"), selection: thumbnailStyle) {
+                Text("Standard", bundle: L10n.bundle).tag(ThumbnailStyle.standard)
+                Text("High Resolution", bundle: L10n.bundle).tag(ThumbnailStyle.highResolution)
+                Text("Compact", bundle: L10n.bundle).tag(ThumbnailStyle.compact)
             }
             .accessibilityIdentifier("settings.thumbnailStylePicker")
             #if !os(tvOS)
-            Picker("Columns (Portrait)", selection: $store.settings.gridColumnsPortrait) {
-                ForEach(AppSettings.availableGridColumnCounts, id: \.self) { Text("\($0)").tag($0) }
+            Picker(L10n.string("Columns (Portrait)"), selection: $store.settings.gridColumnsPortrait) {
+                ForEach(AppSettings.availableGridColumnCounts, id: \.self) {
+                    Text("\($0)", bundle: L10n.bundle).tag($0)
+                }
             }
             .disabled(store.settings.compactThumbnails)
             .accessibilityIdentifier("settings.gridColumnsPortraitPicker")
-            Picker("Columns (Landscape)", selection: $store.settings.gridColumnsLandscape) {
-                ForEach(AppSettings.availableGridColumnCounts, id: \.self) { Text("\($0)").tag($0) }
+            Picker(L10n.string("Columns (Landscape)"), selection: $store.settings.gridColumnsLandscape) {
+                ForEach(AppSettings.availableGridColumnCounts, id: \.self) {
+                    Text("\($0)", bundle: L10n.bundle).tag($0)
+                }
             }
             .disabled(store.settings.compactThumbnails)
             .accessibilityIdentifier("settings.gridColumnsLandscapePicker")
             #endif
-            Toggle("Hide Shorts", isOn: $store.settings.hideShorts)
+            Toggle(L10n.string("Hide Shorts"), isOn: $store.settings.hideShorts)
                 .accessibilityIdentifier("settings.hideShortsToggle")
-            Toggle("Hide Live Shorts", isOn: $store.settings.hideLiveShorts)
+            Toggle(L10n.string("Hide Live Shorts"), isOn: $store.settings.hideLiveShorts)
                 .accessibilityIdentifier("settings.hideLiveShortsToggle")
-            Toggle("Hide Video Premieres", isOn: $store.settings.hideVideoPremieres)
+            Toggle(L10n.string("Hide Video Premieres"), isOn: $store.settings.hideVideoPremieres)
                 .accessibilityIdentifier("settings.hideVideoPremieresToggle")
-            Toggle("Per-Device Recommendations", isOn: $store.settings.perDeviceRecommendationsEnabled)
+            Toggle(L10n.string("Per-Device Recommendations"), isOn: $store.settings.perDeviceRecommendationsEnabled)
                 .accessibilityIdentifier("settings.perDeviceRecommendationsToggle")
-            Toggle("Hide Watched Videos", isOn: $store.settings.hideWatchedVideos)
+            Toggle(L10n.string("Hide Watched Videos"), isOn: $store.settings.hideWatchedVideos)
                 .accessibilityIdentifier("settings.hideWatchedVideosToggle")
             if store.settings.hideWatchedVideos {
                 #if os(tvOS)
                 // tvOS has no Stepper.
-                Picker("Watched threshold", selection: $store.settings.hideWatchedThreshold) {
+                Picker(L10n.string("Watched threshold"), selection: $store.settings.hideWatchedThreshold) {
                     ForEach(Array(stride(from: 50, through: 100, by: 5)), id: \.self) { percent in
-                        Text("\(percent)%").tag(Double(percent) / 100)
+                        Text("\(percent)%", bundle: L10n.bundle).tag(Double(percent) / 100)
                     }
                 }
                 .accessibilityIdentifier("settings.hideWatchedThresholdStepper")
                 #else
                 Stepper(
-                    "Watched threshold: \(Int(store.settings.hideWatchedThreshold * 100))%",
+                    L10n.string("Watched threshold: \(Int(store.settings.hideWatchedThreshold * 100))%"),
                     value: $store.settings.hideWatchedThreshold, in: 0.5...1.0, step: 0.05
                 )
                 .accessibilityIdentifier("settings.hideWatchedThresholdStepper")
@@ -339,11 +345,11 @@ public struct SettingsView: View {
             }
             #if os(iOS)
             if #available(iOS 26.0, *) {
-                Toggle("Disable Liquid Glass", isOn: $store.settings.disableLiquidGlass)
+                Toggle(L10n.string("Disable Liquid Glass"), isOn: $store.settings.disableLiquidGlass)
                     .accessibilityIdentifier("settings.disableLiquidGlassToggle")
             }
             #endif
-            NavigationLink("Visible Sections") {
+            NavigationLink(L10n.string("Visible Sections")) {
                 SectionsSettingsView()
                     .environment(store)
             }
@@ -356,7 +362,7 @@ public struct SettingsView: View {
     private var sponsorBlockSection: some View {
         @Bindable var store = store
         return Section {
-            Toggle("Enable SponsorBlock", isOn: $store.settings.sponsorBlockEnabled)
+            Toggle(L10n.string("Enable SponsorBlock"), isOn: $store.settings.sponsorBlockEnabled)
                 .accessibilityIdentifier("settings.sponsorBlockToggle")
 
             if store.settings.sponsorBlockEnabled {
@@ -372,33 +378,36 @@ public struct SettingsView: View {
                                 set: { store.settings.sponsorBlockActions[cat] = $0 }
                             )
                         ) {
-                            Text("Skip").tag(AppSettings.SponsorBlockAction.skip)
-                            Text("Show Toast").tag(AppSettings.SponsorBlockAction.showToast)
-                            Text("Nothing").tag(AppSettings.SponsorBlockAction.nothing)
+                            Text("Skip", bundle: L10n.bundle).tag(AppSettings.SponsorBlockAction.skip)
+                            Text("Show Toast", bundle: L10n.bundle).tag(AppSettings.SponsorBlockAction.showToast)
+                            Text("Nothing", bundle: L10n.bundle).tag(AppSettings.SponsorBlockAction.nothing)
                         }
                         .accessibilityIdentifier("settings.sponsorBlock.\(cat.rawValue)")
                     }
                 }
 
                 // Minimum segment duration
-                Picker("Min. Segment Length", selection: $store.settings.sponsorBlockMinSegmentDuration) {
-                    Text("Off").tag(0.0)
-                    Text("1s").tag(1.0)
-                    Text("2s").tag(2.0)
-                    Text("5s").tag(5.0)
-                    Text("10s").tag(10.0)
+                Picker(L10n.string("Min. Segment Length"), selection: $store.settings.sponsorBlockMinSegmentDuration) {
+                    Text("Off", bundle: L10n.bundle).tag(0.0)
+                    Text("1s", bundle: L10n.bundle).tag(1.0)
+                    Text("2s", bundle: L10n.bundle).tag(2.0)
+                    Text("5s", bundle: L10n.bundle).tag(5.0)
+                    Text("10s", bundle: L10n.bundle).tag(10.0)
                 }
 
                 // Excluded channels
-                NavigationLink("Excluded Channels (\(store.settings.sponsorBlockExcludedChannels.count))") {
+                NavigationLink(L10n.string("Excluded Channels (\(store.settings.sponsorBlockExcludedChannels.count))"))
+                {
                     SponsorBlockExcludedChannelsView()
                 }
                 .accessibilityIdentifier("settings.sponsorBlockExcludedChannels")
             }
         } header: {
-            Text("SponsorBlock")
+            Text("SponsorBlock", bundle: L10n.bundle)
         } footer: {
-            Text("Skip \u{2014} auto-skips. Show Toast \u{2014} shows a skip button. Nothing \u{2014} plays through.")
+            Text(
+                "Skip \u{2014} auto-skips. Show Toast \u{2014} shows a skip button. Nothing \u{2014} plays through.",
+                bundle: L10n.bundle)
         }
     }
 
@@ -407,11 +416,11 @@ public struct SettingsView: View {
     private var deArrowSection: some View {
         @Bindable var store = store
         return Section {
-            Toggle("Enable DeArrow", isOn: $store.settings.deArrowEnabled)
+            Toggle(L10n.string("Enable DeArrow"), isOn: $store.settings.deArrowEnabled)
         } header: {
-            Text("DeArrow")
+            Text("DeArrow", bundle: L10n.bundle)
         } footer: {
-            Text("Replace clickbait titles and thumbnails with community-sourced alternatives.")
+            Text("Replace clickbait titles and thumbnails with community-sourced alternatives.", bundle: L10n.bundle)
         }
     }
 
@@ -421,13 +430,14 @@ public struct SettingsView: View {
     private var experimentalSection: some View {
         @Bindable var store = store
         return Section {
-            Toggle("IFrame Player (TOS-compliant, shows ads)", isOn: $store.settings.useTOSPlayerOnMac)
+            Toggle(L10n.string("IFrame Player (TOS-compliant, shows ads)"), isOn: $store.settings.useTOSPlayerOnMac)
                 .accessibilityIdentifier("settings.useTOSPlayerOnMacToggle")
         } header: {
-            Text("Experimental")
+            Text("Experimental", bundle: L10n.bundle)
         } footer: {
             Text(
-                "Uses YouTube's official embedded player instead of the direct stream pipeline. Quality selection is unavailable. Ads will play. Useful for videos that refuse to play via the standard path."
+                "Uses YouTube's official embedded player instead of the direct stream pipeline. Quality selection is unavailable. Ads will play. Useful for videos that refuse to play via the standard path.",
+                bundle: L10n.bundle
             )
         }
     }
@@ -438,21 +448,21 @@ public struct SettingsView: View {
     private var aboutSection: some View {
         @Bindable var store = store
         return Section {
-            LabeledContent("Version", value: appVersion)
-            Toggle("Disable Analytics & Crash Reporting", isOn: $store.settings.disableAnalytics)
+            LabeledContent(L10n.string("Version"), value: appVersion)
+            Toggle(L10n.string("Disable Analytics & Crash Reporting"), isOn: $store.settings.disableAnalytics)
                 .accessibilityIdentifier("settings.disableAnalyticsToggle")
-            Text("Restart the app for this to take effect.")
+            Text("Restart the app for this to take effect.", bundle: L10n.bundle)
                 .font(.caption)
                 .foregroundStyle(.secondary)
             #if os(tvOS)
             Button {
                 showGithubQR = true
             } label: {
-                Label("View on GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
+                Label(L10n.string("View on GitHub"), systemImage: "chevron.left.forwardslash.chevron.right")
             }
             #else
             Link(destination: URL(string: "https://github.com/milika/SmartTubeIOS")!) {
-                Label("View on GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
+                Label(L10n.string("View on GitHub"), systemImage: "chevron.left.forwardslash.chevron.right")
             }
             #endif
             Button {
@@ -460,18 +470,18 @@ public struct SettingsView: View {
                 reportSent = true
             } label: {
                 if reportSent {
-                    Label("Report Sent", systemImage: "checkmark.circle.fill")
+                    Label(L10n.string("Report Sent"), systemImage: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                 } else {
-                    Label("Send Diagnostic Report", systemImage: "ladybug")
+                    Label(L10n.string("Send Diagnostic Report"), systemImage: "ladybug")
                 }
             }
             .disabled(reportSent || store.settings.disableAnalytics)
             .accessibilityIdentifier("settings.sendDiagnosticReportButton")
-            Button("Reset All Settings", role: .destructive) { store.reset() }
+            Button(L10n.string("Reset All Settings"), role: .destructive) { store.reset() }
                 .accessibilityIdentifier("settings.resetAllButton")
         } header: {
-            Text("About")
+            Text("About", bundle: L10n.bundle)
         }
     }
 
@@ -502,10 +512,10 @@ private struct GitHubQRView: View {
                         .font(.system(size: 56))
                         .foregroundStyle(.white)
 
-                    Text("SmartTube on GitHub")
+                    Text("SmartTube on GitHub", bundle: L10n.bundle)
                         .font(.largeTitle).fontWeight(.bold)
 
-                    Text("Scan the QR code with your phone to view the project on GitHub.")
+                    Text("Scan the QR code with your phone to view the project on GitHub.", bundle: L10n.bundle)
                         .font(.title3)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -527,7 +537,7 @@ private struct GitHubQRView: View {
             Button {
                 dismiss()
             } label: {
-                Label("Close", systemImage: "xmark")
+                Label(L10n.string("Close"), systemImage: "xmark")
                     .font(.headline)
             }
             .padding(40)
@@ -579,11 +589,11 @@ struct SectionsSettingsView: View {
                     store.settings.enabledSections.move(fromOffsets: offsets, toOffset: destination)
                 }
             } header: {
-                Text("Visible — drag to reorder")
+                Text("Visible — drag to reorder", bundle: L10n.bundle)
             }
 
             if !hiddenSections.isEmpty {
-                Section("Hidden") {
+                Section(L10n.string("Hidden")) {
                     ForEach(hiddenSections) { section in
                         Button {
                             // Append to the end of the user's current order, rather than
@@ -602,7 +612,7 @@ struct SectionsSettingsView: View {
                 }
             }
         }
-        .navigationTitle("Visible Sections")
+        .navigationTitle(L10n.string("Visible Sections"))
         #if os(iOS)
         .toolbar(.visible, for: .navigationBar)
         #endif
@@ -626,10 +636,11 @@ struct SponsorBlockExcludedChannelsView: View {
         return List {
             if sortedChannels.isEmpty {
                 ContentUnavailableView(
-                    "No Excluded Channels",
+                    L10n.string("No Excluded Channels"),
                     systemImage: "person.crop.circle.badge.minus",
                     description: Text(
-                        "Open a channel and tap \u{201C}Exclude from SponsorBlock\u{201D} to add it here.")
+                        "Open a channel and tap \u{201C}Exclude from SponsorBlock\u{201D} to add it here.",
+                        bundle: L10n.bundle)
                 )
             } else {
                 ForEach(sortedChannels, id: \.key) { channelId, title in
@@ -641,7 +652,7 @@ struct SponsorBlockExcludedChannelsView: View {
                 }
             }
         }
-        .navigationTitle("Excluded Channels")
+        .navigationTitle(L10n.string("Excluded Channels"))
         #if os(iOS)
         .toolbar(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)

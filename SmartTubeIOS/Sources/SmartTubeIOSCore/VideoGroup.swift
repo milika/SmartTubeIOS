@@ -71,20 +71,20 @@ public struct BrowseSection: Identifiable, Hashable, Sendable {
         /// allSections, and any code that needs a localised label for a section type.
         public var defaultTitle: String {
             switch self {
-            case .home: return "Home"
-            case .recommended: return "Recommended"
-            case .subscriptions: return "Subscriptions"
-            case .history: return "History"
-            case .playlists: return "Playlists"
-            case .channels: return "Channels"
-            case .shorts: return "Shorts"
-            case .music: return "Music"
-            case .news: return "News"
-            case .gaming: return "Gaming"
-            case .live: return "Live"
-            case .sports: return "Sports"
-            case .watchLater: return "Watch Later"
-            case .settings: return "Settings"
+            case .home: return L10n.string("Home")
+            case .recommended: return L10n.string("Recommended")
+            case .subscriptions: return L10n.string("Subscriptions")
+            case .history: return L10n.string("History")
+            case .playlists: return L10n.string("Playlists")
+            case .channels: return L10n.string("Channels")
+            case .shorts: return L10n.string("Shorts")
+            case .music: return L10n.string("Music")
+            case .news: return L10n.string("News")
+            case .gaming: return L10n.string("Gaming")
+            case .live: return L10n.string("Live")
+            case .sports: return L10n.string("Sports")
+            case .watchLater: return L10n.string("Watch Later")
+            case .settings: return L10n.string("Settings")
             }
         }
     }

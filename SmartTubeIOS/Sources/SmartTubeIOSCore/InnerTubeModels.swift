@@ -252,16 +252,17 @@ public enum APIError: LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .httpError(let code): return "HTTP error \(code)"
-        case .decodingError(let msg): return "Decoding error: \(msg)"
-        case .notAuthenticated: return "You are not signed in"
+        case .httpError(let code): return L10n.string("HTTP error \(code)")
+        case .decodingError(let msg): return L10n.string("Decoding error: \(msg)")
+        case .notAuthenticated: return L10n.string("You are not signed in")
         case .unavailable(let reason): return reason
-        case .invalidURL(let endpoint): return "Could not build URL for endpoint: \(endpoint)"
+        case .invalidURL(let endpoint): return L10n.string("Could not build URL for endpoint: \(endpoint)")
         case .ipBlocked:
-            return
+            return L10n.string(
                 "YouTube is temporarily blocking this network. Disable your VPN, try a different VPN server, or wait a few minutes and retry."
+            )
         case .signInRequired:
-            return "This video is age-restricted or requires sign in to watch."
+            return L10n.string("This video is age-restricted or requires sign in to watch.")
         }
     }
 }

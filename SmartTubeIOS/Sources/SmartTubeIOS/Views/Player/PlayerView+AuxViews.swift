@@ -13,31 +13,33 @@ struct StatsForNerdsOverlay: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            row("Video ID", snapshot.videoId)
+            row(L10n.string("Video ID"), snapshot.videoId)
             row(
-                "Resolution",
+                L10n.string("Resolution"),
                 snapshot.fps > 0
                     ? "\(snapshot.displayResolution) @ \(snapshot.fps) fps"
                     : snapshot.displayResolution)
             if !snapshot.pendingQualityLabel.isEmpty {
                 identifiedRow(
-                    "Selected", snapshot.pendingQualityLabel,
+                    L10n.string("Selected"), snapshot.pendingQualityLabel,
                     valueId: "stats.selectedQuality")
             }
-            row("Codec", snapshot.codec)
-            row("Nominal Bitrate", snapshot.nominalBitrate)
-            row("Connection Speed", snapshot.observedBitrate)
-            row("Dropped Frames", "\(snapshot.droppedFrames)")
-            row("Stalls", "\(snapshot.stalls)")
+            row(L10n.string("Codec"), snapshot.codec)
+            row(L10n.string("Nominal Bitrate"), snapshot.nominalBitrate)
+            row(L10n.string("Connection Speed"), snapshot.observedBitrate)
+            row(L10n.string("Dropped Frames"), "\(snapshot.droppedFrames)")
+            row(L10n.string("Stalls"), "\(snapshot.stalls)")
             Divider().background(.white.opacity(0.2)).padding(.vertical, 2)
-            row("TTP (low-q)", snapshot.timeToPlayMs > 0 ? "\(snapshot.timeToPlayMs) ms" : "—")
-            row("TTP (hi-q)", snapshot.timeToHighQualityMs > 0 ? "\(snapshot.timeToHighQualityMs) ms" : "—")
-            row("Stream Type", snapshot.streamType.isEmpty ? "—" : snapshot.streamType)
-            row("Cache", snapshot.cacheStatus.isEmpty ? "—" : snapshot.cacheStatus)
-            smallRow("Stream URL", snapshot.streamURL.isEmpty ? "—" : snapshot.streamURL)
+            row(L10n.string("TTP (low-q)"), snapshot.timeToPlayMs > 0 ? "\(snapshot.timeToPlayMs) ms" : "—")
+            row(
+                L10n.string("TTP (hi-q)"), snapshot.timeToHighQualityMs > 0 ? "\(snapshot.timeToHighQualityMs) ms" : "—"
+            )
+            row(L10n.string("Stream Type"), snapshot.streamType.isEmpty ? "—" : snapshot.streamType)
+            row(L10n.string("Cache"), snapshot.cacheStatus.isEmpty ? "—" : snapshot.cacheStatus)
+            smallRow(L10n.string("Stream URL"), snapshot.streamURL.isEmpty ? "—" : snapshot.streamURL)
             Divider().background(.white.opacity(0.2)).padding(.vertical, 2)
-            row("Report ID", snapshot.reportID)
-            Text("Two-finger tap to dismiss  ·  Quote Report ID when sending diagnostics")
+            row(L10n.string("Report ID"), snapshot.reportID)
+            Text("Two-finger tap to dismiss  ·  Quote Report ID when sending diagnostics", bundle: L10n.bundle)
                 .foregroundStyle(.white.opacity(0.4))
                 .font(.system(.caption2, design: .monospaced))
                 .padding(.top, 4)
@@ -240,7 +242,7 @@ struct EndCardButton: View {
             .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("End card: \(card.title)")
+        .accessibilityLabel(Text("End card: \(card.title)", bundle: L10n.bundle))
     }
 }
 #endif

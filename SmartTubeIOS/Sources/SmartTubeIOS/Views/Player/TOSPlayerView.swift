@@ -514,7 +514,9 @@ public struct TOSPlayerView: View {
             }
             #endif
             .alert(item: $reportSegmentAlert) { item in
-                Alert(title: Text(item.title), message: Text(item.message), dismissButton: .default(Text("OK")))
+                Alert(
+                    title: Text(item.title), message: Text(item.message),
+                    dismissButton: .default(Text("OK", bundle: L10n.bundle)))
             }
         )
     }
@@ -692,11 +694,11 @@ public struct TOSPlayerView: View {
         .menuStyle(.borderlessButton)
         .fixedSize()
         .accessibilityIdentifier("tosPlayer.speedButton")
-        .accessibilityLabel("Playback speed")
+        .accessibilityLabel(Text("Playback speed", bundle: L10n.bundle))
     }
 
     private func speedLabel(for speed: Double) -> String {
-        speed == 1.0 ? "Normal (1\u{d7})" : String(format: "%.2g\u{d7}", speed)
+        speed == 1.0 ? L10n.string("Normal (1\u{d7})") : String(format: "%.2g\u{d7}", speed)
     }
 
     // MARK: - More menu (Like/Dislike, Sleep Timer, Share, Comments)
@@ -719,7 +721,7 @@ public struct TOSPlayerView: View {
                     vm.like()
                 } label: {
                     Label(
-                        vm.likeStatus == .like ? "Liked" : "Like",
+                        vm.likeStatus == .like ? L10n.string("Liked") : L10n.string("Like"),
                         systemImage: vm.likeStatus == .like ? "hand.thumbsup.fill" : "hand.thumbsup")
                 }
                 .accessibilityIdentifier("tosPlayer.moreMenu.likeRow")
@@ -728,7 +730,7 @@ public struct TOSPlayerView: View {
                     vm.dislike()
                 } label: {
                     Label(
-                        vm.likeStatus == .dislike ? "Disliked" : "Dislike",
+                        vm.likeStatus == .dislike ? L10n.string("Disliked") : L10n.string("Dislike"),
                         systemImage: vm.likeStatus == .dislike ? "hand.thumbsdown.fill" : "hand.thumbsdown")
                 }
                 .accessibilityIdentifier("tosPlayer.moreMenu.dislikeRow")
@@ -741,9 +743,9 @@ public struct TOSPlayerView: View {
                     vm.setSleepTimer(minutes: nil)
                 } label: {
                     if vm.sleepTimerMinutes == nil {
-                        Label("Off", systemImage: "checkmark")
+                        Label(L10n.string("Off"), systemImage: "checkmark")
                     } else {
-                        Text("Off")
+                        Text("Off", bundle: L10n.bundle)
                     }
                 }
                 ForEach(PlaybackViewModel.sleepTimerOptions, id: \.self) { mins in
@@ -751,9 +753,9 @@ public struct TOSPlayerView: View {
                         vm.setSleepTimer(minutes: mins)
                     } label: {
                         if vm.sleepTimerMinutes == mins {
-                            Label("\(mins) minutes", systemImage: "checkmark")
+                            Label(L10n.string("\(mins) minutes"), systemImage: "checkmark")
                         } else {
-                            Text("\(mins) minutes")
+                            Text("\(mins) minutes", bundle: L10n.bundle)
                         }
                     }
                 }
@@ -764,7 +766,7 @@ public struct TOSPlayerView: View {
 
             if let url = video.shareURL {
                 ShareLink(item: url) {
-                    Label("Share", systemImage: "square.and.arrow.up")
+                    Label(L10n.string("Share"), systemImage: "square.and.arrow.up")
                 }
                 .accessibilityIdentifier("tosPlayer.moreMenu.shareRow")
             }
@@ -773,7 +775,7 @@ public struct TOSPlayerView: View {
                 showCommentsSheet = true
                 vm.loadComments()
             } label: {
-                Label("Comments", systemImage: "bubble.left.and.bubble.right")
+                Label(L10n.string("Comments"), systemImage: "bubble.left.and.bubble.right")
             }
             .accessibilityIdentifier("tosPlayer.moreMenu.commentsRow")
 
@@ -781,7 +783,7 @@ public struct TOSPlayerView: View {
                 Button {
                     showChaptersSheet = true
                 } label: {
-                    Label("Chapters", systemImage: "list.bullet.rectangle")
+                    Label(L10n.string("Chapters"), systemImage: "list.bullet.rectangle")
                 }
                 .accessibilityIdentifier("tosPlayer.moreMenu.chaptersRow")
             }
@@ -790,9 +792,9 @@ public struct TOSPlayerView: View {
                 store.settings.loopEnabled.toggle()
             } label: {
                 if store.settings.loopEnabled {
-                    Label("Loop", systemImage: "checkmark")
+                    Label(L10n.string("Loop"), systemImage: "checkmark")
                 } else {
-                    Text("Loop")
+                    Text("Loop", bundle: L10n.bundle)
                 }
             }
             .accessibilityIdentifier("tosPlayer.moreMenu.loopRow")
@@ -806,12 +808,12 @@ public struct TOSPlayerView: View {
         .menuStyle(.borderlessButton)
         .fixedSize()
         .accessibilityIdentifier("tosPlayer.moreButton")
-        .accessibilityLabel("More")
+        .accessibilityLabel(Text("More", bundle: L10n.bundle))
     }
 
     private func sleepTimerLabel(vm: TOSPlayerViewModel) -> String {
-        guard let minutes = vm.sleepTimerMinutes else { return "Sleep Timer" }
-        return "Sleep Timer (\(minutes)m)"
+        guard let minutes = vm.sleepTimerMinutes else { return L10n.string("Sleep Timer") }
+        return L10n.string("Sleep Timer (\(minutes)m)")
     }
 
     // MARK: - Comments overlay
@@ -888,12 +890,15 @@ public struct TOSPlayerView: View {
                 Button {
                     vm.undoAutoSkip()
                 } label: {
-                    Label("\(skippedLabel(for: segment.category)) — Undo", systemImage: "arrow.uturn.backward")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(.thinMaterial, in: Capsule())
+                    Label(
+                        L10n.string("\(skippedLabel(for: segment.category)) — Undo"),
+                        systemImage: "arrow.uturn.backward"
+                    )
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(.thinMaterial, in: Capsule())
                 }
                 .buttonStyle(.plain)
             }
@@ -917,7 +922,7 @@ public struct TOSPlayerView: View {
                 .background(.thinMaterial, in: Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(Text("Report Incorrect Segment", bundle: .module))
+        .accessibilityLabel(Text("Report Incorrect Segment", bundle: L10n.bundle))
         .accessibilityIdentifier("tosPlayer.reportSegmentButton")
     }
 
@@ -928,42 +933,40 @@ public struct TOSPlayerView: View {
             let ok = await vm.reportIncorrectSegment(segment)
             reportSegmentAlert = DownloadAlertItem(
                 title: ok
-                    ? String(localized: "Reported", bundle: .module)
-                    : String(localized: "Could Not Report", bundle: .module),
+                    ? L10n.string("Reported")
+                    : L10n.string("Could Not Report"),
                 message: ok
-                    ? String(
-                        localized: "Thanks for the feedback — this segment has been reported to SponsorBlock.",
-                        bundle: .module)
-                    : String(localized: "The report couldn't be sent. Please try again later.", bundle: .module)
+                    ? L10n.string("Thanks for the feedback — this segment has been reported to SponsorBlock.")
+                    : L10n.string("The report couldn't be sent. Please try again later.")
             )
         }
     }
 
     private func skippedLabel(for category: SponsorSegment.Category) -> String {
         switch category {
-        case .sponsor: return "Skipped Sponsor"
-        case .selfPromo: return "Skipped Self-Promo"
-        case .interaction: return "Skipped Interaction"
-        case .intro: return "Skipped Intro"
-        case .outro: return "Skipped Outro"
-        case .preview: return "Skipped Preview"
-        case .filler: return "Skipped Filler"
-        case .musicOfftopic: return "Skipped Music"
-        case .poiHighlight: return "Skipped to Highlight"
+        case .sponsor: return L10n.string("Skipped Sponsor")
+        case .selfPromo: return L10n.string("Skipped Self-Promo")
+        case .interaction: return L10n.string("Skipped Interaction")
+        case .intro: return L10n.string("Skipped Intro")
+        case .outro: return L10n.string("Skipped Outro")
+        case .preview: return L10n.string("Skipped Preview")
+        case .filler: return L10n.string("Skipped Filler")
+        case .musicOfftopic: return L10n.string("Skipped Music")
+        case .poiHighlight: return L10n.string("Skipped to Highlight")
         }
     }
 
     private func skipLabel(for category: SponsorSegment.Category) -> String {
         switch category {
-        case .sponsor: return "Skip Sponsor"
-        case .selfPromo: return "Skip Self-Promo"
-        case .interaction: return "Skip Interaction"
-        case .intro: return "Skip Intro"
-        case .outro: return "Skip Outro"
-        case .preview: return "Skip Preview"
-        case .filler: return "Skip Filler"
-        case .musicOfftopic: return "Skip Music"
-        case .poiHighlight: return "Skip to Highlight"
+        case .sponsor: return L10n.string("Skip Sponsor")
+        case .selfPromo: return L10n.string("Skip Self-Promo")
+        case .interaction: return L10n.string("Skip Interaction")
+        case .intro: return L10n.string("Skip Intro")
+        case .outro: return L10n.string("Skip Outro")
+        case .preview: return L10n.string("Skip Preview")
+        case .filler: return L10n.string("Skip Filler")
+        case .musicOfftopic: return L10n.string("Skip Music")
+        case .poiHighlight: return L10n.string("Skip to Highlight")
         }
     }
 }

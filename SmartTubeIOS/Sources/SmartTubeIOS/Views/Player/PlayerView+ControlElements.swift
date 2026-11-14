@@ -730,7 +730,7 @@ extension PlayerView {
             HStack {
                 Spacer()
                 if let seg = vm.currentToastSegment {
-                    Button("Skip \(seg.category.displayName)") {
+                    Button(L10n.string("Skip \(seg.category.displayName)")) {
                         vm.skipToastSegment()
                     }
                     .buttonStyle(.borderedProminent)
@@ -792,7 +792,7 @@ extension PlayerView {
                 Button {
                     vm.retryLoad()
                 } label: {
-                    Text("Try Again")
+                    Text("Try Again", bundle: L10n.bundle)
                         .font(.callout.weight(.semibold))
                         .foregroundStyle(.black)
                         .padding(.horizontal, 20)
@@ -864,21 +864,21 @@ extension PlayerControlsOverlay {
 
     private var speedLabel: String {
         store.settings.playbackSpeed == 1.0
-            ? "Normal"
+            ? L10n.string("Normal")
             : String(format: "%.2g", store.settings.playbackSpeed) + "×"
     }
 
     private var qualityLabel: String {
         vm.selectedFormat?.qualityLabel
-            ?? (vm.pendingQualityLabel.isEmpty ? "Auto" : vm.pendingQualityLabel)
+            ?? (vm.pendingQualityLabel.isEmpty ? L10n.string("Auto") : vm.pendingQualityLabel)
     }
 
     private var audioTrackLabel: String {
-        vm.selectedAudioTrack.map { $0.languageCode } ?? "Auto"
+        vm.selectedAudioTrack.map { $0.languageCode } ?? L10n.string("Auto")
     }
 
     private var sleepTimerLabel: String {
-        vm.sleepTimerMinutes.map { "\($0) min" } ?? "Off"
+        vm.sleepTimerMinutes.map { L10n.string("\($0) min") } ?? L10n.string("Off")
     }
 
     // MARK: - Single pill button
@@ -918,7 +918,7 @@ private struct SignInButtonView: View {
         Button {
             showSignIn = true
         } label: {
-            Text("Sign In")
+            Text("Sign In", bundle: L10n.bundle)
                 .font(.callout.weight(.semibold))
                 .foregroundStyle(.black)
                 .padding(.horizontal, 20)

@@ -67,7 +67,7 @@ struct ShortsCardView: View {
             #if !os(tvOS)
             if let shareURL = video.shareURL {
                 ShareLink(item: shareURL) {
-                    Label("Share", systemImage: AppSymbol.share)
+                    Label(L10n.string("Share"), systemImage: AppSymbol.share)
                 }
             }
             #endif
@@ -79,7 +79,7 @@ struct ShortsCardView: View {
                         userInfo: ["channelId": channelId, "channelTitle": video.channelTitle]
                     )
                 } label: {
-                    Label("Open Channel", systemImage: AppSymbol.personRectangle)
+                    Label(L10n.string("Open Channel"), systemImage: AppSymbol.personRectangle)
                 }
             }
             if authService.isSignedIn {
@@ -88,26 +88,24 @@ struct ShortsCardView: View {
                         do {
                             try await api.addToWatchLater(videoId: video.id)
                             watchLaterAlert = DownloadAlertItem(
-                                title: String(localized: "Saved to Watch Later", bundle: .module),
-                                message: String(
-                                    localized: "\"\(video.title)\" was added to your Watch Later playlist.",
-                                    bundle: .module)
+                                title: L10n.string("Saved to Watch Later"),
+                                message: L10n.string("\"\(video.title)\" was added to your Watch Later playlist.")
                             )
                         } catch {
                             watchLaterAlert = DownloadAlertItem(
-                                title: String(localized: "Could Not Save", bundle: .module),
+                                title: L10n.string("Could Not Save"),
                                 message: error.localizedDescription
                             )
                         }
                     }
                 } label: {
-                    Label("Save to Watch Later", systemImage: AppSymbol.watchLater)
+                    Label(L10n.string("Save to Watch Later"), systemImage: AppSymbol.watchLater)
                 }
             }
             Button {
                 Task { await CurrentQueueStore.shared.append(video) }
             } label: {
-                Label("Add to Queue", systemImage: "text.badge.plus")
+                Label(L10n.string("Add to Queue"), systemImage: "text.badge.plus")
             }
             Button {
                 Task {
@@ -115,7 +113,7 @@ struct ShortsCardView: View {
                     await CurrentQueueStore.shared.insertNext(video, afterIndex: count - 1)
                 }
             } label: {
-                Label("Play Next", systemImage: "text.insert")
+                Label(L10n.string("Play Next"), systemImage: "text.insert")
             }
             if authService.isSignedIn {
                 Button(role: .destructive) {
@@ -132,7 +130,7 @@ struct ShortsCardView: View {
                         )
                     }
                 } label: {
-                    Label("Not Interested", systemImage: "hand.raised")
+                    Label(L10n.string("Not Interested"), systemImage: "hand.raised")
                 }
                 Button(role: .destructive) {
                     Task {
@@ -148,7 +146,7 @@ struct ShortsCardView: View {
                         )
                     }
                 } label: {
-                    Label("Don't Like This Video", systemImage: "hand.thumbsdown")
+                    Label(L10n.string("Don't Like This Video"), systemImage: "hand.thumbsdown")
                 }
                 if let channelId = video.channelId, !channelId.isEmpty {
                     Button(role: .destructive) {
@@ -166,7 +164,7 @@ struct ShortsCardView: View {
                             )
                         }
                     } label: {
-                        Label("Don't Recommend Channel", systemImage: "person.slash")
+                        Label(L10n.string("Don't Recommend Channel"), systemImage: "person.slash")
                     }
                 }
             }
@@ -175,16 +173,18 @@ struct ShortsCardView: View {
                 downloadService.download(video: video)
             } label: {
                 if downloadService.state.isActive {
-                    Label("Downloading…", systemImage: AppSymbol.download)
+                    Label(L10n.string("Downloading…"), systemImage: AppSymbol.download)
                 } else {
-                    Label("Download to Gallery", systemImage: AppSymbol.download)
+                    Label(L10n.string("Download to Gallery"), systemImage: AppSymbol.download)
                 }
             }
             .disabled(downloadService.state.isActive)
             #endif
         }
         .alert(item: $watchLaterAlert) { item in
-            Alert(title: Text(item.title), message: Text(item.message), dismissButton: .default(Text("OK")))
+            Alert(
+                title: Text(item.title), message: Text(item.message),
+                dismissButton: .default(Text("OK", bundle: L10n.bundle)))
         }
     }
 }

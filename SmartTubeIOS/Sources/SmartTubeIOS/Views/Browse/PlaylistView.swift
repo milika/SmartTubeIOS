@@ -31,7 +31,7 @@ public struct PlaylistView: View {
     public var body: some View {
         Group {
             if vm.isLoading && vm.videos.isEmpty {
-                ProgressView("Loading…")
+                ProgressView(L10n.string("Loading…"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if vm.videos.isEmpty {
                 emptyState
@@ -50,7 +50,7 @@ public struct PlaylistView: View {
                             dismiss()
                         }
                     } label: {
-                        Label("Clear Queue", systemImage: "trash")
+                        Label(L10n.string("Clear Queue"), systemImage: "trash")
                     }
                 }
                 #else
@@ -61,7 +61,7 @@ public struct PlaylistView: View {
                             dismiss()
                         }
                     } label: {
-                        Label("Clear Queue", systemImage: "trash")
+                        Label(L10n.string("Clear Queue"), systemImage: "trash")
                     }
                 }
                 #endif
@@ -82,9 +82,9 @@ public struct PlaylistView: View {
             guard let channelId = note.userInfo?["channelId"] as? String, !channelId.isEmpty else { return }
             channelDestination = ChannelDestination(channelId: channelId)
         }
-        .alert("Error", isPresented: .constant(vm.error != nil), presenting: vm.error) { _ in
-            Button("Retry") { vm.load(playlistId: playlistId) }
-            Button("Dismiss", role: .cancel) { vm.error = nil }
+        .alert(L10n.string("Error"), isPresented: .constant(vm.error != nil), presenting: vm.error) { _ in
+            Button(L10n.string("Retry")) { vm.load(playlistId: playlistId) }
+            Button(L10n.string("Dismiss"), role: .cancel) { vm.error = nil }
         } message: { err in
             Text(err.localizedDescription)
         }
@@ -233,7 +233,7 @@ public struct PlaylistView: View {
             Image(systemName: AppSymbol.stackLayers)
                 .font(.system(size: 60))
                 .foregroundStyle(.secondary)
-            Text("No videos in this playlist")
+            Text("No videos in this playlist", bundle: L10n.bundle)
                 .font(.headline)
                 .foregroundStyle(.secondary)
         }

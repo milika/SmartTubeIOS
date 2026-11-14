@@ -64,14 +64,14 @@ public actor URLVideoResolver {
         }
 
         // Step 2 — HEAD redirect chain
-        onProgress?("Following redirect links\u{2026}")
+        onProgress?(L10n.string("Following redirect links\u{2026}"))
         if let id = await followRedirects(from: url, onProgress: onProgress) {
             resolverLog.notice("step2 hit: \(id, privacy: .public)")
             return id
         }
 
         // Step 3 — Page scrape
-        onProgress?("Scanning page for video links\u{2026}")
+        onProgress?(L10n.string("Scanning page for video links\u{2026}"))
         if let id = await scrape(url: url) {
             resolverLog.notice("step3 hit: \(id, privacy: .public)")
             return id

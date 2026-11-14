@@ -303,7 +303,7 @@ extension PlaybackViewModel {
         } else {
             playerLog.notice("⚠️ [webView] race failed — attempting serial WKWebView extraction")
             isLoading = true
-            retryStatusMessage = "Still loading\u{2026}"
+            retryStatusMessage = L10n.string("Still loading\u{2026}")
             // Use serialExtract() instead of extractHLSURL() directly: serialExtract awaits any
             // in-flight extraction (for any video) before starting a new one, preventing the
             // cross-video cancellation chain where two concurrent serial callers (for video A and
@@ -329,7 +329,10 @@ extension PlaybackViewModel {
             guard !Task.isCancelled else { return }
             retryAttempts = attempt
             isLoading = true
-            retryStatusMessage = attempt == 1 ? "Trying alternative sources\u{2026}" : "Retrying (\(attempt)/3)\u{2026}"
+            retryStatusMessage =
+                attempt == 1
+                ? L10n.string("Trying alternative sources\u{2026}")
+                : L10n.string("Retrying (\(attempt)/3)\u{2026}")
             playerLog.notice("Exhaustive retry \(attempt)/3 for \(video.id)")
 
             // Evict the stale cache entry so each attempt gets fresh signed URLs.
@@ -524,7 +527,7 @@ extension PlaybackViewModel {
             // and AndroidVR adaptive in the background while the video is already playing.
             if let androidInfo = androidInfoForMuxed, androidInfo.bestMuxedDownloadURL != nil {
                 isLoading = true
-                retryStatusMessage = "Using fallback stream\u{2026}"
+                retryStatusMessage = L10n.string("Using fallback stream\u{2026}")
                 playerLog.notice("[Android[\(attempt)]] All adaptive failed — trying muxed fallback")
                 if await tryAllStreams(
                     video: video, info: androidInfo,
@@ -558,7 +561,7 @@ extension PlaybackViewModel {
 
         guard !Task.isCancelled else { return }
         playerLog.error("❌ All 3 retry attempts exhausted for \(video.id)")
-        error = APIError.unavailable("Unable to play this video")
+        error = APIError.unavailable(L10n.string("Unable to play this video"))
         isLoading = false
     }
 
@@ -2784,7 +2787,7 @@ extension PlaybackViewModel {
     func probeStreamMethod(_ method: String, video: Video) async {
         playerLog.notice("[probe] starting single-method probe: \(method) for \(video.id)")
         isLoading = true
-        retryStatusMessage = "Probing \(method)…"
+        retryStatusMessage = L10n.string("Probing \(method)…")
 
         do {
             let info: PlayerInfo
@@ -2832,7 +2835,7 @@ extension PlaybackViewModel {
                     playerLog.notice("[probe] ✅ wkwebview-hls succeeded for \(video.id)")
                 } else {
                     playerLog.error("[probe] ❌ wkwebview-hls failed for \(video.id)")
-                    error = APIError.unavailable("wkwebview-hls extraction failed")
+                    error = APIError.unavailable(L10n.string("wkwebview-hls extraction failed"))
                     isLoading = false
                 }
                 return
@@ -2840,7 +2843,7 @@ extension PlaybackViewModel {
 
             default:
                 playerLog.error("[probe] unknown method '\(method)' — failing")
-                error = APIError.unavailable("Unknown stream method '\(method)'")
+                error = APIError.unavailable(L10n.string("Unknown stream method '\(method)'"))
                 isLoading = false
                 return
             }
@@ -2851,7 +2854,7 @@ extension PlaybackViewModel {
                 playerLog.notice("[probe] ✅ \(method) succeeded for \(video.id) — \(desc)")
             } else {
                 playerLog.error("[probe] ❌ \(method) returned no playable stream for \(video.id)")
-                error = APIError.unavailable("No playable stream from \(method)")
+                error = APIError.unavailable(L10n.string("No playable stream from \(method)"))
                 isLoading = false
             }
         } catch {

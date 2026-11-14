@@ -25,7 +25,7 @@ public struct BrowseView: View {
     public var body: some View {
         Group {
             if vm.isLoading && vm.videoGroups.isEmpty {
-                ProgressView("Loading…")
+                ProgressView(L10n.string("Loading…"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if vm.videoGroups.isEmpty && !vm.isLoading {
                 emptyState
@@ -50,9 +50,9 @@ public struct BrowseView: View {
             guard let channelId = note.userInfo?["channelId"] as? String, !channelId.isEmpty else { return }
             channelDestination = ChannelDestination(channelId: channelId)
         }
-        .alert("Error", isPresented: $showError, presenting: vm.error) { _ in
-            Button("Retry") { vm.loadContent(refresh: true) }
-            Button("Dismiss", role: .cancel) { vm.error = nil }
+        .alert(L10n.string("Error"), isPresented: $showError, presenting: vm.error) { _ in
+            Button(L10n.string("Retry")) { vm.loadContent(refresh: true) }
+            Button(L10n.string("Dismiss"), role: .cancel) { vm.error = nil }
         } message: { err in
             Text(err.localizedDescription)
         }
@@ -128,14 +128,14 @@ public struct BrowseView: View {
                 .font(.title2)
                 .foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Sign in for your personal feed")
+                Text("Sign in for your personal feed", bundle: L10n.bundle)
                     .font(.subheadline.weight(.semibold))
-                Text("Showing popular videos")
+                Text("Showing popular videos", bundle: L10n.bundle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Button("Sign In") { showSignIn = true }
+            Button(L10n.string("Sign In")) { showSignIn = true }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
         }
@@ -152,19 +152,19 @@ public struct BrowseView: View {
                 .font(.system(size: 60))
                 .foregroundStyle(.secondary)
             if vm.isAuthRequired && !auth.isSignedIn {
-                Text("Sign in to see your feed")
+                Text("Sign in to see your feed", bundle: L10n.bundle)
                     .font(.title3)
-                Text("Your home feed, subscriptions and history\nrequire a Google account.")
+                Text("Your home feed, subscriptions and history\nrequire a Google account.", bundle: L10n.bundle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                Button("Sign In") { showSignIn = true }
+                Button(L10n.string("Sign In")) { showSignIn = true }
                     .buttonStyle(.borderedProminent)
             } else {
-                Text("Nothing here yet")
+                Text("Nothing here yet", bundle: L10n.bundle)
                     .font(.title3)
                     .foregroundStyle(.secondary)
-                Button("Refresh") { vm.loadContent(refresh: true) }
+                Button(L10n.string("Refresh")) { vm.loadContent(refresh: true) }
                     .buttonStyle(.borderedProminent)
             }
         }
@@ -175,7 +175,7 @@ public struct BrowseView: View {
     private var sectionPicker: some ToolbarContent {
         ToolbarItem(placement: .principal) {
             Picker(
-                "Section",
+                L10n.string("Section"),
                 selection: Binding(
                     get: { vm.currentSection },
                     set: { vm.select(section: $0) }

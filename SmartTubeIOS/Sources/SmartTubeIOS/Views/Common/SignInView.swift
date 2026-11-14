@@ -1,5 +1,6 @@
 import CoreImage
 import CoreImage.CIFilterBuiltins
+import SmartTubeIOSCore
 import SwiftUI
 
 #if os(macOS)
@@ -31,21 +32,21 @@ public struct SignInView: View {
                     loadingView
                 }
             }
-            .navigationTitle("Sign In")
+            .navigationTitle(L10n.string("Sign In"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button(L10n.string("Cancel")) {
                         auth.cancelSignIn()
                         dismiss()
                     }
                 }
             }
-            .alert("Sign-In Failed", isPresented: $showError, presenting: auth.error) { _ in
-                Button("Try Again") { Task { await auth.beginSignIn() } }
-                Button("Cancel", role: .cancel) { auth.error = nil }
+            .alert(L10n.string("Sign-In Failed"), isPresented: $showError, presenting: auth.error) { _ in
+                Button(L10n.string("Try Again")) { Task { await auth.beginSignIn() } }
+                Button(L10n.string("Cancel"), role: .cancel) { auth.error = nil }
             } message: { err in
                 Text(err.localizedDescription)
             }
@@ -78,14 +79,14 @@ public struct SignInView: View {
                 auth.cancelSignIn()
                 dismiss()
             } label: {
-                Label("Cancel", systemImage: "xmark")
+                Label(L10n.string("Cancel"), systemImage: "xmark")
                     .font(.headline)
             }
             .padding(40)
         }
-        .alert("Sign-In Failed", isPresented: $showError, presenting: auth.error) { _ in
-            Button("Try Again") { Task { await auth.beginSignIn() } }
-            Button("Cancel", role: .cancel) { auth.error = nil }
+        .alert(L10n.string("Sign-In Failed"), isPresented: $showError, presenting: auth.error) { _ in
+            Button(L10n.string("Try Again")) { Task { await auth.beginSignIn() } }
+            Button(L10n.string("Cancel"), role: .cancel) { auth.error = nil }
         } message: { err in
             Text(err.localizedDescription)
         }
@@ -101,7 +102,7 @@ public struct SignInView: View {
     private var tvLoadingView: some View {
         VStack(spacing: 24) {
             ProgressView().controlSize(.large)
-            Text("Connecting to Google…")
+            Text("Connecting to Google…", bundle: L10n.bundle)
                 .font(.title3)
                 .foregroundStyle(.secondary)
         }
@@ -117,16 +118,16 @@ public struct SignInView: View {
                         .font(.system(size: 56))
                         .foregroundStyle(.red)
 
-                    Text("Sign in to SmartTube")
+                    Text("Sign in to SmartTube", bundle: L10n.bundle)
                         .font(.largeTitle).fontWeight(.bold)
 
-                    Text("On any device, open the link below and enter the code.")
+                    Text("On any device, open the link below and enter the code.", bundle: L10n.bundle)
                         .font(.title3)
                         .foregroundStyle(.secondary)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Go to:")
+                    Text("Go to:", bundle: L10n.bundle)
                         .font(.callout)
                         .foregroundStyle(.secondary)
                     Text(info.verificationURL.absoluteString)
@@ -148,7 +149,7 @@ public struct SignInView: View {
 
                 HStack(spacing: 12) {
                     ProgressView()
-                    Text("Waiting for authorisation…")
+                    Text("Waiting for authorisation…", bundle: L10n.bundle)
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
@@ -163,7 +164,7 @@ public struct SignInView: View {
                     .background(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 20))
 
-                Text("Scan to open activation page")
+                Text("Scan to open activation page", bundle: L10n.bundle)
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -179,7 +180,7 @@ public struct SignInView: View {
         VStack(spacing: 16) {
             ProgressView()
                 .controlSize(.large)
-            Text("Connecting to Google…")
+            Text("Connecting to Google…", bundle: L10n.bundle)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -225,10 +226,11 @@ public struct SignInView: View {
                     .foregroundStyle(.red)
 
                 VStack(spacing: 6) {
-                    Text("Activate SmartTube")
+                    Text("Activate SmartTube", bundle: L10n.bundle)
                         .font(.title2).fontWeight(.bold)
                     Text(
-                        "On this device, tap the button below — the sign-in page opens with your code already filled in."
+                        "On this device, tap the button below — the sign-in page opens with your code already filled in.",
+                        bundle: L10n.bundle
                     )
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -245,7 +247,7 @@ public struct SignInView: View {
                     openURL(URL(string: activationQRURL(info: info)) ?? info.verificationURL)
                     #endif
                 } label: {
-                    Label("Open Activation Page", systemImage: "arrow.up.right")
+                    Label(L10n.string("Open Activation Page"), systemImage: "arrow.up.right")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -254,7 +256,7 @@ public struct SignInView: View {
                 // ── Or: scan from another device ────────────────────────────
                 HStack(spacing: 8) {
                     Rectangle().fill(Color.secondary.opacity(0.3)).frame(height: 1)
-                    Text("Or scan from another device")
+                    Text("Or scan from another device", bundle: L10n.bundle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize()
@@ -269,7 +271,7 @@ public struct SignInView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
 
-                Text("Scan to open activation page")
+                Text("Scan to open activation page", bundle: L10n.bundle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -290,7 +292,7 @@ public struct SignInView: View {
                     NSPasteboard.general.setString(info.userCode, forType: .string)
                     #endif
                 } label: {
-                    Label("Copy Code", systemImage: AppSymbol.copyDoc)
+                    Label(L10n.string("Copy Code"), systemImage: AppSymbol.copyDoc)
                 }
                 .buttonStyle(.bordered)
 
@@ -302,7 +304,7 @@ public struct SignInView: View {
 
                 VStack(spacing: 8) {
                     ProgressView()
-                    Text("Waiting for authorisation…")
+                    Text("Waiting for authorisation…", bundle: L10n.bundle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -311,7 +313,7 @@ public struct SignInView: View {
                 Button(role: .cancel) {
                     auth.cancelSignIn()
                 } label: {
-                    Text("Use a different account")
+                    Text("Use a different account", bundle: L10n.bundle)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -385,7 +387,7 @@ private struct CountdownView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                Text("Code expired")
+                Text("Code expired", bundle: L10n.bundle)
                     .font(.caption)
                     .foregroundStyle(.red)
             }
@@ -408,7 +410,7 @@ private struct CountdownView: View {
     private var timeString: String {
         let mins = Int(remaining) / 60
         let secs = Int(remaining) % 60
-        let fmt = String(localized: "Code expires in %d:%02d", bundle: .module)
+        let fmt = L10n.string("Code expires in %d:%02d")
         return String(format: fmt, mins, secs)
     }
 }

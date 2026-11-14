@@ -18,9 +18,9 @@ struct ManageRSSFeedsView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if feeds.isEmpty {
                     ContentUnavailableView(
-                        "No RSS Feeds",
+                        L10n.string("No RSS Feeds"),
                         systemImage: "dot.radiowaves.left.and.right",
-                        description: Text("Add a feed from the RSS Feeds screen.")
+                        description: Text("Add a feed from the RSS Feeds screen.", bundle: L10n.bundle)
                     )
                 } else {
                     List {
@@ -31,13 +31,13 @@ struct ManageRSSFeedsView: View {
                     }
                 }
             }
-            .navigationTitle("Manage RSS Feeds")
+            .navigationTitle(L10n.string("Manage RSS Feeds"))
             #if !os(macOS) && !os(tvOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button(L10n.string("Done")) { dismiss() }
                 }
             }
             .task {

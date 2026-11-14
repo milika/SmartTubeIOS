@@ -156,7 +156,7 @@ public struct VideoCardView: View {
             #if !os(tvOS)
             if let shareURL = video.shareURL {
                 ShareLink(item: shareURL) {
-                    Label("Share", systemImage: AppSymbol.share)
+                    Label(L10n.string("Share"), systemImage: AppSymbol.share)
                 }
             }
             #endif
@@ -168,7 +168,7 @@ public struct VideoCardView: View {
                         userInfo: ["channelId": channelId, "channelTitle": video.channelTitle]
                     )
                 } label: {
-                    Label("Open Channel", systemImage: AppSymbol.personRectangle)
+                    Label(L10n.string("Open Channel"), systemImage: AppSymbol.personRectangle)
                 }
             }
             if authService.isSignedIn {
@@ -185,10 +185,8 @@ public struct VideoCardView: View {
                                 ?? WatchLaterMembershipStore.shared.setVideoId(for: video.id)
                         else {
                             watchLaterAlert = DownloadAlertItem(
-                                title: String(localized: "Could Not Remove", bundle: .module),
-                                message: String(
-                                    localized: "Missing playlist entry information for \"\(video.title)\".",
-                                    bundle: .module)
+                                title: L10n.string("Could Not Remove"),
+                                message: L10n.string("Missing playlist entry information for \"\(video.title)\".")
                             )
                             return
                         }
@@ -197,20 +195,19 @@ public struct VideoCardView: View {
                                 try await api.removeFromWatchLater(setVideoId: setVideoId)
                                 WatchLaterMembershipStore.shared.markRemoved(video.id)
                                 watchLaterAlert = DownloadAlertItem(
-                                    title: String(localized: "Removed from Watch Later", bundle: .module),
-                                    message: String(
-                                        localized: "\"\(video.title)\" was removed from your Watch Later playlist.",
-                                        bundle: .module)
+                                    title: L10n.string("Removed from Watch Later"),
+                                    message: L10n.string(
+                                        "\"\(video.title)\" was removed from your Watch Later playlist.")
                                 )
                             } catch {
                                 watchLaterAlert = DownloadAlertItem(
-                                    title: String(localized: "Could Not Remove", bundle: .module),
+                                    title: L10n.string("Could Not Remove"),
                                     message: error.localizedDescription
                                 )
                             }
                         }
                     } label: {
-                        Label("Remove from Watch Later", systemImage: AppSymbol.watchLater)
+                        Label(L10n.string("Remove from Watch Later"), systemImage: AppSymbol.watchLater)
                     }
                 } else {
                     Button {
@@ -219,39 +216,37 @@ public struct VideoCardView: View {
                                 let setVideoId = try await api.addToWatchLater(videoId: video.id)
                                 WatchLaterMembershipStore.shared.markSaved(video, setVideoId: setVideoId)
                                 watchLaterAlert = DownloadAlertItem(
-                                    title: String(localized: "Saved to Watch Later", bundle: .module),
-                                    message: String(
-                                        localized: "\"\(video.title)\" was added to your Watch Later playlist.",
-                                        bundle: .module)
+                                    title: L10n.string("Saved to Watch Later"),
+                                    message: L10n.string("\"\(video.title)\" was added to your Watch Later playlist.")
                                 )
                             } catch {
                                 watchLaterAlert = DownloadAlertItem(
-                                    title: String(localized: "Could Not Save", bundle: .module),
+                                    title: L10n.string("Could Not Save"),
                                     message: error.localizedDescription
                                 )
                             }
                         }
                     } label: {
-                        Label("Save to Watch Later", systemImage: AppSymbol.watchLater)
+                        Label(L10n.string("Save to Watch Later"), systemImage: AppSymbol.watchLater)
                     }
                 }
                 Button {
                     playlistPickerMode = .copy
                 } label: {
-                    Label("Copy to Playlist", systemImage: "rectangle.stack.badge.plus")
+                    Label(L10n.string("Copy to Playlist"), systemImage: "rectangle.stack.badge.plus")
                 }
                 if effectivePlaylistId != nil {
                     Button {
                         playlistPickerMode = .move
                     } label: {
-                        Label("Move to Playlist", systemImage: "arrow.right.circle")
+                        Label(L10n.string("Move to Playlist"), systemImage: "arrow.right.circle")
                     }
                 }
             }
             Button {
                 Task { await CurrentQueueStore.shared.append(video) }
             } label: {
-                Label("Add to Queue", systemImage: "text.badge.plus")
+                Label(L10n.string("Add to Queue"), systemImage: "text.badge.plus")
             }
             Button {
                 Task {
@@ -259,13 +254,13 @@ public struct VideoCardView: View {
                     await CurrentQueueStore.shared.insertNext(video, afterIndex: count - 1)
                 }
             } label: {
-                Label("Play Next", systemImage: "text.insert")
+                Label(L10n.string("Play Next"), systemImage: "text.insert")
             }
             #if os(iOS)
             Button {
                 playerRouter.open(video: video, api: api, incognito: true)
             } label: {
-                Label("Play Incognito", systemImage: "eyeglasses")
+                Label(L10n.string("Play Incognito"), systemImage: "eyeglasses")
             }
             #endif
             if authService.isSignedIn {
@@ -283,7 +278,7 @@ public struct VideoCardView: View {
                         )
                     }
                 } label: {
-                    Label("Not Interested", systemImage: "hand.raised")
+                    Label(L10n.string("Not Interested"), systemImage: "hand.raised")
                 }
                 if let channelId = video.channelId, !channelId.isEmpty {
                     Button(role: .destructive) {
@@ -301,7 +296,7 @@ public struct VideoCardView: View {
                             )
                         }
                     } label: {
-                        Label("Don't Recommend Channel", systemImage: "person.slash")
+                        Label(L10n.string("Don't Recommend Channel"), systemImage: "person.slash")
                     }
                 }
             }
@@ -310,9 +305,9 @@ public struct VideoCardView: View {
                 downloadService.download(video: video)
             } label: {
                 if downloadService.state.isActive {
-                    Label("Downloading…", systemImage: AppSymbol.download)
+                    Label(L10n.string("Downloading…"), systemImage: AppSymbol.download)
                 } else {
-                    Label("Download to Gallery", systemImage: AppSymbol.download)
+                    Label(L10n.string("Download to Gallery"), systemImage: AppSymbol.download)
                 }
             }
             .disabled(downloadService.state.isActive)
@@ -379,7 +374,9 @@ public struct VideoCardView: View {
             .zIndex(isFocused ? 1 : 0)
             .animation(.easeInOut(duration: 0.15), value: isFocused)
             .alert(item: $watchLaterAlert) { item in
-                Alert(title: Text(item.title), message: Text(item.message), dismissButton: .default(Text("OK")))
+                Alert(
+                    title: Text(item.title), message: Text(item.message),
+                    dismissButton: .default(Text("OK", bundle: L10n.bundle)))
             }
             .sheet(item: $playlistPickerMode) { mode in
                 PlaylistPickerSheet(
@@ -391,7 +388,9 @@ public struct VideoCardView: View {
         cardContent
             .onAppear { feedLog.info("[feed] id=\(self.video.id) title=\(self.video.title)") }
             .alert(item: $watchLaterAlert) { item in
-                Alert(title: Text(item.title), message: Text(item.message), dismissButton: .default(Text("OK")))
+                Alert(
+                    title: Text(item.title), message: Text(item.message),
+                    dismissButton: .default(Text("OK", bundle: L10n.bundle)))
             }
             .sheet(item: $playlistPickerMode) { mode in
                 PlaylistPickerSheet(
@@ -406,13 +405,12 @@ public struct VideoCardView: View {
         switch result {
         case .success(let playlist):
             watchLaterAlert = DownloadAlertItem(
-                title: String(localized: "Added to Playlist", bundle: .module),
-                message: String(
-                    localized: "\"\(video.title)\" was added to \"\(playlist.title)\".", bundle: .module)
+                title: L10n.string("Added to Playlist"),
+                message: L10n.string("\"\(video.title)\" was added to \"\(playlist.title)\".")
             )
         case .failure(let error):
             watchLaterAlert = DownloadAlertItem(
-                title: String(localized: "Could Not Update Playlist", bundle: .module),
+                title: L10n.string("Could Not Update Playlist"),
                 message: error.localizedDescription
             )
         }
@@ -655,25 +653,25 @@ public struct VideoCardView: View {
             timeFmt.locale = .autoupdatingCurrent
             timeFmt.timeStyle = .short
             if cal.isDateInToday(date) {
-                return "Scheduled: Today, \(timeFmt.string(from: date))"
+                return L10n.string("Scheduled: Today, \(timeFmt.string(from: date))")
             }
             if cal.isDateInTomorrow(date) {
-                return "Scheduled: Tomorrow, \(timeFmt.string(from: date))"
+                return L10n.string("Scheduled: Tomorrow, \(timeFmt.string(from: date))")
             }
             let dateFmt = DateFormatter()
             dateFmt.locale = .autoupdatingCurrent
             dateFmt.dateStyle = .medium
             dateFmt.timeStyle = .short
-            return "Scheduled: \(dateFmt.string(from: date))"
+            return L10n.string("Scheduled: \(dateFmt.string(from: date))")
         }
         guard let date = video.publishedAt else { return nil }
         let now = Date()
         let elapsed = now.timeIntervalSince(date)
-        if elapsed < 86_400 { return "Today" }
+        if elapsed < 86_400 { return L10n.string("Today") }
         let days = Int(elapsed / 86_400)
         // For recent videos (<7 days) always compute fresh relative label — avoids
         // showing a stale "2 hours ago" from a cached `publishedTimeText`.
-        if days < 7 { return days == 1 ? "1 day ago" : "\(days) days ago" }
+        if days < 7 { return days == 1 ? L10n.string("1 day ago") : L10n.string("\(days) days ago") }
         // For older videos, prefer the raw API text (e.g. "2 years ago", "3 months ago").
         // Formatting an approximate publishedAt as "May 12" looks precise but can be weeks off.
         if let raw = video.publishedTimeText, !raw.isEmpty {
@@ -692,7 +690,7 @@ public struct VideoCardView: View {
     }
 
     private var liveBadge: some View {
-        Text("LIVE")
+        Text("LIVE", bundle: L10n.bundle)
             .font(.caption2)
             .fontWeight(.bold)
             .padding(.horizontal, 5)
@@ -714,7 +712,7 @@ public struct VideoCardView: View {
             .foregroundStyle(.white)
             .clipShape(Circle())
             .padding(4)
-            .accessibilityLabel(Text("Saved to Watch Later", bundle: .module))
+            .accessibilityLabel(Text("Saved to Watch Later", bundle: L10n.bundle))
     }
 }
 

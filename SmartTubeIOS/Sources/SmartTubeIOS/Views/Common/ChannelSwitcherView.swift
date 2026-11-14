@@ -15,11 +15,11 @@ struct ChannelSwitcherView: View {
         Group {
             if !auth.isSignedIn {
                 ContentUnavailableView {
-                    Label("Not Signed In", systemImage: AppSymbol.channel)
+                    Label(L10n.string("Not Signed In"), systemImage: AppSymbol.channel)
                 } description: {
-                    Text("Sign in to switch between your channels.")
+                    Text("Sign in to switch between your channels.", bundle: L10n.bundle)
                 } actions: {
-                    Button("Sign in with Google") { showSignIn = true }
+                    Button(L10n.string("Sign in with Google")) { showSignIn = true }
                 }
             } else if auth.channels.isEmpty {
                 if isLoading {
@@ -27,9 +27,9 @@ struct ChannelSwitcherView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ContentUnavailableView(
-                        "No Channels",
+                        L10n.string("No Channels"),
                         systemImage: AppSymbol.channel,
-                        description: Text("Could not load the channels of this account.")
+                        description: Text("Could not load the channels of this account.", bundle: L10n.bundle)
                     )
                 }
             } else {
@@ -38,7 +38,7 @@ struct ChannelSwitcherView: View {
                 }
             }
         }
-        .navigationTitle("Channel")
+        .navigationTitle(L10n.string("Channel"))
         .sheet(isPresented: $showSignIn) { SignInView() }
         .task(id: auth.isSignedIn) {
             isLoading = true
@@ -66,7 +66,7 @@ struct ChannelSwitcherView: View {
                     Text(channel.name)
                         .foregroundStyle(.primary)
                     if channel.isPrimary {
-                        Text("Primary account")
+                        Text("Primary account", bundle: L10n.bundle)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

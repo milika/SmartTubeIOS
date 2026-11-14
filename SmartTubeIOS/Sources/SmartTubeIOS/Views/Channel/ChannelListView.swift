@@ -56,7 +56,7 @@ private struct ChannelListRow: View {
         HStack(spacing: 12) {
             avatar
             VStack(alignment: .leading, spacing: 2) {
-                Text(channel.title.isEmpty ? "Unknown channel" : channel.title)
+                Text(channel.title.isEmpty ? L10n.string("Unknown channel") : channel.title)
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
                 if let count = channel.subscriberCount {

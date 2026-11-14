@@ -43,7 +43,11 @@ public struct RootView: View {
             #endif
         }
         .environment(\.isLandscapeLayout, isLandscapeLayout)
-        .onGeometryChange(for: Bool.self) { $0.size.width > $0.size.height } action: { isLandscapeLayout = $0 }
+        .onGeometryChange(for: Bool.self) {
+            $0.size.width > $0.size.height
+        } action: {
+            isLandscapeLayout = $0
+        }
         .tint(store.settings.accentColor.color)
         .preferredColorScheme(store.settings.themeName.colorScheme)
         #if !os(tvOS) && ENABLE_DOWNLOADS
@@ -51,13 +55,13 @@ public struct RootView: View {
             switch newState {
             case .done:
                 cardDownloadAlertItem = DownloadAlertItem(
-                    title: String(localized: "Saved to Gallery", bundle: .module),
-                    message: String(localized: "Video has been saved to your Photos library.", bundle: .module)
+                    title: L10n.string("Saved to Gallery"),
+                    message: L10n.string("Video has been saved to your Photos library.")
                 )
                 cardDownloadService.reset()
             case .failed(let reason):
                 cardDownloadAlertItem = DownloadAlertItem(
-                    title: String(localized: "Download Failed", bundle: .module),
+                    title: L10n.string("Download Failed"),
                     message: reason
                 )
                 cardDownloadService.reset()
@@ -73,7 +77,7 @@ public struct RootView: View {
             ),
             presenting: cardDownloadAlertItem
         ) { _ in
-            Button("OK") { cardDownloadAlertItem = nil }
+            Button(L10n.string("OK")) { cardDownloadAlertItem = nil }
         } message: { item in
             Text(item.message)
         }
@@ -107,6 +111,16 @@ enum AppSection: String, CaseIterable, Identifiable {
     case settings = "Settings"
 
     var id: String { rawValue }
+
+    /// Localised tab / sidebar label — the raw value is a stable identifier, not display text.
+    var title: String {
+        switch self {
+        case .home: return L10n.string("Home")
+        case .search: return L10n.string("Search")
+        case .library: return L10n.string("Library")
+        case .settings: return L10n.string("Settings")
+        }
+    }
 
     var icon: String {
         switch self {
@@ -205,7 +219,7 @@ struct MainTabView: View {
                                 )
                         }
                     }
-                    .tabItem { Label(section.rawValue, systemImage: section.icon) }
+                    .tabItem { Label(section.title, systemImage: section.icon) }
                     .tag(section)
                     .accessibilityIdentifier("tab.\(section.rawValue.lowercased())")
             }
@@ -297,7 +311,8 @@ struct MainTabView: View {
                 // work there. The standard player plays with the app's own sign-in, so
                 // this one error still falls back to it on iOS.
                 if tosState.vm?.playerError == .signInRequired {
-                    rootLog.notice("[RootView] TOS sign-in required for videoId=\(video.id) — opening the standard player")
+                    rootLog.notice(
+                        "[RootView] TOS sign-in required for videoId=\(video.id) — opening the standard player")
                     tosState.markFallback(videoId: video.id)
                     playerRouter.open(video: video, api: api)
                     return
@@ -363,7 +378,7 @@ struct MainTVTabView: View {
             ForEach(AppSection.allCases) { section in
                 NavigationStack { section.destination(api: api) }
                     .tabItem {
-                        Label(section.rawValue, systemImage: section.icon)
+                        Label(section.title, systemImage: section.icon)
                     }
                     .tag(section)
             }
@@ -396,10 +411,10 @@ struct MainSidebarView: View {
         ZStack {
             NavigationSplitView {
                 List(AppSection.allCases, selection: $selectedSection) { section in
-                    Label(section.rawValue, systemImage: section.icon)
+                    Label(section.title, systemImage: section.icon)
                         .tag(section)
                 }
-                .navigationTitle("SmartTube")
+                .navigationTitle(L10n.string("SmartTube"))
                 if auth.isSignedIn {
                     Divider()
                     HStack {
@@ -410,7 +425,7 @@ struct MainSidebarView: View {
                         }
                         .frame(width: 28, height: 28)
                         .clipShape(Circle())
-                        Text(auth.accountName ?? "Account")
+                        Text(auth.accountName ?? L10n.string("Account"))
                             .font(.subheadline)
                     }
                     .padding(.horizontal)

@@ -158,8 +158,9 @@ extension PlayerView {
                             let newMode: AppSettings.VideoGravityMode =
                                 store.settings.videoGravityMode == .fit ? .fill : .fit
                             store.settings.videoGravityMode = newMode
-                            scaleToast = newMode == .fill ? "Fill" : "Fit"
-                            seekToastMessage = newMode == .fill ? "Fill" : "Fit"  // diagnostic: also set seekToast
+                            scaleToast = newMode == .fill ? L10n.string("Fill") : L10n.string("Fit")
+                            // diagnostic: also set seekToast
+                            seekToastMessage = newMode == .fill ? L10n.string("Fill") : L10n.string("Fit")
                         }
                     },
                     onTwoFingerTap: { vm.toggleStatsForNerds() },
@@ -859,13 +860,13 @@ extension PlayerView {
             case .done:
                 let title = vm.playerInfo?.video.title ?? video.title
                 downloadAlertItem = DownloadAlertItem(
-                    title: String(localized: "Saved to Gallery", bundle: .module),
-                    message: String(localized: "\"\(title)\" has been saved to your Photos library.", bundle: .module)
+                    title: L10n.string("Saved to Gallery"),
+                    message: L10n.string("\"\(title)\" has been saved to your Photos library.")
                 )
                 downloadService.reset()
             case .failed(let reason):
                 downloadAlertItem = DownloadAlertItem(
-                    title: String(localized: "Download Failed", bundle: .module),
+                    title: L10n.string("Download Failed"),
                     message: reason
                 )
                 downloadService.reset()
@@ -874,7 +875,9 @@ extension PlayerView {
             }
         }
         .alert(item: $downloadAlertItem) { item in
-            Alert(title: Text(item.title), message: Text(item.message), dismissButton: .default(Text("OK")))
+            Alert(
+                title: Text(item.title), message: Text(item.message),
+                dismissButton: .default(Text("OK", bundle: L10n.bundle)))
         }
         #endif
         // Intercept smarttube://seek/<seconds> links emitted by timestamp spans in
@@ -974,7 +977,7 @@ extension PlayerView {
             }
         }
         .ignoresSafeArea()
-        .accessibilityLabel("Audio only — thumbnail")
+        .accessibilityLabel(Text("Audio only — thumbnail", bundle: L10n.bundle))
         .accessibilityIdentifier("player.audioOnlyOverlay")
     }
 }

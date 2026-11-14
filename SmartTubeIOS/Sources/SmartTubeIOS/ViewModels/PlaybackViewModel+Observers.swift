@@ -3,6 +3,7 @@ import SmartTubeIOSCore
 import os
 
 #if canImport(UIKit)
+import UIKit
 import MediaPlayer
 #endif
 
@@ -49,6 +50,11 @@ extension PlaybackViewModel {
             guard let self, let newRate = change.newValue else { return }
             Task { @MainActor [weak self] in
                 guard let self else { return }
+                #if canImport(UIKit)
+                // Fallback paths (tryAllStreams/exhaustiveRetry) start playback without
+                // disabling the idle timer, so tvOS screensaver kicks in mid-video.
+                if newRate > 0 { UIApplication.shared.isIdleTimerDisabled = true }
+                #endif
                 // Ignore rate changes that we ourselves triggered (load/pause/resume/stop)
                 // by only acting when the player goes silent unexpectedly while we
                 // believed it was playing.

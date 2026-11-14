@@ -21,8 +21,8 @@ struct HomeFeedWidget: Widget {
             HomeFeedWidgetView(entry: entry)
                 .containerBackground(.black, for: .widget)
         }
-        .configurationDisplayName("SmartTube Home")
-        .description("Videos from your Home page. Tap one to play it.")
+        .configurationDisplayName(L10n.string("SmartTube Home"))
+        .description(L10n.string("Videos from your Home page. Tap one to play it."))
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
         .contentMarginsDisabled()
     }
@@ -118,7 +118,7 @@ struct HomeFeedWidgetView: View {
             Image(systemName: "play.rectangle.fill")
                 .font(.title)
                 .foregroundStyle(.red)
-            Text("Open SmartTube to load your Home feed")
+            Text("Open SmartTube to load your Home feed", bundle: L10n.bundle)
                 .font(.caption)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.white.opacity(0.8))
@@ -193,7 +193,7 @@ private struct VideoTile: View {
 
     @ViewBuilder private var badge: some View {
         if item.video.isLive {
-            label("LIVE", background: .red)
+            label(L10n.string("LIVE"), background: .red)
         } else if let duration = item.video.duration, duration > 0 {
             label(Self.format(duration), background: .black.opacity(0.75))
         }

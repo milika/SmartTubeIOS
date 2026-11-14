@@ -134,9 +134,11 @@ public extension Video {
     var formattedViewCount: String {
         guard let viewCount else { return "" }
         switch viewCount {
-        case 0..<1_000: return "\(viewCount) views"
-        case 1_000..<1_000_000: return String(format: "%.1fK views", Double(viewCount) / 1_000)
-        default: return String(format: "%.1fM views", Double(viewCount) / 1_000_000)
+        case 0..<1_000: return L10n.string("\(viewCount) views")
+        case 1_000..<1_000_000:
+            return String(format: L10n.string("%.1fK views"), Double(viewCount) / 1_000)
+        default:
+            return String(format: L10n.string("%.1fM views"), Double(viewCount) / 1_000_000)
         }
     }
 

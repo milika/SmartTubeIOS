@@ -31,7 +31,7 @@ extension InnerTubeAPI {
         // explicitly — it is always available for authenticated users and always uses
         // the fixed browse ID VLWL (handled correctly by fetchPlaylistVideos).
         if !playlists.contains(where: { $0.id == "WL" }) {
-            playlists.insert(PlaylistInfo(id: "WL", title: "Watch Later"), at: 0)
+            playlists.insert(PlaylistInfo(id: "WL", title: L10n.string("Watch Later")), at: 0)
         }
         return playlists
     }

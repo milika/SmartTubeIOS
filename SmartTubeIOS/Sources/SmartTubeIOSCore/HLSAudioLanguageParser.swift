@@ -71,7 +71,7 @@ public func parseHLSAudioLanguages(from manifest: String) -> [AudioTrack] {
     // contentID=nil signals the proxy to keep variants with no CONTENT-ID attribute.
     if !tracks.isEmpty && !tracks.contains(where: \.isOriginal) {
         let synthetic = AudioTrack(
-            id: "yt-original-audio", name: "Original",
+            id: "yt-original-audio", name: L10n.string("Original"),
             languageCode: "original", isOriginal: true,
             contentID: nil)
         tracks.insert(synthetic, at: 0)

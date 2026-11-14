@@ -31,7 +31,7 @@ struct ChaptersOverlayView: View {
                     }
                     .buttonStyle(.plain)
                     Spacer()
-                    Text("Chapters")
+                    Text("Chapters", bundle: L10n.bundle)
                         .fontWeight(.semibold)
                     Spacer()
                     Color.clear.frame(width: 44, height: 44)
@@ -39,7 +39,7 @@ struct ChaptersOverlayView: View {
                 .padding(.horizontal, 4)
                 Divider()
                 if chapters.isEmpty {
-                    Text("No chapters available.")
+                    Text("No chapters available.", bundle: L10n.bundle)
                         .foregroundStyle(.secondary)
                         .padding(40)
                 } else {

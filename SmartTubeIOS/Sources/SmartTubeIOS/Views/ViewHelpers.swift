@@ -79,17 +79,17 @@ extension AppSettings.AccentColorChoice {
 
     var displayName: String {
         switch self {
-        case .system: return String(localized: "Default", bundle: .module)
-        case .red: return String(localized: "Red", bundle: .module)
-        case .orange: return String(localized: "Orange", bundle: .module)
-        case .yellow: return String(localized: "Yellow", bundle: .module)
-        case .green: return String(localized: "Green", bundle: .module)
-        case .mint: return String(localized: "Mint", bundle: .module)
-        case .teal: return String(localized: "Teal", bundle: .module)
-        case .blue: return String(localized: "Blue", bundle: .module)
-        case .indigo: return String(localized: "Indigo", bundle: .module)
-        case .purple: return String(localized: "Purple", bundle: .module)
-        case .pink: return String(localized: "Pink", bundle: .module)
+        case .system: return L10n.string("Default")
+        case .red: return L10n.string("Red")
+        case .orange: return L10n.string("Orange")
+        case .yellow: return L10n.string("Yellow")
+        case .green: return L10n.string("Green")
+        case .mint: return L10n.string("Mint")
+        case .teal: return L10n.string("Teal")
+        case .blue: return L10n.string("Blue")
+        case .indigo: return L10n.string("Indigo")
+        case .purple: return L10n.string("Purple")
+        case .pink: return L10n.string("Pink")
         }
     }
 

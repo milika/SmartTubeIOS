@@ -35,7 +35,7 @@ struct CommentsOverlayView: View {
                     }
                     .buttonStyle(.plain)
                     Spacer()
-                    Text("Comments")
+                    Text("Comments", bundle: L10n.bundle)
                         .fontWeight(.semibold)
                     Spacer()
                     Color.clear.frame(width: 44, height: 44)
@@ -46,7 +46,7 @@ struct CommentsOverlayView: View {
                     ProgressView()
                         .padding(40)
                 } else if comments.isEmpty {
-                    Text("No comments available.")
+                    Text("No comments available.", bundle: L10n.bundle)
                         .foregroundStyle(.secondary)
                         .padding(40)
                 } else {

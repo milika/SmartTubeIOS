@@ -82,7 +82,7 @@ public struct SearchView: View {
         return HStack(spacing: 8) {
             Image(systemName: AppSymbol.search)
                 .foregroundStyle(.secondary)
-            TextField("Search YouTube", text: $vm.query)
+            TextField(L10n.string("Search YouTube"), text: $vm.query)
                 .focused($isSearchFocused)
                 .submitLabel(.search)
                 .autocorrectionDisabled()
@@ -130,28 +130,28 @@ public struct SearchView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     if vm.filter.sortOrder != .relevance {
-                        FilterChip(label: LocalizedStringKey(vm.filter.sortOrder.label)) {
+                        FilterChip(label: vm.filter.sortOrder.label) {
                             var f = vm.filter
                             f.sortOrder = .relevance
                             vm.applyFilter(f)
                         }
                     }
                     if vm.filter.uploadDate != .anytime {
-                        FilterChip(label: LocalizedStringKey(vm.filter.uploadDate.label)) {
+                        FilterChip(label: vm.filter.uploadDate.label) {
                             var f = vm.filter
                             f.uploadDate = .anytime
                             vm.applyFilter(f)
                         }
                     }
                     if vm.filter.type != .any {
-                        FilterChip(label: LocalizedStringKey(vm.filter.type.label)) {
+                        FilterChip(label: vm.filter.type.label) {
                             var f = vm.filter
                             f.type = .any
                             vm.applyFilter(f)
                         }
                     }
                     if vm.filter.duration != .any {
-                        FilterChip(label: LocalizedStringKey(vm.filter.duration.label)) {
+                        FilterChip(label: vm.filter.duration.label) {
                             var f = vm.filter
                             f.duration = .any
                             vm.applyFilter(f)
@@ -211,11 +211,12 @@ public struct SearchView: View {
     // MARK: - Suggestions list (history + recommended/live)
 
     private var suggestionsListView: some View {
-        let suggestionsHeader = vm.query.isEmpty ? "Recommended" : "Suggestions"
+        let suggestionsHeader =
+            vm.query.isEmpty ? L10n.string("Recommended") : L10n.string("Suggestions")
         return List {
             // History section — only shown when there are matching entries
             if !vm.filteredHistory.isEmpty {
-                Section(header: Text("Recent").font(.caption).foregroundStyle(.secondary)) {
+                Section(header: Text("Recent", bundle: L10n.bundle).font(.caption).foregroundStyle(.secondary)) {
                     ForEach(vm.filteredHistory) { entry in
                         Button {
                             vm.query = entry.query
@@ -238,7 +239,7 @@ public struct SearchView: View {
                                         .font(.caption)
                                 }
                                 .buttonStyle(.plain)
-                                .accessibilityLabel("Remove \(entry.query) from history")
+                                .accessibilityLabel(L10n.string("Remove \(entry.query) from history"))
                                 #endif
                             }
                             .contentShape(Rectangle())
@@ -249,7 +250,7 @@ public struct SearchView: View {
                     Button(role: .destructive) {
                         vm.clearHistory()
                     } label: {
-                        Text("Clear History")
+                        Text("Clear History", bundle: L10n.bundle)
                             .font(.subheadline)
                             .frame(maxWidth: .infinity)
                     }
@@ -302,7 +303,7 @@ public struct SearchView: View {
             Image(systemName: AppSymbol.search)
                 .font(.system(size: 60))
                 .foregroundStyle(.secondary)
-            Text("Search for videos, channels & playlists")
+            Text("Search for videos, channels & playlists", bundle: L10n.bundle)
                 .font(.headline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -316,7 +317,7 @@ public struct SearchView: View {
             Image(systemName: AppSymbol.questionCircle)
                 .font(.system(size: 60))
                 .foregroundStyle(.secondary)
-            Text("No results for \"\(vm.query)\"")
+            Text("No results for \"\(vm.query)\"", bundle: L10n.bundle)
                 .font(.headline)
                 .foregroundStyle(.secondary)
         }
@@ -332,7 +333,7 @@ public struct SearchView: View {
 // MARK: - FilterChip
 
 private struct FilterChip: View {
-    let label: LocalizedStringKey
+    let label: String
     let onRemove: () -> Void
 
     var body: some View {
@@ -369,63 +370,63 @@ struct SearchFilterSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Sort by") {
-                    Picker("Sort", selection: $draft.sortOrder) {
+                Section(L10n.string("Sort by")) {
+                    Picker(L10n.string("Sort"), selection: $draft.sortOrder) {
                         ForEach(SearchFilter.SortOrder.allCases, id: \.self) { order in
-                            Text(LocalizedStringKey(order.label)).tag(order)
+                            Text(order.label).tag(order)
                         }
                     }
                     .pickerStyle(.inline)
                     .labelsHidden()
                 }
 
-                Section("Upload date") {
-                    Picker("Upload date", selection: $draft.uploadDate) {
+                Section(L10n.string("Upload date")) {
+                    Picker(L10n.string("Upload date"), selection: $draft.uploadDate) {
                         ForEach(SearchFilter.UploadDate.allCases, id: \.self) { date in
-                            Text(LocalizedStringKey(date.label)).tag(date)
+                            Text(date.label).tag(date)
                         }
                     }
                     .pickerStyle(.inline)
                     .labelsHidden()
                 }
 
-                Section(String(localized: "search.filter.type", bundle: .module)) {
-                    Picker(String(localized: "search.filter.type", bundle: .module), selection: $draft.type) {
+                Section(L10n.string("search.filter.type")) {
+                    Picker(L10n.string("search.filter.type"), selection: $draft.type) {
                         ForEach(SearchFilter.VideoType.allCases, id: \.self) { type in
-                            Text(LocalizedStringKey(type.label)).tag(type)
+                            Text(type.label).tag(type)
                         }
                     }
                     .pickerStyle(.inline)
                     .labelsHidden()
                 }
 
-                Section("Duration") {
-                    Picker("Duration", selection: $draft.duration) {
+                Section(L10n.string("Duration")) {
+                    Picker(L10n.string("Duration"), selection: $draft.duration) {
                         ForEach(SearchFilter.Duration.allCases, id: \.self) { dur in
-                            Text(LocalizedStringKey(dur.label)).tag(dur)
+                            Text(dur.label).tag(dur)
                         }
                     }
                     .pickerStyle(.inline)
                     .labelsHidden()
                 }
             }
-            .navigationTitle("Search filters")
+            .navigationTitle(L10n.string("Search filters"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button(L10n.string("Cancel")) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Apply") {
+                    Button(L10n.string("Apply")) {
                         onApply(draft)
                         dismiss()
                     }
                 }
                 #if os(iOS)
                 ToolbarItem(placement: .bottomBar) {
-                    Button("Reset") { draft = .default }
+                    Button(L10n.string("Reset")) { draft = .default }
                         .disabled(draft.isDefault)
                 }
                 #endif

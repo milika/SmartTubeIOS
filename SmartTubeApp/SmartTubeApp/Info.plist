@@ -12,6 +12,25 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>ar</string>
+		<string>de</string>
+		<string>en</string>
+		<string>es</string>
+		<string>fr</string>
+		<string>hi</string>
+		<string>hr</string>
+		<string>id</string>
+		<string>it</string>
+		<string>ja</string>
+		<string>ko</string>
+		<string>pt-BR</string>
+		<string>ru</string>
+		<string>sr</string>
+		<string>tr</string>
+		<string>zh-Hans</string>
+	</array>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
@@ -37,17 +56,6 @@
 	<false/>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.entertainment</string>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>SmartTube uses your local network to find AirPlay-compatible devices for casting videos to your TV.</string>
-	<!-- Downloading is compiled out (App Store guideline 5.2.3). When building with
-	     ENABLE_DOWNLOADS, restore these keys:
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>SmartTube needs access to save downloaded videos to your Photos library.</string>
-	<key>NSSupportsLiveActivities</key>
-	<true/>
-	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
-	<true/>
-	-->
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -55,6 +63,8 @@
 	</dict>
 	<key>NSHumanReadableCopyright</key>
 	<string>DeadPixels</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>SmartTube uses your local network to find AirPlay-compatible devices for casting videos to your TV.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

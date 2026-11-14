@@ -29,10 +29,10 @@ public struct SearchFilter: Sendable, Equatable {
 
         public var label: String {
             switch self {
-            case .relevance: return "Relevance"
-            case .rating: return "Rating"
-            case .uploadDate: return "Upload date"
-            case .viewCount: return "View count"
+            case .relevance: return L10n.string("Relevance")
+            case .rating: return L10n.string("Rating")
+            case .uploadDate: return L10n.string("Upload date")
+            case .viewCount: return L10n.string("View count")
             }
         }
     }
@@ -47,12 +47,12 @@ public struct SearchFilter: Sendable, Equatable {
 
         public var label: String {
             switch self {
-            case .anytime: return "Anytime"
-            case .lastHour: return "Last hour"
-            case .today: return "Today"
-            case .thisWeek: return "This week"
-            case .thisMonth: return "This month"
-            case .thisYear: return "This year"
+            case .anytime: return L10n.string("Anytime")
+            case .lastHour: return L10n.string("Last hour")
+            case .today: return L10n.string("Today")
+            case .thisWeek: return L10n.string("This week")
+            case .thisMonth: return L10n.string("This month")
+            case .thisYear: return L10n.string("This year")
             }
         }
     }
@@ -66,11 +66,11 @@ public struct SearchFilter: Sendable, Equatable {
 
         public var label: String {
             switch self {
-            case .any: return "Any type"
-            case .video: return "Video"
-            case .channel: return "Channel"
-            case .playlist: return "Playlist"
-            case .movie: return "Movie"
+            case .any: return L10n.string("Any type")
+            case .video: return L10n.string("Video")
+            case .channel: return L10n.string("Channel")
+            case .playlist: return L10n.string("Playlist")
+            case .movie: return L10n.string("Movie")
             }
         }
     }
@@ -83,10 +83,10 @@ public struct SearchFilter: Sendable, Equatable {
 
         public var label: String {
             switch self {
-            case .any: return "Any duration"
-            case .short: return "Under 4 minutes"
-            case .medium: return "4 – 20 minutes"
-            case .long: return "Over 20 minutes"
+            case .any: return L10n.string("Any duration")
+            case .short: return L10n.string("Under 4 minutes")
+            case .medium: return L10n.string("4 – 20 minutes")
+            case .long: return L10n.string("Over 20 minutes")
             }
         }
     }

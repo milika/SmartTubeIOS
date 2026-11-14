@@ -575,12 +575,12 @@ extension PlaybackViewModel: QualityEventHandler {
         case .revertToAuto:
             playerLog.notice("Quality-switch failed — reverting selectedFormat to Auto")
             qualityManager.selectedFormat = nil
-            toastMessage = "Quality unavailable — reverting to Auto"
+            toastMessage = L10n.string("Quality unavailable — reverting to Auto")
             await qualityManager.reloadHLSItem(seekTo: currentTime, quality: .auto)
         case .retryWithH264Cap:
             playerLog.notice("Auto HLS Cannot Decode — retrying with H.264 bitrate cap")
             qualityManager.hasAppliedH264Cap = true
-            toastMessage = "Adjusting quality for this device…"
+            toastMessage = L10n.string("Adjusting quality for this device…")
             await qualityManager.reloadHLSItemH264Capped(seekTo: currentTime)
         case .fail(let e):
             self.error = e
@@ -611,7 +611,7 @@ extension PlaybackViewModel: QualityEventHandler {
             activeId: active.id,
             activeTitle: active.title
         )
-        toastMessage = "⚠️ Wrong video loaded — report sent"
+        toastMessage = L10n.string("⚠️ Wrong video loaded — report sent")
     }
 }
 

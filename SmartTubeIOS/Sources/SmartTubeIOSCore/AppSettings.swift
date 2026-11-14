@@ -237,6 +237,15 @@ public struct AppSettings: Codable {
         public static func from(height: Int) -> VideoQuality? {
             allCases.first { $0.maxHeight == height }
         }
+
+        /// Localised display label for quality pickers. Resolution strings (e.g. `2160p`)
+        /// are format labels and stay as-is; only `.auto` needs translation.
+        public var displayName: String {
+            switch self {
+            case .auto: return L10n.string("Auto")
+            default: return rawValue
+            }
+        }
     }
 
     public enum ThemeName: String, Codable, CaseIterable {
@@ -249,6 +258,15 @@ public struct AppSettings: Codable {
             case .system: return nil
             case .dark: return .dark
             case .light: return .light
+            }
+        }
+
+        /// Localised display label for theme pickers (the raw value is persisted).
+        public var displayName: String {
+            switch self {
+            case .system: return L10n.string("System")
+            case .dark: return L10n.string("Dark")
+            case .light: return L10n.string("Light")
             }
         }
     }
@@ -431,10 +449,14 @@ extension AppSettings {
         accentColor = c.safeDecode(AccentColorChoice.self, forKey: .accentColor, default: d.accentColor)
         let columns = Self.availableGridColumnCounts
         gridColumnsPortrait = min(
-            max(c.safeDecode(Int.self, forKey: .gridColumnsPortrait, default: d.gridColumnsPortrait), columns.lowerBound),
+            max(
+                c.safeDecode(Int.self, forKey: .gridColumnsPortrait, default: d.gridColumnsPortrait), columns.lowerBound
+            ),
             columns.upperBound)
         gridColumnsLandscape = min(
-            max(c.safeDecode(Int.self, forKey: .gridColumnsLandscape, default: d.gridColumnsLandscape), columns.lowerBound),
+            max(
+                c.safeDecode(Int.self, forKey: .gridColumnsLandscape, default: d.gridColumnsLandscape),
+                columns.lowerBound),
             columns.upperBound)
         enabledSections = c.safeDecode(
             [BrowseSection.SectionType].self, forKey: .enabledSections, default: d.enabledSections)

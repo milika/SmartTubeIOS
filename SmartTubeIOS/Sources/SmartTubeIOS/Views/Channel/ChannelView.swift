@@ -11,6 +11,13 @@ import SwiftUI
 private enum ChannelFilter: String, CaseIterable {
     case all = "All"
     case shorts = "Shorts"
+
+    var displayTitle: String {
+        switch self {
+        case .all: return L10n.string("All")
+        case .shorts: return L10n.string("Shorts")
+        }
+    }
 }
 
 public struct ChannelView: View {
@@ -36,14 +43,14 @@ public struct ChannelView: View {
     public var body: some View {
         Group {
             if vm.isLoading && vm.channel == nil {
-                ProgressView("Loading channel…")
+                ProgressView(L10n.string("Loading channel…"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .accessibilityIdentifier("channel.view")
             } else {
                 content
             }
         }
-        .navigationTitle(vm.channel?.title ?? "Channel")
+        .navigationTitle(vm.channel?.title ?? L10n.string("Channel"))
         .onAppear { vm.load(channelId: channelId) }
         .task(id: vm.channel?.id) {
             guard let id = vm.channel?.id else { return }
@@ -71,9 +78,9 @@ public struct ChannelView: View {
             ShortsPlayerView(videos: target.videos, startIndex: target.startIndex, api: api)
         }
         #endif
-        .alert("Error", isPresented: .constant(vm.error != nil), presenting: vm.error) { _ in
-            Button("Retry") { vm.load(channelId: channelId) }
-            Button("Dismiss", role: .cancel) {}
+        .alert(L10n.string("Error"), isPresented: .constant(vm.error != nil), presenting: vm.error) { _ in
+            Button(L10n.string("Retry")) { vm.load(channelId: channelId) }
+            Button(L10n.string("Dismiss"), role: .cancel) {}
         } message: { err in
             Text(err.localizedDescription)
         }
@@ -86,7 +93,8 @@ public struct ChannelView: View {
                         toggleSponsorBlockExclusion(for: channel)
                     } label: {
                         Label(
-                            isExcluded ? "Remove SponsorBlock Exclusion" : "Exclude from SponsorBlock",
+                            L10n.string(
+                                isExcluded ? "Remove SponsorBlock Exclusion" : "Exclude from SponsorBlock"),
                             systemImage: isExcluded
                                 ? "person.crop.circle.badge.checkmark" : "person.crop.circle.badge.minus"
                         )
@@ -99,7 +107,8 @@ public struct ChannelView: View {
                         toggleSponsorBlockExclusion(for: channel)
                     } label: {
                         Label(
-                            isExcluded ? "Remove SponsorBlock Exclusion" : "Exclude from SponsorBlock",
+                            L10n.string(
+                                isExcluded ? "Remove SponsorBlock Exclusion" : "Exclude from SponsorBlock"),
                             systemImage: isExcluded
                                 ? "person.crop.circle.badge.checkmark" : "person.crop.circle.badge.minus"
                         )
@@ -120,9 +129,9 @@ public struct ChannelView: View {
                 }
 
                 // All / Shorts filter
-                Picker("Filter", selection: $filter) {
+                Picker(L10n.string("Filter"), selection: $filter) {
                     ForEach(ChannelFilter.allCases, id: \.self) { tab in
-                        Text(tab.rawValue).tag(tab)
+                        Text(tab.displayTitle).tag(tab)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -291,7 +300,7 @@ public struct ChannelView: View {
                     Task { await toggleFollow(channel) }
                 } label: {
                     Label(
-                        isFollowedLocally ? "Unfollow" : "Follow",
+                        L10n.string(isFollowedLocally ? "Unfollow" : "Follow"),
                         systemImage: isFollowedLocally ? "bell.slash" : "bell"
                     )
                 }

@@ -15,10 +15,10 @@ struct AddRSSFeedView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Feed Details") {
-                    TextField("Feed Title (e.g. Tech Reviews)", text: $feedTitle)
+                Section(L10n.string("Feed Details")) {
+                    TextField(L10n.string("Feed Title (e.g. Tech Reviews)"), text: $feedTitle)
                         .accessibilityIdentifier("rss.addFeed.titleField")
-                    TextField("RSS Feed URL", text: $feedURL)
+                    TextField(L10n.string("RSS Feed URL"), text: $feedURL)
                         .textContentType(.URL)
                         .autocorrectionDisabled()
                         #if os(iOS)
@@ -36,10 +36,10 @@ struct AddRSSFeedView: View {
                             HStack {
                                 ProgressView()
                                     .padding(.trailing, 4)
-                                Text("Adding…")
+                                Text("Adding…", bundle: L10n.bundle)
                             }
                         } else {
-                            Text("Add Feed")
+                            Text("Add Feed", bundle: L10n.bundle)
                                 .frame(maxWidth: .infinity, alignment: .center)
                         }
                     }
@@ -56,19 +56,20 @@ struct AddRSSFeedView: View {
 
                 Section {
                     Text(
-                        "YouTube RSS feed URLs look like:\n**youtube.com/feeds/videos.xml?channel_id=…**\n\nYou can also find a channel's RSS feed via their channel page URL."
+                        "YouTube RSS feed URLs look like:\n**youtube.com/feeds/videos.xml?channel_id=…**\n\nYou can also find a channel's RSS feed via their channel page URL.",
+                        bundle: L10n.bundle
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle("Add RSS Feed")
+            .navigationTitle(L10n.string("Add RSS Feed"))
             #if !os(macOS) && !os(tvOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button(L10n.string("Cancel")) { dismiss() }
                 }
             }
         }
@@ -81,7 +82,7 @@ struct AddRSSFeedView: View {
         guard let url = URL(string: trimmedURL),
             url.scheme == "https" || url.scheme == "http"
         else {
-            errorMessage = "Please enter a valid https URL."
+            errorMessage = L10n.string("Please enter a valid https URL.")
             return
         }
 

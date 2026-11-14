@@ -245,7 +245,7 @@ extension PlayerView {
                     }
                     .buttonStyle(.plain)
                     Spacer()
-                    Text("Description")
+                    Text("Description", bundle: L10n.bundle)
                         .fontWeight(.semibold)
                     Spacer()
                     Color.clear.frame(width: 44, height: 44)
@@ -265,7 +265,7 @@ extension PlayerView {
                             Text(descriptionAttributedString(description))
                                 .font(.body)
                         } else {
-                            Text("No description available.")
+                            Text("No description available.", bundle: L10n.bundle)
                                 .font(.body)
                                 .foregroundStyle(.secondary)
                         }
@@ -351,12 +351,12 @@ extension PlayerView {
             showSpeedPicker = true
         } label: {
             HStack {
-                Label("Playback Speed", systemImage: "speedometer")
+                Label(L10n.string("Playback Speed"), systemImage: "speedometer")
                 Spacer()
                 Text(
                     store.settings.playbackSpeed == 1.0
-                        ? "Normal"
-                        : "\(store.settings.playbackSpeed, specifier: "%.2g")×"
+                        ? L10n.string("Normal")
+                        : String(format: "%.2g×", store.settings.playbackSpeed)
                 )
                 .foregroundStyle(.secondary)
             }
@@ -384,11 +384,11 @@ extension PlayerView {
                 showQualityPicker = true
             } label: {
                 HStack {
-                    Label("Quality", systemImage: "film.stack")
+                    Label(L10n.string("Quality"), systemImage: "film.stack")
                     Spacer()
                     Text(
                         vm.selectedFormat?.qualityLabel
-                            ?? (vm.pendingQualityLabel.isEmpty ? "Auto" : vm.pendingQualityLabel)
+                            ?? (vm.pendingQualityLabel.isEmpty ? L10n.string("Auto") : vm.pendingQualityLabel)
                     )
                     .foregroundStyle(.secondary)
                 }
@@ -422,7 +422,7 @@ extension PlayerView {
                     showMoreMenu = false
                 } label: {
                     Label(
-                        vm.likeStatus == .like ? "Liked" : "Like",
+                        vm.likeStatus == .like ? L10n.string("Liked") : L10n.string("Like"),
                         systemImage: vm.likeStatus == .like
                             ? "\(AppSymbol.thumbsUp).fill" : AppSymbol.thumbsUp
                     )
@@ -444,7 +444,7 @@ extension PlayerView {
                     showMoreMenu = false
                 } label: {
                     Label(
-                        vm.likeStatus == .dislike ? "Disliked" : "Dislike",
+                        vm.likeStatus == .dislike ? L10n.string("Disliked") : L10n.string("Dislike"),
                         systemImage: vm.likeStatus == .dislike
                             ? "\(AppSymbol.thumbsDown).fill" : AppSymbol.thumbsDown
                     )
@@ -473,7 +473,7 @@ extension PlayerView {
                 presentShareSheet(url: url)
             }
         } label: {
-            Label("Share", systemImage: AppSymbol.share)
+            Label(L10n.string("Share"), systemImage: AppSymbol.share)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
                 .contentShape(Rectangle())
@@ -491,13 +491,13 @@ extension PlayerView {
             showSleepTimerPicker = true
         } label: {
             HStack {
-                Label("Sleep Timer", systemImage: "moon.zzz")
+                Label(L10n.string("Sleep Timer"), systemImage: "moon.zzz")
                 Spacer()
                 if let mins = vm.sleepTimerMinutes {
-                    Text("\(mins) min")
+                    Text("\(mins) min", bundle: L10n.bundle)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("Off")
+                    Text("Off", bundle: L10n.bundle)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -527,8 +527,8 @@ extension PlayerView {
             HStack {
                 Label(
                     store.settings.audioOnlyMode
-                        ? String(localized: "Audio-Only (On)", bundle: .module)
-                        : String(localized: "Audio-Only", bundle: .module),
+                        ? L10n.string("Audio-Only (On)")
+                        : L10n.string("Audio-Only"),
                     systemImage: AppSymbol.audioOnly
                 )
                 Spacer()
@@ -563,8 +563,8 @@ extension PlayerView {
                 HStack {
                     Label(
                         store.settings.queueShuffleEnabled
-                            ? String(localized: "Shuffle Queue (On)", bundle: .module)
-                            : String(localized: "Shuffle Queue", bundle: .module),
+                            ? L10n.string("Shuffle Queue (On)")
+                            : L10n.string("Shuffle Queue"),
                         systemImage: "shuffle"
                     )
                     Spacer()
@@ -596,9 +596,9 @@ extension PlayerView {
         } label: {
             Group {
                 if downloadService.state.isActive {
-                    Label("Downloading…", systemImage: AppSymbol.download)
+                    Label(L10n.string("Downloading…"), systemImage: AppSymbol.download)
                 } else {
-                    Label("Download to Gallery", systemImage: AppSymbol.download)
+                    Label(L10n.string("Download to Gallery"), systemImage: AppSymbol.download)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -620,12 +620,12 @@ extension PlayerView {
                 showCaptionPicker = true
             } label: {
                 HStack {
-                    Label("Captions", systemImage: "captions.bubble")
+                    Label(L10n.string("Captions"), systemImage: "captions.bubble")
                     Spacer()
                     Text(
                         vm.selectedCaption.map {
-                            $0.isAutoGenerated ? "\($0.name) (auto)" : $0.name
-                        } ?? "Off"
+                            $0.isAutoGenerated ? L10n.string("\($0.name) (auto)") : $0.name
+                        } ?? L10n.string("Off")
                     )
                     .foregroundStyle(.secondary)
                 }
@@ -651,12 +651,12 @@ extension PlayerView {
                 showAudioTrackPicker = true
             } label: {
                 HStack {
-                    Label("Audio Track", systemImage: "waveform")
+                    Label(L10n.string("Audio Track"), systemImage: "waveform")
                     Spacer()
                     Text(
                         vm.selectedAudioTrack.map {
-                            $0.isOriginal ? "\($0.name) (Original)" : $0.name
-                        } ?? "Auto"
+                            $0.isOriginal ? L10n.string("\($0.name) (Original)") : $0.name
+                        } ?? L10n.string("Auto")
                     )
                     .foregroundStyle(.secondary)
                 }
@@ -682,7 +682,7 @@ extension PlayerView {
                 showMoreMenu = false
                 showDescriptionSheet = true
             } label: {
-                Label("Description", systemImage: "text.alignleft")
+                Label(L10n.string("Description"), systemImage: "text.alignleft")
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
                     .contentShape(Rectangle())
@@ -705,7 +705,7 @@ extension PlayerView {
             showCommentsSheet = true
             loadComments()
         } label: {
-            Label("Comments", systemImage: "bubble.left.and.bubble.right")
+            Label(L10n.string("Comments"), systemImage: "bubble.left.and.bubble.right")
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
                 .contentShape(Rectangle())
@@ -727,7 +727,7 @@ extension PlayerView {
             showMoreMenu = false
         } label: {
             HStack {
-                Label("Stats for Nerds", systemImage: "chart.bar.xaxis")
+                Label(L10n.string("Stats for Nerds"), systemImage: "chart.bar.xaxis")
                 Spacer()
                 if vm.statsForNerdsVisible {
                     Image(systemName: "checkmark")
@@ -753,7 +753,7 @@ extension PlayerView {
         Button {
             showMoreMenu = false
         } label: {
-            Text("Cancel")
+            Text("Cancel", bundle: L10n.bundle)
                 .frame(maxWidth: .infinity)
                 .padding()
                 .fontWeight(.semibold)

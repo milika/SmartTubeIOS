@@ -796,7 +796,7 @@ extension PlaybackViewModel {
                     return
                 }
                 playerLog.error("❌ No stream URL after successful parse (should not happen)")
-                throw APIError.decodingError("No stream URL")
+                throw APIError.decodingError(L10n.string("No stream URL"))
             }
             // When the iOS client has no HLS URL (non-embeddable videos return only muxed
             // 360p), playing masterStreamURL directly would settle for 360p without ever

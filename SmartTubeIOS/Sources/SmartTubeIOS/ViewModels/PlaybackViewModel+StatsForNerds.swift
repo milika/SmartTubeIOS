@@ -55,7 +55,7 @@ extension PlaybackViewModel {
         if let br = selectedFormat?.bitrate, br > 0 {
             nominalBitrate = Self.formatBitrate(br)
         } else if playerInfo?.hlsURL != nil || playerInfo?.dashURL != nil {
-            nominalBitrate = "Adaptive"
+            nominalBitrate = L10n.string("Adaptive")
         } else if let br = playerInfo?.formats.first?.bitrate, br > 0 {
             nominalBitrate = Self.formatBitrate(br)
         } else {

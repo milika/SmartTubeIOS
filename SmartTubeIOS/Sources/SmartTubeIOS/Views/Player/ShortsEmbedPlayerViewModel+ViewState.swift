@@ -25,15 +25,15 @@ extension ShortsEmbedPlayerViewModel {
         guard let playerError else { return nil }
         switch playerError {
         case .notFound:
-            return "This video isn't available."
+            return L10n.string("This video isn't available.")
         case .embeddingDisabled:
-            return "This video can't be played here."
+            return L10n.string("This video can't be played here.")
         case .iframeError:
-            return "This video can't be played right now."
+            return L10n.string("This video can't be played right now.")
         case .webViewLoadFailed:
-            return "Couldn't load this video."
+            return L10n.string("Couldn't load this video.")
         case .signInRequired:
-            return "YouTube asked to sign in before playing this video."
+            return L10n.string("YouTube asked to sign in before playing this video.")
         }
     }
 

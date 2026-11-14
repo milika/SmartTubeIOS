@@ -1,6 +1,6 @@
+import SmartTubeIOSCore
 import UIKit
 import UniformTypeIdentifiers
-import SmartTubeIOSCore
 import os
 
 private let shareLog = Logger(subsystem: "com.void.smarttube.app.shareextension", category: "Share")
@@ -18,11 +18,11 @@ private let shareLog = Logger(subsystem: "com.void.smarttube.app.shareextension"
 
 final class ShareViewController: UIViewController {
 
-    private static let appGroup             = "group.com.void.smarttube"
-    private static let pendingKey           = "pendingVideoID"
+    private static let appGroup = "group.com.void.smarttube"
+    private static let pendingKey = "pendingVideoID"
     private static let pendingWatchLaterKey = "pendingWatchLaterVideoID"
-    private static let pendingQueueKey      = "pendingQueueVideoID"
-    private static let pendingRSSFeedKey    = "pendingRSSFeedURL"
+    private static let pendingQueueKey = "pendingQueueVideoID"
+    private static let pendingRSSFeedKey = "pendingRSSFeedURL"
 
     // Set after successful URL extraction; nil means extraction failed or pending.
     private var deeplink: URL?
@@ -38,7 +38,7 @@ final class ShareViewController: UIViewController {
 
     private let openButton: UIButton = {
         var config = UIButton.Configuration.filled()
-        config.title = "Open in SmartTube"
+        config.title = L10n.string("Open in SmartTube")
         config.cornerStyle = .large
         config.baseBackgroundColor = UIColor(red: 0.40, green: 0.20, blue: 0.80, alpha: 1)
         let b = UIButton(configuration: config)
@@ -48,7 +48,7 @@ final class ShareViewController: UIViewController {
 
     private let watchLaterButton: UIButton = {
         var config = UIButton.Configuration.bordered()
-        config.title = "Add to Watch Later"
+        config.title = L10n.string("Add to Watch Later")
         config.cornerStyle = .large
         config.baseForegroundColor = UIColor(red: 0.40, green: 0.20, blue: 0.80, alpha: 1)
         config.image = UIImage(
@@ -63,7 +63,7 @@ final class ShareViewController: UIViewController {
 
     private let addToQueueButton: UIButton = {
         var config = UIButton.Configuration.bordered()
-        config.title = "Add to Queue"
+        config.title = L10n.string("Add to Queue")
         config.cornerStyle = .large
         config.baseForegroundColor = UIColor(red: 0.40, green: 0.20, blue: 0.80, alpha: 1)
         config.image = UIImage(
@@ -78,7 +78,7 @@ final class ShareViewController: UIViewController {
 
     private let addToRSSButton: UIButton = {
         var config = UIButton.Configuration.bordered()
-        config.title = "Add to RSS Feeds"
+        config.title = L10n.string("Add to RSS Feeds")
         config.cornerStyle = .large
         config.baseForegroundColor = UIColor(red: 0.20, green: 0.50, blue: 0.20, alpha: 1)
         config.image = UIImage(
@@ -103,7 +103,7 @@ final class ShareViewController: UIViewController {
 
     private let statusLabel: UILabel = {
         let l = UILabel()
-        l.text = "Looking for video\u{2026}"
+        l.text = L10n.string("Looking for video\u{2026}")
         l.textColor = .secondaryLabel
         l.font = .systemFont(ofSize: 15)
         l.textAlignment = .center
@@ -129,10 +129,10 @@ final class ShareViewController: UIViewController {
         cfg.image = xmark
         cfg.baseForegroundColor = UIColor(white: 0.40, alpha: 1)
         cfg.background.backgroundColor = UIColor(white: 0.92, alpha: 1)
-        cfg.background.cornerRadius = 15          // half of the 30 pt button size → perfect circle
+        cfg.background.cornerRadius = 15  // half of the 30 pt button size → perfect circle
         cfg.contentInsets = .zero
         let b = UIButton(configuration: cfg)
-        b.accessibilityLabel = "Close"
+        b.accessibilityLabel = L10n.string("Close")
         b.translatesAutoresizingMaskIntoConstraints = false
         return b
     }()
@@ -275,7 +275,7 @@ final class ShareViewController: UIViewController {
             logEntry("✅ Queued for Watch Later")
             watchLaterButton.isEnabled = false
             var cfg = watchLaterButton.configuration
-            cfg?.title = "Added to Watch Later"
+            cfg?.title = L10n.string("Added to Watch Later")
             watchLaterButton.configuration = cfg
         } else {
             logEntry("❌ Could not write to shared storage")
@@ -295,7 +295,7 @@ final class ShareViewController: UIViewController {
             logEntry("✅ Added to Queue")
             addToQueueButton.isEnabled = false
             var cfg = addToQueueButton.configuration
-            cfg?.title = "Added to Queue"
+            cfg?.title = L10n.string("Added to Queue")
             addToQueueButton.configuration = cfg
         } else {
             logEntry("❌ Could not write to shared storage")
@@ -366,7 +366,8 @@ final class ShareViewController: UIViewController {
     private func extractAndPrepare() async {
         guard let items = extensionContext?.inputItems as? [NSExtensionItem] else {
             shareLog.error("No inputItems — cancelling")
-            cancel(); return
+            cancel()
+            return
         }
 
         shareLog.notice("inputItems count: \(items.count, privacy: .public)")
@@ -380,7 +381,7 @@ final class ShareViewController: UIViewController {
             shareLog.error("No YouTube URL found")
             spinner.stopAnimating()
             spinner.isHidden = true
-            statusLabel.text = "Cannot find a YouTube video URL."
+            statusLabel.text = L10n.string("Cannot find a YouTube video URL.")
             statusLabel.textColor = .secondaryLabel
             try? await Task.sleep(for: .seconds(2))
             cancel()
@@ -401,7 +402,8 @@ final class ShareViewController: UIViewController {
 
         guard let link = URL(string: "smarttube://video/\(videoID)") else {
             shareLog.error("failed to build deeplink — cancelling")
-            cancel(); return
+            cancel()
+            return
         }
 
         deeplink = link
@@ -423,11 +425,12 @@ final class ShareViewController: UIViewController {
                 if RSSFeedInfo.isYouTubeRSSFeed(url) { return url }
                 // Also accept channel page URLs: https://www.youtube.com/channel/CHANNEL_ID
                 if url.host == "www.youtube.com",
-                   url.pathComponents.count >= 3,
-                   url.pathComponents[1] == "channel",
-                   let channelId = url.pathComponents.dropFirst(2).first,
-                   !channelId.isEmpty,
-                   let rssURL = RSSFeedInfo.feedURL(for: channelId) {
+                    url.pathComponents.count >= 3,
+                    url.pathComponents[1] == "channel",
+                    let channelId = url.pathComponents.dropFirst(2).first,
+                    !channelId.isEmpty,
+                    let rssURL = RSSFeedInfo.feedURL(for: channelId)
+                {
                     return rssURL
                 }
             }
@@ -465,7 +468,7 @@ final class ShareViewController: UIViewController {
             logEntry("✅ Queued for RSS Feeds")
             addToRSSButton.isEnabled = false
             var cfg = addToRSSButton.configuration
-            cfg?.title = "Added to RSS Feeds"
+            cfg?.title = L10n.string("Added to RSS Feeds")
             addToRSSButton.configuration = cfg
         } else {
             logEntry("❌ Could not write to shared storage")
@@ -483,7 +486,9 @@ final class ShareViewController: UIViewController {
             let attachments = item.attachments ?? []
             shareLog.notice("item[\(i, privacy: .public)] attachments: \(attachments.count, privacy: .public)")
             for (j, provider) in attachments.enumerated() {
-                shareLog.notice("  provider[\(j, privacy: .public)] types: \(provider.registeredTypeIdentifiers.joined(separator: ", "), privacy: .public)")
+                shareLog.notice(
+                    "  provider[\(j, privacy: .public)] types: \(provider.registeredTypeIdentifiers.joined(separator: ", "), privacy: .public)"
+                )
                 guard let url = await loadURL(from: provider, index: j) else { continue }
                 logEntry("Checking: \(url.host ?? url.absoluteString)\u{2026}")
                 let progress: @Sendable (String) -> Void = { [weak self] message in
@@ -502,7 +507,8 @@ final class ShareViewController: UIViewController {
     private func loadURL(from provider: NSItemProvider, index j: Int) async -> URL? {
         if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
             let loaded = try? await provider.loadItem(forTypeIdentifier: UTType.url.identifier)
-            shareLog.notice("  provider[\(j, privacy: .public)] url loaded: \(String(describing: loaded), privacy: .public)")
+            shareLog.notice(
+                "  provider[\(j, privacy: .public)] url loaded: \(String(describing: loaded), privacy: .public)")
             if let u = loaded as? URL { return u }
             if let s = loaded as? String { return URL(string: s) }
         }
@@ -526,4 +532,3 @@ final class ShareViewController: UIViewController {
         )
     }
 }
-

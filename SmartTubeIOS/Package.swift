@@ -31,6 +31,10 @@ let package = Package(
             name: "SmartTubeIOSCore",
             dependencies: [],
             path: "Sources/SmartTubeIOSCore",
+            resources: [
+                // Single catalog for every target: app, extensions, widget and both libraries.
+                .process("Localizable.xcstrings")
+            ],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         // MARK: UI – iOS/iPadOS/macOS (SwiftUI)
@@ -42,7 +46,6 @@ let package = Package(
             ],
             path: "Sources/SmartTubeIOS",
             resources: [
-                .process("Localizable.xcstrings"),
                 .copy("Resources/yt.solver.lib.min.js"),
                 .copy("Resources/yt.solver.core.min.js"),
             ],

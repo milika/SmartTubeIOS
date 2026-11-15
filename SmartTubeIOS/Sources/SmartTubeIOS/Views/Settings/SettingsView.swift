@@ -277,6 +277,15 @@ public struct SettingsView: View {
     private var uiSection: some View {
         @Bindable var store = store
         return Section(L10n.string("Interface")) {
+            Picker(L10n.string("Language"), selection: $store.settings.language) {
+                Text(AppLanguage.system.displayName).tag(AppLanguage.system)
+                Divider()
+                ForEach(AppLanguage.selectable, id: \.self) { language in
+                    // Language names stay untranslated — each is shown in its own language.
+                    Text(language.displayName).tag(language)
+                }
+            }
+            .accessibilityIdentifier("settings.languageRow")
             Picker(L10n.string("Theme"), selection: $store.settings.themeName) {
                 ForEach(AppSettings.ThemeName.allCases, id: \.self) { t in
                     Text(t.displayName).tag(t)

@@ -22,10 +22,17 @@ Two things are required for a string to actually appear translated:
 
    ```swift
    public enum L10n {
-       public static let bundle: Bundle        // the catalog's bundle
+       public static var language: AppLanguage // Settings › Interface override (.system = device)
+       public static var bundle: Bundle        // the catalog's bundle for that language
+       public static var locale: Locale        // matching locale for SwiftUI formatting
        public static func string(_ key: String.LocalizationValue) -> String
    }
    ```
+
+   The language is a user setting (`AppSettings.language`). `SettingsStore` pushes it into
+   `L10n.language` — at launch and whenever it changes — and `L10n` then resolves strings from
+   that language's `.lproj` sub-bundle. `.system` follows `Locale.preferredLanguages`, falling
+   back to `en` when the device language has no catalog localization.
 
    ```swift
    Text("Watch Later", bundle: L10n.bundle)          // LocalizedStringKey sites
@@ -73,7 +80,8 @@ tokens, and paces requests with a shared rate limiter (bursts trigger HTTP 429).
 If Google throttles an IP, wait a few minutes and rerun — it resumes where it left off.
 
 Add a language to `LANG_MAP`, to the catalog, to `CFBundleLocalizations` in every
-Info.plist and to `knownRegions` in `project.pbxproj`.
+Info.plist, to `knownRegions` in `project.pbxproj` and as a case of `AppLanguage` in
+`SmartTubeIOSCore/Localization.swift` (that enum is what the Settings picker offers).
 
 ## Chinese (zh-Hans) glossary
 

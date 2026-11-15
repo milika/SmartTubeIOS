@@ -77,6 +77,9 @@ public struct AppSettings: Codable {
     /// When `false`, the token is cleared and YouTube returns its default shared feed.
     public var perDeviceRecommendationsEnabled: Bool
     public var themeName: ThemeName
+    /// Interface language; `.system` follows the device and falls back to English for
+    /// languages the string catalog doesn't cover.
+    public var language: AppLanguage
     public var accentColor: AccentColorChoice
     /// Video grid column count when the window is taller than wide (ignored on tvOS).
     public var gridColumnsPortrait: Int
@@ -302,6 +305,7 @@ public struct AppSettings: Codable {
         hideVideoPremieres = false
         perDeviceRecommendationsEnabled = true
         themeName = .system
+        language = .system
         accentColor = .system
         gridColumnsPortrait = 2
         gridColumnsLandscape = 3
@@ -391,6 +395,7 @@ extension AppSettings {
         case hideVideoPremieres
         case perDeviceRecommendationsEnabled
         case themeName
+        case language
         case accentColor
         case gridColumnsPortrait
         case gridColumnsLandscape
@@ -446,6 +451,7 @@ extension AppSettings {
         perDeviceRecommendationsEnabled = c.safeDecode(
             Bool.self, forKey: .perDeviceRecommendationsEnabled, default: d.perDeviceRecommendationsEnabled)
         themeName = c.safeDecode(ThemeName.self, forKey: .themeName, default: d.themeName)
+        language = c.safeDecode(AppLanguage.self, forKey: .language, default: d.language)
         accentColor = c.safeDecode(AccentColorChoice.self, forKey: .accentColor, default: d.accentColor)
         let columns = Self.availableGridColumnCounts
         gridColumnsPortrait = min(

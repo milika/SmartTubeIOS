@@ -102,16 +102,20 @@ public struct BrowseSection: Identifiable, Hashable, Sendable {
         self.type = type
     }
 
-    public static let defaultSections: [BrowseSection] = [
-        BrowseSection(type: .home),
-        BrowseSection(type: .subscriptions),
-        BrowseSection(type: .history),
-        BrowseSection(type: .playlists),
-        BrowseSection(type: .channels),
-    ]
+    /// Computed rather than stored: the titles are localized, so a constant would freeze
+    /// them in whatever language happened to be active on first access.
+    public static var defaultSections: [BrowseSection] {
+        [
+            BrowseSection(type: .home),
+            BrowseSection(type: .subscriptions),
+            BrowseSection(type: .history),
+            BrowseSection(type: .playlists),
+            BrowseSection(type: .channels),
+        ]
+    }
 
     /// All known sections including extended categories (music, gaming, etc.).
-    public static let allSections: [BrowseSection] =
+    public static var allSections: [BrowseSection] {
         defaultSections + [
             BrowseSection(type: .recommended),
             BrowseSection(type: .shorts),
@@ -122,6 +126,7 @@ public struct BrowseSection: Identifiable, Hashable, Sendable {
             BrowseSection(type: .sports),
             BrowseSection(type: .watchLater),
         ]
+    }
 }
 
 // MARK: - SearchResult

@@ -42,6 +42,10 @@ public struct RootView: View {
             MainTabView()
             #endif
         }
+        // A language change must re-resolve every label, including the ones held by views
+        // that don't observe the settings store, so rebuild the hierarchy on a change.
+        .id(store.settings.language)
+        .environment(\.locale, L10n.locale)
         .environment(\.isLandscapeLayout, isLandscapeLayout)
         .onGeometryChange(for: Bool.self) {
             $0.size.width > $0.size.height

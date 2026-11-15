@@ -1,54 +1,67 @@
 #!/usr/bin/env python3
-"""
-Automate localization for Localizable.xcstrings.
+"""Automate localization for Localizable.xcstrings.
 
-- Adds Serbian (sr) and Croatian (hr) translations for all keys.
-- Fills the 19 untranslated keys in every other language.
-- Protects format specifiers (%@, %lld, %.2g, etc.) during translation.
+Fills missing translations for every non-source language using Google's public
+translate endpoint (no API key, no third-party package). Chinese (zh-Hans) is
+reviewed by hand and should NOT be machine translated; use --fix-lang only when
+you really mean to overwrite it.
 
 Usage:
-    /tmp/loctranslate_venv/bin/python3 translate_strings.py [--dry-run]
+    python3 translate_strings.py [--dry-run] [--fix-lang <code>] [--langs a,b]
+
+Additive by default: existing language/key pairs are left untouched. Format
+specifiers (%@, %lld, %.2g, ...) are protected during translation. Requests are
+paced (~4/s) because Google rejects bursts.
 """
 
 import json
 import re
 import sys
+import threading
 import time
+import urllib.parse
+import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-XCSTRINGS_PATH = Path(__file__).parent / "Localizable.xcstrings"
+XCSTRINGS_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "SmartTubeIOSCore"
+    / "Localizable.xcstrings"
+)
 
-# xcstrings lang code → GoogleTranslator lang code
+# xcstrings lang code → Google translate code
 LANG_MAP = {
-    "ar":      "ar",
-    "de":      "de",
-    "es":      "es",
-    "fr":      "fr",
-    "hi":      "hi",
-    "id":      "id",
-    "it":      "it",
-    "ja":      "ja",
-    "ko":      "ko",
-    "pt-BR":   "pt",
-    "ru":      "ru",
-    "tr":      "tr",
+    "ar": "ar",
+    "de": "de",
+    "es": "es",
+    "fr": "fr",
+    "hi": "hi",
+    "id": "id",
+    "it": "it",
+    "ja": "ja",
+    "ko": "ko",
+    "pt-BR": "pt",
+    "ru": "ru",
+    "tr": "tr",
     "zh-Hans": "zh-CN",
-    "sr":      "sr",
-    "hr":      "hr",
+    "sr": "sr",
+    "hr": "hr",
 }
 
 # These keys carry no meaningful text to translate
 SKIP_KEYS = {"", "%lld", "%lld s"}
 
-# Regex to find printf-style format specifiers and keep them safe
-FORMAT_SPEC_RE = re.compile(r'(%(?:\.\d+)?[diouxXeEfgGs@%]|%lld|%\d+\$[diouxXeEfgGs@]|%0\d+[d])')
+FORMAT_SPEC_RE = re.compile(r"%(?:\d+\$)?(?:\.\d+)?(?:lld|[diouxXeEfgGs@%])")
 
-# Use bracket tokens that are symbols — won't be transliterated by any script
+# Symbol-bracket tokens survive every script (they are not letters).
 _OPEN = "\u27ea"   # ⟪
 _CLOSE = "\u27eb"  # ⟫
 
+_ENDPOINT = "https://translate.googleapis.com/translate_a/single"
+
+
 def protect_format_specs(text: str) -> tuple[str, list[str]]:
-    """Replace format specifiers with unique symbol-bracket placeholders."""
     placeholders: list[str] = []
 
     def replacer(m: re.Match) -> str:
@@ -56,8 +69,7 @@ def protect_format_specs(text: str) -> tuple[str, list[str]]:
         placeholders.append(m.group(0))
         return f"{_OPEN}{idx}{_CLOSE}"
 
-    protected = FORMAT_SPEC_RE.sub(replacer, text)
-    return protected, placeholders
+    return FORMAT_SPEC_RE.sub(replacer, text), placeholders
 
 
 def restore_format_specs(text: str, placeholders: list[str]) -> str:
@@ -66,96 +78,133 @@ def restore_format_specs(text: str, placeholders: list[str]) -> str:
     return text
 
 
-def translate(text: str, target_lang: str, translator_cls) -> str:
-    """Translate text to target_lang, preserving format specifiers."""
+class RateLimiter:
+    """One request per `interval` seconds across all threads."""
+
+    def __init__(self, interval: float = 0.22) -> None:
+        self._interval = interval
+        self._lock = threading.Lock()
+        self._next = 0.0
+
+    def wait(self) -> None:
+        with self._lock:
+            now = time.monotonic()
+            if now < self._next:
+                time.sleep(self._next - now)
+                now = time.monotonic()
+            self._next = now + self._interval
+
+
+_LIMITER = RateLimiter()
+
+
+def fetch_translation(text: str, target_lang: str) -> str:
+    """Translate one string, retrying with backoff. Returns "" on failure."""
+    query = urllib.parse.urlencode(
+        {"client": "gtx", "sl": "en", "tl": target_lang, "dt": "t", "q": text}
+    )
+    url = f"{_ENDPOINT}?{query}"
+    delay = 1.0
+    for attempt in range(5):
+        _LIMITER.wait()
+        try:
+            with urllib.request.urlopen(url, timeout=20) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            segments = payload[0]
+            result = "".join(seg[0] for seg in segments if seg and seg[0])
+            if result.strip():
+                return result
+        except Exception:
+            pass
+        time.sleep(delay)
+        delay *= 2
+    return ""
+
+
+def translate(text: str, target_lang: str) -> str:
     if not text.strip():
         return text
-
     protected, placeholders = protect_format_specs(text)
-
-    # If only format specifiers remain, no need to translate
-    cleaned = FORMAT_SPEC_RE.sub("", protected).strip()
-    if not cleaned:
+    if not FORMAT_SPEC_RE.sub("", protected).strip():
         return text
-
-    try:
-        t = translator_cls(source="en", target=target_lang)
-        result = t.translate(protected)
-        return restore_format_specs(result, placeholders)
-    except Exception as exc:
-        print(f"    WARNING: translation failed ({exc}), keeping original", file=sys.stderr)
+    result = fetch_translation(protected, target_lang)
+    if not result:
+        print(f"    WARNING: translation failed, keeping original: {text[:40]!r}", file=sys.stderr)
         return text
+    return restore_format_specs(result, placeholders)
 
 
-def main():
+def main() -> int:
     dry_run = "--dry-run" in sys.argv
-    # --fix-lang sr  → force-retranslate every key for that language
-    fix_lang: str | None = None
+    fix_lang = None
     if "--fix-lang" in sys.argv:
         idx = sys.argv.index("--fix-lang")
         fix_lang = sys.argv[idx + 1] if idx + 1 < len(sys.argv) else None
+    only_langs = None
+    if "--langs" in sys.argv:
+        idx = sys.argv.index("--langs")
+        only_langs = set(sys.argv[idx + 1].split(",")) if idx + 1 < len(sys.argv) else None
 
-    try:
-        from deep_translator import GoogleTranslator
-    except ImportError:
-        print("ERROR: deep-translator not installed. Run:")
-        print("  /tmp/loctranslate_venv/bin/pip install deep-translator")
-        sys.exit(1)
-
-    with open(XCSTRINGS_PATH, encoding="utf-8") as f:
-        data = json.load(f)
-
+    data = json.loads(XCSTRINGS_PATH.read_text(encoding="utf-8"))
     strings: dict = data["strings"]
-    all_langs = list(LANG_MAP.keys())
 
-    total_translated = 0
-    total_skipped = 0
-
+    jobs: list[tuple[str, str, str]] = []
     for key, entry in strings.items():
         if key in SKIP_KEYS:
-            total_skipped += 1
             continue
-
         locs: dict = entry.setdefault("localizations", {})
+        for xc_locale, google_lang in LANG_MAP.items():
+            if only_langs and xc_locale not in only_langs:
+                continue
+            force = fix_lang == xc_locale
+            if xc_locale in locs and not force:
+                continue
+            jobs.append((key, xc_locale, google_lang))
 
-        for xcstrings_lang, google_lang in LANG_MAP.items():
-            force = fix_lang == xcstrings_lang
-            if xcstrings_lang in locs and not force:
-                continue  # already translated
-
-            # Determine source text: the key itself is the English string
-            source_text = key
-
-            print(f"  [{xcstrings_lang}] {repr(source_text)[:60]} …")
-
-            if dry_run:
-                translated_value = f"[{xcstrings_lang}] {source_text}"
-            else:
-                translated_value = translate(source_text, google_lang, GoogleTranslator)
-                time.sleep(0.15)  # gentle rate limiting
-
-            locs[xcstrings_lang] = {
-                "stringUnit": {
-                    "state": "translated",
-                    "value": translated_value,
-                }
-            }
-            total_translated += 1
-
-    print(f"\nDone: {total_translated} translations added, {total_skipped} keys skipped.")
-
+    print(f"{len(jobs)} translations to fill")
     if dry_run:
+        for key, locale, _ in jobs[:20]:
+            print(f"  [{locale}] {key[:60]!r}")
         print("(dry-run — file not written)")
-        return
+        return 0
 
-    # Write back with the same formatting as Xcode produces
-    output = json.dumps(data, ensure_ascii=False, indent=2, sort_keys=False)
-    with open(XCSTRINGS_PATH, "w", encoding="utf-8") as f:
-        f.write(output)
-        f.write("\n")
+    results: dict[str, dict[str, str]] = {}
+    lock = threading.Lock()
+    done = 0
 
+    def worker(job: tuple[str, str, str]) -> None:
+        nonlocal done
+        key, locale, google_lang = job
+        value = translate(key, google_lang)
+        with lock:
+            results.setdefault(locale, {})[key] = value
+            done += 1
+            if done % 100 == 0:
+                print(f"  {done}/{len(jobs)} …", flush=True)
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        list(pool.map(worker, jobs))
+
+    added = 0
+    identical = 0
+    for locale, mapping in results.items():
+        for key, value in mapping.items():
+            locs = strings[key].setdefault("localizations", {})
+            if key in locs.get(locale, {}).get("stringUnit", {}).get("value", "") and fix_lang != locale:
+                continue
+            locs[locale] = {"stringUnit": {"state": "translated", "value": value}}
+            added += 1
+            if value == key:
+                identical += 1
+
+    XCSTRINGS_PATH.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2, separators=(",", " : ")) + "\n",
+        encoding="utf-8",
+    )
+    print(f"Done: {added} translations written, {identical} identical to English, {len(jobs) - done} skipped.")
     print(f"Written: {XCSTRINGS_PATH}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

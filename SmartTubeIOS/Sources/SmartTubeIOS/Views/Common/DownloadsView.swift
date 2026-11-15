@@ -33,7 +33,7 @@ struct DownloadsView: View {
     private var iOSBody: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("Downloads")
+                Text("Downloads", bundle: L10n.bundle)
                     .font(.headline)
                 Spacer()
             }
@@ -63,23 +63,25 @@ struct DownloadsView: View {
             }
         }
         .alert(
-            "Delete Download",
+            L10n.string("Delete Download"),
             isPresented: Binding(
                 get: { deleteConfirmationVideoId != nil },
                 set: { if !$0 { deleteConfirmationVideoId = nil } }
             )
         ) {
-            Button("Delete", role: .destructive) {
+            Button(L10n.string("Delete"), role: .destructive) {
                 if let vid = deleteConfirmationVideoId {
                     downloadStore.remove(videoId: vid)
                 }
                 deleteConfirmationVideoId = nil
             }
-            Button("Cancel", role: .cancel) {
+            Button(L10n.string("Cancel"), role: .cancel) {
                 deleteConfirmationVideoId = nil
             }
         } message: {
-            Text("This video will be removed from your device. You can re-download it from the player.")
+            Text(
+                "This video will be removed from your device. You can re-download it from the player.",
+                bundle: L10n.bundle)
         }
     }
     #else
@@ -93,10 +95,10 @@ struct DownloadsView: View {
             Image(systemName: "arrow.down.to.line.circle")
                 .font(.system(size: 52))
                 .foregroundStyle(.secondary)
-            Text("No Downloaded Videos")
+            Text("No Downloaded Videos", bundle: L10n.bundle)
                 .font(.title3)
                 .foregroundStyle(.secondary)
-            Text("Download a video from the player to watch it offline.")
+            Text("Download a video from the player to watch it offline.", bundle: L10n.bundle)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

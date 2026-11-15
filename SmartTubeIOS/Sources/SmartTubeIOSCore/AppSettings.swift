@@ -77,6 +77,9 @@ public struct AppSettings: Codable {
     /// When `false`, the token is cleared and YouTube returns its default shared feed.
     public var perDeviceRecommendationsEnabled: Bool
     public var themeName: ThemeName
+    /// Interface language; `.system` follows the device and falls back to English for
+    /// languages the string catalog doesn't cover.
+    public var language: AppLanguage
     public var accentColor: AccentColorChoice
     /// Video grid column count when the window is taller than wide (ignored on tvOS).
     public var gridColumnsPortrait: Int
@@ -237,6 +240,15 @@ public struct AppSettings: Codable {
         public static func from(height: Int) -> VideoQuality? {
             allCases.first { $0.maxHeight == height }
         }
+
+        /// Localised display label for quality pickers. Resolution strings (e.g. `2160p`)
+        /// are format labels and stay as-is; only `.auto` needs translation.
+        public var displayName: String {
+            switch self {
+            case .auto: return L10n.string("Auto")
+            default: return rawValue
+            }
+        }
     }
 
     public enum ThemeName: String, Codable, CaseIterable {
@@ -249,6 +261,15 @@ public struct AppSettings: Codable {
             case .system: return nil
             case .dark: return .dark
             case .light: return .light
+            }
+        }
+
+        /// Localised display label for theme pickers (the raw value is persisted).
+        public var displayName: String {
+            switch self {
+            case .system: return L10n.string("System")
+            case .dark: return L10n.string("Dark")
+            case .light: return L10n.string("Light")
             }
         }
     }
@@ -284,6 +305,7 @@ public struct AppSettings: Codable {
         hideVideoPremieres = false
         perDeviceRecommendationsEnabled = true
         themeName = .system
+        language = .system
         accentColor = .system
         gridColumnsPortrait = 2
         gridColumnsLandscape = 3
@@ -373,6 +395,7 @@ extension AppSettings {
         case hideVideoPremieres
         case perDeviceRecommendationsEnabled
         case themeName
+        case language
         case accentColor
         case gridColumnsPortrait
         case gridColumnsLandscape
@@ -428,13 +451,18 @@ extension AppSettings {
         perDeviceRecommendationsEnabled = c.safeDecode(
             Bool.self, forKey: .perDeviceRecommendationsEnabled, default: d.perDeviceRecommendationsEnabled)
         themeName = c.safeDecode(ThemeName.self, forKey: .themeName, default: d.themeName)
+        language = c.safeDecode(AppLanguage.self, forKey: .language, default: d.language)
         accentColor = c.safeDecode(AccentColorChoice.self, forKey: .accentColor, default: d.accentColor)
         let columns = Self.availableGridColumnCounts
         gridColumnsPortrait = min(
-            max(c.safeDecode(Int.self, forKey: .gridColumnsPortrait, default: d.gridColumnsPortrait), columns.lowerBound),
+            max(
+                c.safeDecode(Int.self, forKey: .gridColumnsPortrait, default: d.gridColumnsPortrait), columns.lowerBound
+            ),
             columns.upperBound)
         gridColumnsLandscape = min(
-            max(c.safeDecode(Int.self, forKey: .gridColumnsLandscape, default: d.gridColumnsLandscape), columns.lowerBound),
+            max(
+                c.safeDecode(Int.self, forKey: .gridColumnsLandscape, default: d.gridColumnsLandscape),
+                columns.lowerBound),
             columns.upperBound)
         enabledSections = c.safeDecode(
             [BrowseSection.SectionType].self, forKey: .enabledSections, default: d.enabledSections)

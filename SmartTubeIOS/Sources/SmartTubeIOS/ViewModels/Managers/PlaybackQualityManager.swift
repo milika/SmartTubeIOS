@@ -438,7 +438,7 @@ final class PlaybackQualityManager {
             playerLog.notice("[quality] rqh=1 detected in DASH URL — skipping doomed rebuild, reverting to Auto")
             selectedFormat = nil
             pendingQualityLabel = ""
-            delegate?.toastMessage = "Quality unavailable (CDN restriction)"
+            delegate?.toastMessage = L10n.string("Quality unavailable (CDN restriction)")
             return
         }
 
@@ -694,7 +694,9 @@ final class PlaybackQualityManager {
                 case .failed:
                     let err = item.error.map { "\($0)" } ?? "nil"
                     playerLog.error("❌ [wkHLS quality] AVPlayerItem failed: \(err)")
-                    await MainActor.run { self.delegate?.toastMessage = "Quality unavailable" }
+                    await MainActor.run {
+                        self.delegate?.toastMessage = L10n.string("Quality unavailable")
+                    }
                 case .unknown: break
                 @unknown default: break
                 }

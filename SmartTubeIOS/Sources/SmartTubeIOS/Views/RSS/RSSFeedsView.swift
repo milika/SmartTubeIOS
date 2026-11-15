@@ -24,7 +24,7 @@ struct RSSFeedsView: View {
             #if os(iOS)
             // Inline header — shown because LibraryView hides the navigation bar globally.
             HStack {
-                Text("RSS Feeds")
+                Text("RSS Feeds", bundle: L10n.bundle)
                     .font(.headline)
                 Spacer()
                 Button {
@@ -32,14 +32,14 @@ struct RSSFeedsView: View {
                 } label: {
                     Image(systemName: "list.bullet.indent")
                 }
-                .accessibilityLabel("Manage RSS Feeds")
+                .accessibilityLabel(L10n.string("Manage RSS Feeds"))
                 .accessibilityIdentifier("rss.manageFeedsButton")
                 Button {
                     showAddFeed = true
                 } label: {
                     Image(systemName: "plus")
                 }
-                .accessibilityLabel("Add RSS Feed")
+                .accessibilityLabel(L10n.string("Add RSS Feed"))
                 .accessibilityIdentifier("rss.addFeedButton")
             }
             .padding(.horizontal, 16)
@@ -84,10 +84,10 @@ struct RSSFeedsView: View {
             Image(systemName: "dot.radiowaves.left.and.right")
                 .font(.system(size: 56))
                 .foregroundStyle(.secondary)
-            Text("No RSS Feeds")
+            Text("No RSS Feeds", bundle: L10n.bundle)
                 .font(.title3)
                 .fontWeight(.semibold)
-            Text("Add a YouTube channel RSS feed to see videos here.")
+            Text("Add a YouTube channel RSS feed to see videos here.", bundle: L10n.bundle)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -95,7 +95,7 @@ struct RSSFeedsView: View {
             Button {
                 showAddFeed = true
             } label: {
-                Label("Add RSS Feed", systemImage: "plus")
+                Label(L10n.string("Add RSS Feed"), systemImage: "plus")
             }
             .buttonStyle(.borderedProminent)
             .accessibilityIdentifier("rss.emptyAddFeedButton")

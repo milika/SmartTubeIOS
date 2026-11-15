@@ -650,7 +650,8 @@ extension InnerTubeAPI {
         // Fail early for definitely-unplayable videos so callers don't waste work on
         // related/SponsorBlock fetches. Mirrors Android playabilityStatus check.
         if streamingData == nil, playabilityStatus != "OK" {
-            let reason = playabilityReason ?? "This video is unavailable (\(playabilityStatus))"
+            let reason =
+                playabilityReason ?? L10n.string("This video is unavailable (\(playabilityStatus))")
             tubeLog.error("❌ parsePlayerInfo: unplayable — \(reason, privacy: .public)")
             // Sign-in / age-gate: checked before IP-block so the caller shows "Sign In" not "Try Again".
             // Covers both explicit playabilityStatus values and reason-string keywords.
@@ -805,7 +806,7 @@ extension InnerTubeAPI {
         )
 
         guard hlsURL != nil || !formats.isEmpty else {
-            throw APIError.unavailable("This video is unavailable")
+            throw APIError.unavailable(L10n.string("This video is unavailable"))
         }
         // If streamingData is present but every format URL is nil, the server returned
         // cipher-protected URLs that we cannot decode (signatureCipher / cipher fields).
@@ -814,7 +815,8 @@ extension InnerTubeAPI {
         let hasAnyURL = hlsURL != nil || formats.contains { $0.url != nil }
         if !hasAnyURL {
             tubeLog.error("❌ parsePlayerInfo: streamingData present but all format URLs are nil (cipher-protected?)")
-            throw APIError.unavailable("Stream URLs require decryption — not supported by this client")
+            throw APIError.unavailable(
+                L10n.string("Stream URLs require decryption — not supported by this client"))
         }
         let endCards = parseEndCards(from: json)
         tubeLog.notice("parsePlayerInfo: endCards=\(endCards.count, privacy: .public)")

@@ -47,9 +47,11 @@ public final class HomeViewModel {
     // MARK: - Shelf definitions (in display order)
 
     public static let shelfSections: [BrowseSection] = [
-        BrowseSection(id: BrowseSection.SectionType.home.rawValue, title: "Recommended", type: .home),
         BrowseSection(
-            id: BrowseSection.SectionType.subscriptions.rawValue, title: "Subscriptions", type: .subscriptions),
+            id: BrowseSection.SectionType.home.rawValue, title: L10n.string("Recommended"), type: .home),
+        BrowseSection(
+            id: BrowseSection.SectionType.subscriptions.rawValue, title: L10n.string("Subscriptions"),
+            type: .subscriptions),
     ]
 
     /// Number of recommended videos inserted between each subscription video

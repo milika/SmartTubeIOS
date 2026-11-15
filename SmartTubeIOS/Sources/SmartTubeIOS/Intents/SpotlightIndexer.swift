@@ -66,7 +66,7 @@ public final class SpotlightIndexer {
             items: channels.prefix(Self.maxChannelItems).map { channel in
                 Item(
                     id: "channel:\(channel.id)", title: channel.title,
-                    detail: String(localized: "YouTube channel", bundle: .module), thumbnail: channel.thumbnailURL,
+                    detail: L10n.string("YouTube channel"), thumbnail: channel.thumbnailURL,
                     keywords: ["channel"])
             })
     }

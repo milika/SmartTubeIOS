@@ -16,6 +16,9 @@ public final class SettingsStore {
 
     public var settings: AppSettings {
         didSet {
+            if self.settings.language != oldValue.language {
+                L10n.language = self.settings.language
+            }
             if self.settings.hideShorts != oldValue.hideShorts {
                 settingsLog.notice(
                     "hideShorts \(oldValue.hideShorts ? "ON" : "OFF", privacy: .public) → \(self.settings.hideShorts ? "ON" : "OFF", privacy: .public)"
@@ -67,6 +70,8 @@ public final class SettingsStore {
         if ProcessInfo.processInfo.arguments.contains("--uitesting-disable-tos-player-on-ios") {
             self.useTOSPlayerOnIOS = false
         }
+        // Apply the stored interface language before the first view renders.
+        L10n.language = settings.language
     }
 
     private func save() {

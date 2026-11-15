@@ -171,7 +171,7 @@ public final class VideoDownloadService {
     private func performDownload(video: Video) async {
         do {
             guard await requestPhotoAddAccess() else {
-                state = .failed("Photo library access is required to save the video")
+                state = .failed(L10n.string("Photo library access is required to save the video"))
                 #if os(iOS)
                 if #available(iOS 16.1, *) { await endLiveActivity(phase: .failed) }
                 #endif
@@ -212,7 +212,7 @@ public final class VideoDownloadService {
                 let audioURL = androidInfo.bestAdaptiveAudioURL
             else {
                 downloadLog.error("[download] ❌ no adaptive video/audio streams found")
-                state = .failed("No downloadable stream found for this video")
+                state = .failed(L10n.string("No downloadable stream found for this video"))
                 #if os(iOS)
                 if #available(iOS 16.1, *) { await endLiveActivity(phase: .failed) }
                 #endif
@@ -247,10 +247,12 @@ public final class VideoDownloadService {
                 "[download] ❌ failed: domain=\(nsErr.domain) code=\(nsErr.code) desc=\(nsErr.localizedDescription)")
             let userMessage: String
             if nsErr.domain == "PHPhotosErrorDomain" {
-                userMessage =
+                userMessage = L10n.string(
                     "Could not save to Photos. Please check Settings → Privacy & Security → Photos and allow SmartTube to add photos."
+                )
             } else if let urlErr = error as? URLError, urlErr.code == .fileDoesNotExist {
-                userMessage = "Download failed — the video file was removed before saving. Please try again."
+                userMessage = L10n.string(
+                    "Download failed — the video file was removed before saving. Please try again.")
             } else {
                 userMessage = error.localizedDescription
             }
@@ -539,7 +541,8 @@ public final class VideoDownloadService {
     private nonisolated func saveToPhotoLibrary(fileURL: URL) async throws {
         #if os(iOS)
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
-            let desc = "Video file was removed before saving to Photos: \(fileURL.lastPathComponent)"
+            let desc = L10n.string(
+                "Video file was removed before saving to Photos: \(fileURL.lastPathComponent)")
             downloadLog.error("[download] ❌ \(desc)")
             throw URLError(.fileDoesNotExist, userInfo: [NSLocalizedDescriptionKey: desc])
         }
@@ -559,8 +562,9 @@ public final class VideoDownloadService {
                         continuation.resume()
                     } else {
                         // success=false, error=nil means permission was denied or restricted at save time
-                        let desc =
+                        let desc = L10n.string(
                             "Could not save to Photos. Please check Settings → Privacy & Security → Photos and allow SmartTube to add photos."
+                        )
                         downloadLog.error(
                             "[download] ❌ PHPhotoLibrary performChanges returned success=false with no error — likely permission denied"
                         )

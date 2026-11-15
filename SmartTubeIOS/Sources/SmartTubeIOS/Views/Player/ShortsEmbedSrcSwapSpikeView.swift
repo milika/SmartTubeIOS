@@ -1,4 +1,5 @@
 #if os(iOS)
+import SmartTubeIOSCore
 import SwiftUI
 import WebKit
 
@@ -23,7 +24,7 @@ struct ShortsEmbedSrcSwapSpikeView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .accessibilityIdentifier("shortsSpike.statusLabel")
 
-                Button("Swap") {
+                Button(L10n.string("Swap")) {
                     vm.swapToNextVideo()
                 }
                 .buttonStyle(.borderedProminent)

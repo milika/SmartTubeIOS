@@ -41,7 +41,7 @@ struct ParentalControlsSheet: View {
             content
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { dismiss() }
+                        Button(L10n.string("Cancel")) { dismiss() }
                     }
                 }
         }
@@ -52,11 +52,11 @@ struct ParentalControlsSheet: View {
         switch step {
         case .verifyCurrent:
             PINKeypadView(
-                title: "Enter Current PIN",
+                title: L10n.string("Enter Current PIN"),
                 errorMessage: errorMessage
             ) { pin in
                 guard SettingsPINHasher.hash(pin) == store.settings.settingsPINHash else {
-                    errorMessage = "Incorrect PIN"
+                    errorMessage = L10n.string("Incorrect PIN")
                     return
                 }
                 errorMessage = nil
@@ -74,7 +74,7 @@ struct ParentalControlsSheet: View {
 
         case .enterNew:
             PINKeypadView(
-                title: "Enter New PIN",
+                title: L10n.string("Enter New PIN"),
                 errorMessage: errorMessage
             ) { pin in
                 errorMessage = nil
@@ -84,11 +84,11 @@ struct ParentalControlsSheet: View {
 
         case .confirmNew(let firstPIN):
             PINKeypadView(
-                title: "Confirm New PIN",
+                title: L10n.string("Confirm New PIN"),
                 errorMessage: errorMessage
             ) { pin in
                 guard pin == firstPIN else {
-                    errorMessage = "PINs didn't match. Try again."
+                    errorMessage = L10n.string("PINs didn't match. Try again.")
                     step = .enterNew
                     return
                 }

@@ -4,6 +4,7 @@ import SmartTubeIOS
 import SmartTubeIOSCore
 import SwiftUI
 import os
+
 #if os(iOS)
 import CoreSpotlight
 #endif
@@ -150,7 +151,7 @@ struct AppEntry: App {
                 .environment(settingsStore)
                 .environment(\.innerTubeAPI, api)
                 #if ENABLE_DOWNLOADS
-                .environment(cardDownloadService)
+            .environment(cardDownloadService)
                 #endif
                 .onChange(of: authService.accessToken, initial: true) { _, newToken in
                     Task {
@@ -207,7 +208,7 @@ struct AppEntry: App {
                 .environment(settingsStore)
                 .environment(\.innerTubeAPI, api)
                 #if ENABLE_DOWNLOADS
-                .environment(cardDownloadService)
+            .environment(cardDownloadService)
                 #endif
                 .onChange(of: authService.accessToken, initial: true) { _, newToken in
                     Task {
@@ -240,7 +241,7 @@ struct AppEntry: App {
                     .environment(\.innerTubeAPI, api)
                     .environment(playerStateStore)
                     #if ENABLE_DOWNLOADS
-                    .environment(cardDownloadService)
+                .environment(cardDownloadService)
                     #endif
             } else {
                 RootView()
@@ -249,98 +250,98 @@ struct AppEntry: App {
                     .environment(settingsStore)
                     .environment(\.innerTubeAPI, api)
                     #if ENABLE_DOWNLOADS
-                    .environment(cardDownloadService)
+                .environment(cardDownloadService)
                     #endif
                     #if os(iOS)
                 .environment(playerStateStore)
                 .environment(tosPlayerStateStore)
                 .environment(playerRouter)
-                    #endif
-                    .onChange(of: authService.accessToken, initial: true) { _, newToken in
-                        #if os(iOS)
-                        playerStateStore.vm.updateAuthToken(newToken)
-                        #endif
-                        Task {
-                            await api.setAuthToken(newToken)
-                            await browseViewModel.updateAuthToken(newToken)
-                        }
-                    }
-                    .onChange(of: authService.sapisid, initial: true) { _, newSapisid in
-                        #if os(iOS)
-                        playerStateStore.vm.updateSAPISID(newSapisid)
-                        #endif
-                        Task { await api.setSAPISID(newSapisid) }
-                    }
-                    .onChange(of: settingsStore.settings.enabledSections) { _, newSections in
-                        browseViewModel.configureSections(newSections)
-                    }
-                    .onChange(of: settingsStore.settings.historyState, initial: true) { _, newState in
-                        browseViewModel.updateHistoryEnabled(newState == .enabled)
-                    }
-                    .onChange(of: settingsStore.settings.perDeviceRecommendationsEnabled) { _, enabled in
-                        Task {
-                            if !enabled { await api.resetVisitorData() }
-                            browseViewModel.loadContent(refresh: true, source: "perDeviceRecommendationsChanged")
-                        }
-                    }
-                    .onOpenURL { url in handleOpenURL(url) }
+                #endif
+                .onChange(of: authService.accessToken, initial: true) { _, newToken in
                     #if os(iOS)
-                    // Spotlight: tapping a video or channel result opens it.
-                    .onContinueUserActivity(CSSearchableItemActionType) { activity in
-                        guard let id = activity.userInfo?[CSSearchableItemActivityIdentifier] as? String,
-                            let route = SpotlightIndexer.route(forIdentifier: id)
-                        else { return }
-                        handleOpenURL(route.url)
-                    }
-                    // Spotlight: recently watched videos (removed when history is off or cleared)
-                    // and subscribed channels (removed on sign-out).
-                    .onChange(of: LocalWatchHistoryStore.shared.entries.map(\.video.id), initial: true) { _, _ in
-                        syncSpotlightHistory()
-                    }
-                    .onChange(of: settingsStore.settings.historyState) { _, _ in syncSpotlightHistory() }
-                    .onChange(of: browseViewModel.subscribedChannels) { _, channels in
-                        if !channels.isEmpty { SpotlightIndexer.shared.syncChannels(channels) }
-                    }
-                    .onChange(of: authService.isSignedIn) { _, signedIn in
-                        if !signedIn { SpotlightIndexer.shared.syncChannels([]) }
-                    }
+                    playerStateStore.vm.updateAuthToken(newToken)
                     #endif
-                    .onChange(of: scenePhase, initial: true) { _, phase in
-                        if phase == .active {
-                            consumePendingVideoID()
-                            consumePendingVideoFromLaunchArgs()
-                            consumeDeepLinkFromLaunchArgs()
-                            consumeChannelDeepLinkFromLaunchArgs()
-                            consumeQueueInjectFromLaunchArgs()
-                            consumeBotGuardProbeFromLaunchArgs()
-                            authService.handleForeground()
-                            browseViewModel.refreshIfStale()
-                            consumePendingRSSFeedURL()
-                            #if os(iOS)
-                            consumePendingWatchLaterID()
-                            consumePendingQueueVideoID()
-                            if playerStateStore.presentation == .miniPlayer {
-                                playerStateStore.vm.handleForeground()
-                            }
-                            #endif
-                        } else if phase == .background {
-                            #if os(iOS)
-                            if playerStateStore.presentation == .miniPlayer {
-                                playerStateStore.vm.handleBackground()
-                            }
-                            #endif
-                        }
+                    Task {
+                        await api.setAuthToken(newToken)
+                        await browseViewModel.updateAuthToken(newToken)
                     }
-                    .onAppear {
-                        enableShortsIfNeeded()
-                        signOutIfNeeded()
-                    }
+                }
+                .onChange(of: authService.sapisid, initial: true) { _, newSapisid in
                     #if os(iOS)
+                    playerStateStore.vm.updateSAPISID(newSapisid)
+                    #endif
+                    Task { await api.setSAPISID(newSapisid) }
+                }
+                .onChange(of: settingsStore.settings.enabledSections) { _, newSections in
+                    browseViewModel.configureSections(newSections)
+                }
+                .onChange(of: settingsStore.settings.historyState, initial: true) { _, newState in
+                    browseViewModel.updateHistoryEnabled(newState == .enabled)
+                }
+                .onChange(of: settingsStore.settings.perDeviceRecommendationsEnabled) { _, enabled in
+                    Task {
+                        if !enabled { await api.resetVisitorData() }
+                        browseViewModel.loadContent(refresh: true, source: "perDeviceRecommendationsChanged")
+                    }
+                }
+                .onOpenURL { url in handleOpenURL(url) }
+                #if os(iOS)
+                // Spotlight: tapping a video or channel result opens it.
+                .onContinueUserActivity(CSSearchableItemActionType) { activity in
+                    guard let id = activity.userInfo?[CSSearchableItemActivityIdentifier] as? String,
+                        let route = SpotlightIndexer.route(forIdentifier: id)
+                    else { return }
+                    handleOpenURL(route.url)
+                }
+                // Spotlight: recently watched videos (removed when history is off or cleared)
+                // and subscribed channels (removed on sign-out).
+                .onChange(of: LocalWatchHistoryStore.shared.entries.map(\.video.id), initial: true) { _, _ in
+                    syncSpotlightHistory()
+                }
+                .onChange(of: settingsStore.settings.historyState) { _, _ in syncSpotlightHistory() }
+                .onChange(of: browseViewModel.subscribedChannels) { _, channels in
+                    if !channels.isEmpty { SpotlightIndexer.shared.syncChannels(channels) }
+                }
+                .onChange(of: authService.isSignedIn) { _, signedIn in
+                    if !signedIn { SpotlightIndexer.shared.syncChannels([]) }
+                }
+                #endif
+                .onChange(of: scenePhase, initial: true) { _, phase in
+                    if phase == .active {
+                        consumePendingVideoID()
+                        consumePendingVideoFromLaunchArgs()
+                        consumeDeepLinkFromLaunchArgs()
+                        consumeChannelDeepLinkFromLaunchArgs()
+                        consumeQueueInjectFromLaunchArgs()
+                        consumeBotGuardProbeFromLaunchArgs()
+                        authService.handleForeground()
+                        browseViewModel.refreshIfStale()
+                        consumePendingRSSFeedURL()
+                        #if os(iOS)
+                        consumePendingWatchLaterID()
+                        consumePendingQueueVideoID()
+                        if playerStateStore.presentation == .miniPlayer {
+                            playerStateStore.vm.handleForeground()
+                        }
+                        #endif
+                    } else if phase == .background {
+                        #if os(iOS)
+                        if playerStateStore.presentation == .miniPlayer {
+                            playerStateStore.vm.handleBackground()
+                        }
+                        #endif
+                    }
+                }
+                .onAppear {
+                    enableShortsIfNeeded()
+                    signOutIfNeeded()
+                }
+                #if os(iOS)
                 .alert(item: $watchLaterAlert) { item in
                     Alert(
                         title: Text(item.title),
                         message: Text(item.message),
-                        dismissButton: .default(Text("OK"))
+                        dismissButton: .default(Text("OK", bundle: L10n.bundle))
                     )
                 }
                 #endif
@@ -376,7 +377,8 @@ struct AppEntry: App {
             NotificationCenter.default.post(name: .smartTubeOpenSearch, object: nil, userInfo: ["query": query])
         case .section(let type):
             leaveFullScreenPlayer()
-            NotificationCenter.default.post(name: .smartTubeOpenSection, object: nil, userInfo: ["section": type.rawValue])
+            NotificationCenter.default.post(
+                name: .smartTubeOpenSection, object: nil, userInfo: ["section": type.rawValue])
         case .playWatchLater:
             Task { @MainActor in
                 // Needs a signed-in account; otherwise show the Watch Later section, which
@@ -473,8 +475,8 @@ struct AppEntry: App {
         let token = authService.accessToken
         guard token != nil else {
             watchLaterAlert = WatchLaterAlert(
-                title: "Sign In Required",
-                message: "Please sign in to save videos to Watch Later."
+                title: L10n.string("Sign In Required"),
+                message: L10n.string("Please sign in to save videos to Watch Later.")
             )
             return
         }
@@ -486,12 +488,12 @@ struct AppEntry: App {
             do {
                 try await api.addToWatchLater(videoId: videoID)
                 watchLaterAlert = WatchLaterAlert(
-                    title: "Saved to Watch Later",
-                    message: "The video was added to your Watch Later playlist."
+                    title: L10n.string("Saved to Watch Later"),
+                    message: L10n.string("The video was added to your Watch Later playlist.")
                 )
             } catch {
                 watchLaterAlert = WatchLaterAlert(
-                    title: "Could Not Save",
+                    title: L10n.string("Could Not Save"),
                     message: error.localizedDescription
                 )
             }
@@ -526,7 +528,9 @@ struct AppEntry: App {
         defaults.removeObject(forKey: Self.pendingRSSFeedKey)
         defaults.synchronize()
         Task {
-            let title = RSSFeedInfo.channelId(from: feedURL).map { "Channel \($0)" } ?? "RSS Feed"
+            let title =
+                RSSFeedInfo.channelId(from: feedURL).map { L10n.string("Channel \($0)") }
+                ?? L10n.string("RSS Feed")
             let feed = RSSFeedInfo(title: title, feedURL: feedURL)
             await RSSFeedStore.shared.addFeed(feed)
         }

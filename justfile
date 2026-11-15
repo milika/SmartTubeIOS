@@ -32,6 +32,10 @@ secrets-check:
 doc-links:
     cd {{root}} && scripts/check-doc-links.sh
 
+# every declared language must cover every user-visible key (see scripts/check-localizations.py)
+localization-check:
+    python3 {{root}}/scripts/check-localizations.py
+
 # --- build & test ------------------------------------------------------------
 build:
     xcodebuild build -workspace {{workspace}} -scheme SmartTube -destination "platform=iOS Simulator,name={{sim}}" -derivedDataPath {{derived}} CODE_SIGNING_ALLOWED=NO -quiet
@@ -63,7 +67,7 @@ test-ui:
 test-ui-one id:
     xcodebuild test -workspace {{workspace}} -scheme SmartTube -destination "platform=iOS Simulator,name={{sim}}" -derivedDataPath {{derived}} -only-testing:{{id}} 2>&1 | grep -E "Test Case|TEST SUCCEEDED|TEST FAILED|error:" | tail -20
 
-ci: secrets-check doc-links format-check lint test-unit
+ci: secrets-check doc-links format-check lint localization-check test-unit
     @echo "CI gate passed"
 
 # regenerate the Unreleased section of CHANGELOG.md from Conventional Commits since the last tag

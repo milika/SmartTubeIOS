@@ -119,7 +119,7 @@ public actor CurrentQueueStore: UserDefaultsBackedStore {
     public var asPlaylistInfo: PlaylistInfo {
         PlaylistInfo(
             id: Self.playlistID,
-            title: "Current Queue",
+            title: L10n.string("Current Queue"),
             videoCount: videos.count,
             thumbnailURL: videos.first?.thumbnailURL
         )

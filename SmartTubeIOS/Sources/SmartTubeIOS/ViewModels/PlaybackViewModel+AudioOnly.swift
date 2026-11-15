@@ -22,8 +22,8 @@ extension PlaybackViewModel {
         settings.audioOnlyMode = isAudioOnlyMode
         toastMessage =
             isAudioOnlyMode
-            ? String(localized: "Audio-Only Mode", bundle: .module)
-            : String(localized: "Video Mode", bundle: .module)
+            ? L10n.string("Audio-Only Mode")
+            : L10n.string("Video Mode")
 
         if isAudioOnlyMode {
             // Overlay shows immediately via isAudioOnlyMode = true.
@@ -173,7 +173,7 @@ extension PlaybackViewModel {
             // Live toggle: keep overlay showing with HLS audio underneath.
             // Don't reset isAudioOnlyMode — the user's preference stays.
             audioOnlyLog.notice("Audio-only: all attempts failed (live toggle) — overlay stays, HLS audio continues")
-            toastMessage = "Audio-only stream unavailable — showing thumbnail"
+            toastMessage = L10n.string("Audio-only stream unavailable — showing thumbnail")
         } else {
             // New video load: silently fall back to HLS video.
             audioOnlyLog.notice("Audio-only: all attempts failed, falling back to HLS")

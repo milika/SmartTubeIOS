@@ -36,13 +36,13 @@ struct PlaylistPickerSheet: View {
                     ProgressView()
                 } else if let loadErrorMessage {
                     ContentUnavailableView(
-                        String(localized: "Could Not Load Playlists", bundle: .module),
+                        L10n.string("Could Not Load Playlists"),
                         systemImage: "exclamationmark.triangle",
                         description: Text(loadErrorMessage)
                     )
                 } else if playlists.isEmpty {
                     ContentUnavailableView(
-                        String(localized: "No Playlists", bundle: .module),
+                        L10n.string("No Playlists"),
                         systemImage: "list.bullet.rectangle"
                     )
                 } else {
@@ -65,15 +65,15 @@ struct PlaylistPickerSheet: View {
             }
             .navigationTitle(
                 mode == .copy
-                    ? String(localized: "Copy to Playlist", bundle: .module)
-                    : String(localized: "Move to Playlist", bundle: .module)
+                    ? L10n.string("Copy to Playlist")
+                    : L10n.string("Move to Playlist")
             )
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "Cancel", bundle: .module)) { dismiss() }
+                    Button(L10n.string("Cancel")) { dismiss() }
                 }
             }
         }

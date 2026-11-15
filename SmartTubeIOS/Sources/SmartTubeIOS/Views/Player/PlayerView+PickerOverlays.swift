@@ -33,13 +33,13 @@ extension PlayerView {
                 .onTapGesture { showQualityPicker = false }
             VStack(spacing: 0) {
                 HStack {
-                    Button("Cancel") { showQualityPicker = false }
+                    Button(L10n.string("Cancel")) { showQualityPicker = false }
                         #if os(tvOS)
                     .buttonStyle(PickerHeaderButtonStyle())
                         #endif
                         .padding()
                     Spacer()
-                    Text("Quality")
+                    Text("Quality", bundle: L10n.bundle)
                         .fontWeight(.semibold)
                     Spacer()
                     Color.clear.frame(width: 70, height: 44)
@@ -52,10 +52,10 @@ extension PlayerView {
                                 "[qualityPicker] selected Auto (was: \(vm.selectedFormat?.qualityLabel ?? "Auto"))")
                             vm.selectFormat(nil)
                             showQualityPicker = false
-                            qualityToastMessage = "Auto quality"
+                            qualityToastMessage = L10n.string("Auto quality")
                         } label: {
                             HStack {
-                                Text("Auto")
+                                Text("Auto", bundle: L10n.bundle)
                                     .foregroundStyle(.primary)
                                 Spacer()
                                 if vm.selectedFormat == nil {
@@ -79,7 +79,7 @@ extension PlayerView {
                                 )
                                 vm.selectFormat(fmt)
                                 showQualityPicker = false
-                                qualityToastMessage = "\(fmt.qualityLabel) · may take up to 30s"
+                                qualityToastMessage = L10n.string("\(fmt.qualityLabel) · may take up to 30s")
                             } label: {
                                 HStack {
                                     Text(fmt.qualityLabel)
@@ -145,13 +145,13 @@ extension PlayerView {
                 .onTapGesture { showSpeedPicker = false }
             VStack(spacing: 0) {
                 HStack {
-                    Button("Cancel") { showSpeedPicker = false }
+                    Button(L10n.string("Cancel")) { showSpeedPicker = false }
                         #if os(tvOS)
                     .buttonStyle(PickerHeaderButtonStyle())
                         #endif
                         .padding()
                     Spacer()
-                    Text("Playback Speed")
+                    Text("Playback Speed", bundle: L10n.bundle)
                         .fontWeight(.semibold)
                     Spacer()
                     Color.clear.frame(width: 70, height: 44)
@@ -166,8 +166,11 @@ extension PlayerView {
                                 showSpeedPicker = false
                             } label: {
                                 HStack {
-                                    Text(speed == 1.0 ? "Normal (1\u{d7})" : "\(speed, specifier: "%.2g")\u{d7}")
-                                        .foregroundStyle(.primary)
+                                    Text(
+                                        speed == 1.0
+                                            ? L10n.string("Normal (1\u{d7})") : String(format: "%.2g\u{d7}", speed)
+                                    )
+                                    .foregroundStyle(.primary)
                                     Spacer()
                                     if abs(store.settings.playbackSpeed - speed) < 0.01 {
                                         Image(systemName: AppSymbol.checkmark)
@@ -215,13 +218,13 @@ extension PlayerView {
                 .onTapGesture { showSleepTimerPicker = false }
             VStack(spacing: 0) {
                 HStack {
-                    Button("Cancel") { showSleepTimerPicker = false }
+                    Button(L10n.string("Cancel")) { showSleepTimerPicker = false }
                         #if os(tvOS)
                     .buttonStyle(PickerHeaderButtonStyle())
                         #endif
                         .padding()
                     Spacer()
-                    Text("Sleep Timer")
+                    Text("Sleep Timer", bundle: L10n.bundle)
                         .fontWeight(.semibold)
                     Spacer()
                     Color.clear.frame(width: 70, height: 44)
@@ -233,7 +236,7 @@ extension PlayerView {
                         showSleepTimerPicker = false
                     } label: {
                         HStack {
-                            Text("Off")
+                            Text("Off", bundle: L10n.bundle)
                                 .foregroundStyle(.primary)
                             Spacer()
                             if vm.sleepTimerMinutes == nil {
@@ -257,7 +260,7 @@ extension PlayerView {
                             showSleepTimerPicker = false
                         } label: {
                             HStack {
-                                Text("\(mins) min")
+                                Text("\(mins) min", bundle: L10n.bundle)
                                     .foregroundStyle(.primary)
                                 Spacer()
                                 if vm.sleepTimerMinutes == mins {
@@ -301,13 +304,13 @@ extension PlayerView {
                 .onTapGesture { showCaptionPicker = false }
             VStack(spacing: 0) {
                 HStack {
-                    Button("Cancel") { showCaptionPicker = false }
+                    Button(L10n.string("Cancel")) { showCaptionPicker = false }
                         #if os(tvOS)
                     .buttonStyle(PickerHeaderButtonStyle())
                         #endif
                         .padding()
                     Spacer()
-                    Text("Captions")
+                    Text("Captions", bundle: L10n.bundle)
                         .fontWeight(.semibold)
                     Spacer()
                     Color.clear.frame(width: 70, height: 44)
@@ -321,7 +324,7 @@ extension PlayerView {
                             showCaptionPicker = false
                         } label: {
                             HStack {
-                                Text("Off")
+                                Text("Off", bundle: L10n.bundle)
                                     .foregroundStyle(.primary)
                                 Spacer()
                                 if vm.selectedCaption == nil {
@@ -349,7 +352,7 @@ extension PlayerView {
                                         Text(track.name)
                                             .foregroundStyle(.primary)
                                         if track.isAutoGenerated {
-                                            Text("Auto-generated")
+                                            Text("Auto-generated", bundle: L10n.bundle)
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
                                         }
@@ -398,13 +401,13 @@ extension PlayerView {
                 .onTapGesture { showAudioTrackPicker = false }
             VStack(spacing: 0) {
                 HStack {
-                    Button("Cancel") { showAudioTrackPicker = false }
+                    Button(L10n.string("Cancel")) { showAudioTrackPicker = false }
                         #if os(tvOS)
                     .buttonStyle(PickerHeaderButtonStyle())
                         #endif
                         .padding()
                     Spacer()
-                    Text("Audio Track")
+                    Text("Audio Track", bundle: L10n.bundle)
                         .fontWeight(.semibold)
                     Spacer()
                     Color.clear.frame(width: 70, height: 44)
@@ -418,7 +421,7 @@ extension PlayerView {
                             showAudioTrackPicker = false
                         } label: {
                             HStack {
-                                Text("Auto")
+                                Text("Auto", bundle: L10n.bundle)
                                     .foregroundStyle(.primary)
                                 Spacer()
                                 if vm.selectedAudioTrack == nil {
@@ -446,7 +449,7 @@ extension PlayerView {
                                         Text(track.name)
                                             .foregroundStyle(.primary)
                                         if track.isOriginal {
-                                            Text("Original")
+                                            Text("Original", bundle: L10n.bundle)
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
                                         }

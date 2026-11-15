@@ -1,3 +1,4 @@
+import SmartTubeIOSCore
 import SwiftUI
 
 // MARK: - GestureAdjustmentHUD (#19)
@@ -48,13 +49,18 @@ struct GestureAdjustmentInfo: Equatable {
     var systemImage: String {
         switch kind {
         case .brightness: return value < 0.3 ? "sun.min.fill" : "sun.max.fill"
-        case .volume: return value == 0 ? "speaker.slash.fill" : value < 0.5 ? "speaker.wave.1.fill" : "speaker.wave.2.fill"
+        case .volume:
+            return value == 0 ? "speaker.slash.fill" : value < 0.5 ? "speaker.wave.1.fill" : "speaker.wave.2.fill"
         }
     }
 }
 
 struct GestureAdjustmentHUD: View {
     let info: GestureAdjustmentInfo
+
+    private var kindLabel: String {
+        info.kind == .brightness ? L10n.string("Brightness") : L10n.string("Volume")
+    }
 
     var body: some View {
         VStack(spacing: 10) {
@@ -80,7 +86,7 @@ struct GestureAdjustmentHUD: View {
             info.kind == .brightness ? "tosPlayer.brightnessHUD" : "tosPlayer.volumeHUD"
         )
         .accessibilityLabel(
-            "\(info.kind == .brightness ? "Brightness" : "Volume") \(Int(info.value * 100)) percent"
+            Text("\(kindLabel) \(Int(info.value * 100)) percent", bundle: L10n.bundle)
         )
     }
 }

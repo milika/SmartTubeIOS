@@ -43,6 +43,19 @@ public struct LibraryView: View {
         #endif
 
         var id: String { rawValue }
+
+        /// Localised label shown in the chip bar / segmented picker. `rawValue` stays the
+        /// stable English identifier used for accessibility ids and browse-section keys.
+        var displayName: String {
+            switch self {
+            case .subscriptions: return L10n.string("Subs")
+            case .history: return L10n.string("History")
+            case .playlists: return L10n.string("Playlists")
+            case .rss: return L10n.string("RSS Feeds")
+            case .downloads: return L10n.string("Downloads")
+            }
+        }
+
         var browseSectionType: BrowseSection.SectionType {
             switch self {
             case .subscriptions: return .subscriptions
@@ -90,7 +103,7 @@ public struct LibraryView: View {
                         guard selectedSection != sec else { return }
                         selectedSection = sec
                     } label: {
-                        Text(sec.rawValue)
+                        Text(sec.displayName)
                             .font(.headline)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 12)
@@ -119,9 +132,9 @@ public struct LibraryView: View {
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("library.chipBar")
             #else
-            Picker("Library Section", selection: $selectedSection) {
+            Picker(L10n.string("Library Section"), selection: $selectedSection) {
                 ForEach(LibrarySection.allCases) { sec in
-                    Text(sec.rawValue).tag(sec)
+                    Text(sec.displayName).tag(sec)
                         .accessibilityIdentifier("library.picker.\(sec.rawValue.lowercased())")
                 }
             }
@@ -264,11 +277,11 @@ public struct LibraryView: View {
                 .frame(width: 44, height: 44)
                 .foregroundStyle(Color.accentColor)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Current Queue")
+                Text("Current Queue", bundle: L10n.bundle)
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundStyle(.primary)
-                Text("\(queueVideosCount) video\(queueVideosCount == 1 ? "" : "s")")
+                Text("\(queueVideosCount) video\(queueVideosCount == 1 ? "" : "s")", bundle: L10n.bundle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -283,7 +296,7 @@ public struct LibraryView: View {
         .onTapGesture {
             selectedPlaylist = Video(
                 id: CurrentQueueStore.playlistID,
-                title: "Current Queue",
+                title: L10n.string("Current Queue"),
                 channelTitle: ""
             )
         }
@@ -297,11 +310,11 @@ public struct LibraryView: View {
                 Image(systemName: "person.badge.plus")
                     .font(.system(size: 60))
                     .foregroundStyle(.secondary)
-                Text("Follow channels to see their latest videos here")
+                Text("Follow channels to see their latest videos here", bundle: L10n.bundle)
                     .font(.headline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                Button("Search") {
+                Button(L10n.string("Search")) {
                     NotificationCenter.default.post(name: .navigateToSearch, object: nil)
                 }
                 .buttonStyle(.borderedProminent)
@@ -312,7 +325,7 @@ public struct LibraryView: View {
                 Image(systemName: AppSymbol.stackLayers)
                     .font(.system(size: 60))
                     .foregroundStyle(.secondary)
-                Text("Nothing here yet")
+                Text("Nothing here yet", bundle: L10n.bundle)
                     .font(.headline)
                     .foregroundStyle(.secondary)
             }
@@ -325,10 +338,10 @@ public struct LibraryView: View {
             Image(systemName: AppSymbol.personCircleQuestion)
                 .font(.system(size: 60))
                 .foregroundStyle(.secondary)
-            Text("Sign in to see your \(selectedSection.rawValue.lowercased())")
+            Text("Sign in to see your \(selectedSection.displayName.lowercased())", bundle: L10n.bundle)
                 .font(.headline)
                 .foregroundStyle(.secondary)
-            NavigationLink("Sign In") {
+            NavigationLink(L10n.string("Sign In")) {
                 SignInView()
             }
             .buttonStyle(.borderedProminent)

@@ -256,6 +256,9 @@ public actor VideoPreloadCache {
         prefetchTasks.removeValue(forKey: videoId)
     }
 
+    /// `true` while prefetching is paused because YouTube blocked this network.
+    public var isPausedForNetworkBlock: Bool { gate.isPaused(now: .init()) }
+
     /// Stops background prefetching for `PrefetchGate.networkBlockPause` and drops the
     /// queue. Call when YouTube answers a `/player` request with `APIError.ipBlocked`.
     public func pauseForNetworkBlock() {

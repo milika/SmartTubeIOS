@@ -535,6 +535,9 @@ extension InnerTubeAPI {
         }
         do {
             let body = await buildTrackingURLsBody(videoId: videoId)
+            // The caller cancels this when the player request finds the network blocked;
+            // don't send the /player request after that.
+            try Task.checkCancellation()
             let data = try await postWebSafari(body: body, allowBearerFallback: true)
             guard
                 let tracking = data["playbackTracking"] as? [String: Any],

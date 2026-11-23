@@ -617,6 +617,10 @@ extension PlaybackViewModel {
             if cachedTrackingURLs != nil {
                 // Tracking URLs came from the cache; no need for a parallel TV-client call.
                 authTrackingTask = nil
+            } else if await VideoPreloadCache.shared.isPausedForNetworkBlock {
+                // YouTube is blocking this network: the player request will fail too, and
+                // every extra request from the blocked IP can extend the block.
+                authTrackingTask = nil
             } else {
                 authTrackingTask = Task<PlaybackTrackingURLs?, Never> { [api = self.api] in
                     await api.fetchAuthenticatedTrackingURLs(videoId: video.id)
@@ -650,7 +654,9 @@ extension PlaybackViewModel {
                         // without a "Try Again" button. Suppress Crashlytics recording —
                         // this is a user-side network condition, not an app bug.
                         playerLog.error("⚠️ iOS client detected IP block — reason: \(reason)")
-                        // Feed prefetches would keep asking from the same blocked network.
+                        // Feed prefetches would keep asking from the same blocked network,
+                        // and the parallel tracking request has not reached /player yet.
+                        authTrackingTask?.cancel()
                         await VideoPreloadCache.shared.pauseForNetworkBlock()
                         throw error
                     } else if case APIError.unavailable = error, hasAuthToken {

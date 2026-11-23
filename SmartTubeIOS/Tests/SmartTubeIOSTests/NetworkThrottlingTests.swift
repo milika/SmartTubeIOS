@@ -15,9 +15,13 @@ struct NetworkThrottlingTests {
 
     // MARK: - Worker cap constants
 
-    @Test("maxWorkersWiFi is 5")
+    @Test("maxWorkersWiFi is 5 (2 on tvOS)")
     func maxWorkersWiFiIs5() {
+        #if os(tvOS)
+        #expect(VideoPreloadCache.maxWorkersWiFi == 2)
+        #else
         #expect(VideoPreloadCache.maxWorkersWiFi == 5)
+        #endif
     }
 
     @Test("maxWorkersCellular is 2")
@@ -25,9 +29,9 @@ struct NetworkThrottlingTests {
         #expect(VideoPreloadCache.maxWorkersCellular == 2)
     }
 
-    @Test("cellular cap is less than WiFi cap")
+    @Test("cellular cap is not above the WiFi cap")
     func cellularCapLessThanWiFi() {
-        #expect(VideoPreloadCache.maxWorkersCellular < VideoPreloadCache.maxWorkersWiFi)
+        #expect(VideoPreloadCache.maxWorkersCellular <= VideoPreloadCache.maxWorkersWiFi)
     }
 
     // MARK: - Network cap before first path update
@@ -56,19 +60,23 @@ struct NetworkThrottlingTests {
         }
     }
 
-    @Test("allowedPrefetchDataTypes on WiFi includes endCards and deArrowBranding")
+    @Test("allowedPrefetchDataTypes on WiFi includes deArrowBranding")
     func allowedTypesOnWiFiIncludesAllTypes() async {
-        // We can't force WiFi in tests, but we can verify the full set has 5 items.
+        // We can't force WiFi in tests, but we can verify the full set has 4 items.
         // When running on a development machine (typically WiFi), this should pass.
         let allowed = await VideoPreloadCache.shared.allowedPrefetchDataTypes
-        if allowed.count == 5 {
-            #expect(allowed.contains("endCards"))
+        if allowed.count == 4 {
             #expect(allowed.contains("deArrowBranding"))
         }
-        // If cellular (3 items), endCards + deArrow are excluded — that's also valid.
+        // If cellular (3 items), deArrow is excluded — that's also valid.
         #expect(
-            allowed.count == 0 || allowed.count == 3 || allowed.count == 5,
-            "Expected 0 (offline), 3 (cellular), or 5 (WiFi) allowed types")
+            allowed.count == 0 || allowed.count == 3 || allowed.count == 4,
+            "Expected 0 (offline), 3 (cellular), or 4 (WiFi) allowed types")
+    }
+
+    @Test("end cards are never prefetched (they cost a second /player request per card)")
+    func endCardsAreNotPrefetched() async {
+        #expect(!(await VideoPreloadCache.shared.allowedPrefetchDataTypes).contains("endCards"))
     }
 
     // MARK: - Queue depth + cellular cap relationship

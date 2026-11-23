@@ -41,8 +41,12 @@ struct PrefetchQueueTests {
         #expect(VideoPreloadCache.maxQueueDepth == 20)
     }
 
-    @Test("maxWorkersWiFi is 5")
+    @Test("maxWorkersWiFi is 5 (2 on tvOS)")
     func maxWorkersWiFiIs5() {
+        #if os(tvOS)
+        #expect(VideoPreloadCache.maxWorkersWiFi == 2)
+        #else
         #expect(VideoPreloadCache.maxWorkersWiFi == 5)
+        #endif
     }
 }

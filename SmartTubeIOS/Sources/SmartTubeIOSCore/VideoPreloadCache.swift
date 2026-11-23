@@ -138,9 +138,17 @@ public actor VideoPreloadCache {
 
     private var prefetchQueue: [PrefetchRequest] = []
     internal static let maxQueueDepth = 20  // internal for tests + Phase K
+    #if os(tvOS)
+    // Apple TV shows a whole grid of cards at once; 5 parallel prefetches sent bursts of
+    // ~10 /player requests a second. 2 spreads them out.
+    internal static let maxWorkersWiFi = 2  // internal for Phase K override
+    #else
     internal static let maxWorkersWiFi = 5  // internal for Phase K override
+    #endif
     internal static let maxWorkersCellular = 2  // internal for Phase K override
     private var activeWorkerCount = 0
+    /// Network-block pause and failed-video memory (see `PrefetchGate`).
+    private var gate = PrefetchGate()
 
     // MARK: - Disk cache (Phase J)
 
@@ -199,6 +207,8 @@ public actor VideoPreloadCache {
         // Playlist IDs are not video IDs — skip them to avoid wasted /player calls.
         let isPlaylistId = videoId == "WL" || videoId == "LL" || videoId.hasPrefix("PL")
         if isPlaylistId { return }
+        // Skip while YouTube is blocking the network, and videos that failed recently.
+        guard gate.allows(videoId: videoId, now: .init()) else { return }
         // Skip if still fresh
         if let entry = playerInfoCache[videoId], !entry.isExpired { return }
         // Skip if already in-flight
@@ -246,6 +256,17 @@ public actor VideoPreloadCache {
         prefetchTasks.removeValue(forKey: videoId)
     }
 
+    /// `true` while prefetching is paused because YouTube blocked this network.
+    public var isPausedForNetworkBlock: Bool { gate.isPaused(now: .init()) }
+
+    /// Stops background prefetching for `PrefetchGate.networkBlockPause` and drops the
+    /// queue. Call when YouTube answers a `/player` request with `APIError.ipBlocked`.
+    public func pauseForNetworkBlock() {
+        gate.noteNetworkBlock(now: .init())
+        prefetchQueue.removeAll()
+        cacheLog.notice("[prefetch] PAUSED — YouTube is blocking this network; queue dropped")
+    }
+
     // MARK: - Private: worker pool drain
 
     /// Updates the tracked network path and re-evaluates the worker pool.
@@ -268,16 +289,18 @@ public actor VideoPreloadCache {
     }
 
     /// Data types allowed for prefetch on the current network path.
-    /// Cellular/expensive paths skip large cosmetic fetches (endCards, deArrow).
+    /// Cellular/expensive paths skip large cosmetic fetches (deArrow). End cards are never
+    /// prefetched: they need a second `/player` request (Web client) per card, and are only
+    /// shown at the end of a video, so the live load fetches them when the video plays.
     var allowedPrefetchDataTypes: Set<String> {  // internal for tests
         guard let path = currentPath, path.status == .satisfied else {
             return currentPath == nil
-                ? ["playerInfo", "nextInfo", "sponsorSegments", "endCards", "deArrowBranding"] : []
+                ? ["playerInfo", "nextInfo", "sponsorSegments", "deArrowBranding"] : []
         }
         if path.isConstrained || path.isExpensive {
             return ["playerInfo", "nextInfo", "sponsorSegments"]
         }
-        return ["playerInfo", "nextInfo", "sponsorSegments", "endCards", "deArrowBranding"]
+        return ["playerInfo", "nextInfo", "sponsorSegments", "deArrowBranding"]
     }
 
     /// Starts worker tasks up to the current cap until the queue is empty.
@@ -285,6 +308,7 @@ public actor VideoPreloadCache {
     func drainQueue(workerCap: Int? = nil) {
         let cap = workerCap ?? networkCap
         guard cap > 0 else { return }  // paused when offline
+        guard !gate.isPaused(now: .init()) else { return }
         while activeWorkerCount < cap, !prefetchQueue.isEmpty {
             let request = prefetchQueue.removeFirst()
             guard prefetchTasks[request.videoId] == nil else { continue }
@@ -314,7 +338,15 @@ public actor VideoPreloadCache {
         }
         cacheLog.notice("[coalesce] creating new in-flight task for \(videoId, privacy: .public)")
         let task = Task<PlayerInfo?, Never>(priority: .userInitiated) {
-            let result = try? await self.api.fetchPlayerInfo(videoId: videoId)
+            let result: PlayerInfo?
+            do {
+                result = try await self.api.fetchPlayerInfo(videoId: videoId)
+            } catch APIError.ipBlocked {
+                self.pauseForNetworkBlock()
+                result = nil
+            } catch {
+                result = nil
+            }
             self.inFlightPlayerFetches.removeValue(forKey: videoId)
             return result
         }
@@ -546,14 +578,13 @@ public actor VideoPreloadCache {
         let playerFetchTask = getOrFetchPlayerInfo(videoId: videoId)
         // Gate optional fetches on the current network path (Phase K).
         async let nextResult = allowed.contains("nextInfo") ? (try? await api.fetchNextInfo(videoId: videoId)) : nil
-        async let endCardsResult = allowed.contains("endCards") ? (try? await api.fetchEndCards(videoId: videoId)) : nil
         async let sponsorResult = await sponsorBlock.fetchSegments(videoId: videoId, categories: sponsorCategories)
         async let deArrowResult =
             allowed.contains("deArrowBranding") ? await deArrow.fetchBranding(videoId: videoId) : nil
 
         // Pass the caller-supplied token directly — no dependency on api.authToken being set —
         // eliminating the actor-timing race that caused tracking=false on browse-phase prefetch.
-        // This runs concurrently with the 5 child tasks above (all are in flight by this point).
+        // This runs concurrently with the child tasks above (all are in flight by this point).
         //
         // Tracking URLs: prefer the `playbackTracking` URLs from the iOS-client player
         // response (which `getOrFetchPlayerInfo` already obtained) over a separate dedicated
@@ -570,24 +601,27 @@ public actor VideoPreloadCache {
         // for callers that have a working web-session auth context (SAPISID or web OAuth
         // Bearer) where it can return real account-bound URLs.
 
-        let (next, cards, sponsor, dearrow) =
-            await (nextResult, endCardsResult, sponsorResult, deArrowResult)
+        let (next, sponsor, dearrow) = await (nextResult, sponsorResult, deArrowResult)
         let player = await playerFetchTask.value
 
         guard !Task.isCancelled else { return }
 
         let elapsed = String(format: "%.2fs", Date().timeIntervalSince(startedAt))
 
-        if let player { store(playerInfo: player, for: videoId) }
+        if let player {
+            store(playerInfo: player, for: videoId)
+            gate.noteSuccess(videoId: videoId)
+        } else {
+            gate.noteFailure(videoId: videoId, now: .init())
+        }
         let tracking: PlaybackTrackingURLs? = player?.trackingURLs
         store(trackingURLs: tracking, for: videoId)
         if let next { store(nextInfo: next, for: videoId) }
-        if let cards { store(endCards: cards, for: videoId) }
         store(sponsorSegments: sponsor, for: videoId)
         if let dearrow { store(deArrowBranding: dearrow, for: videoId) }
 
         cacheLog.notice(
-            "[prefetch] DONE \(videoId, privacy: .public) elapsed=\(elapsed, privacy: .public) playerInfo=\(player != nil, privacy: .public) tracking=\(tracking != nil, privacy: .public) next=\(next != nil, privacy: .public) endCards=\(cards != nil, privacy: .public) sponsor=\(sponsor.count, privacy: .public) deArrow=\(dearrow != nil, privacy: .public)"
+            "[prefetch] DONE \(videoId, privacy: .public) elapsed=\(elapsed, privacy: .public) playerInfo=\(player != nil, privacy: .public) tracking=\(tracking != nil, privacy: .public) next=\(next != nil, privacy: .public) sponsor=\(sponsor.count, privacy: .public) deArrow=\(dearrow != nil, privacy: .public)"
         )
         prefetchTasks.removeValue(forKey: videoId)
     }

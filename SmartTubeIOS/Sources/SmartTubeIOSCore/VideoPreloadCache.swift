@@ -141,6 +141,8 @@ public actor VideoPreloadCache {
     internal static let maxWorkersWiFi = 5  // internal for Phase K override
     internal static let maxWorkersCellular = 2  // internal for Phase K override
     private var activeWorkerCount = 0
+    /// Network-block pause and failed-video memory (see `PrefetchGate`).
+    private var gate = PrefetchGate()
 
     // MARK: - Disk cache (Phase J)
 
@@ -199,6 +201,8 @@ public actor VideoPreloadCache {
         // Playlist IDs are not video IDs — skip them to avoid wasted /player calls.
         let isPlaylistId = videoId == "WL" || videoId == "LL" || videoId.hasPrefix("PL")
         if isPlaylistId { return }
+        // Skip while YouTube is blocking the network, and videos that failed recently.
+        guard gate.allows(videoId: videoId, now: .init()) else { return }
         // Skip if still fresh
         if let entry = playerInfoCache[videoId], !entry.isExpired { return }
         // Skip if already in-flight
@@ -246,6 +250,14 @@ public actor VideoPreloadCache {
         prefetchTasks.removeValue(forKey: videoId)
     }
 
+    /// Stops background prefetching for `PrefetchGate.networkBlockPause` and drops the
+    /// queue. Call when YouTube answers a `/player` request with `APIError.ipBlocked`.
+    public func pauseForNetworkBlock() {
+        gate.noteNetworkBlock(now: .init())
+        prefetchQueue.removeAll()
+        cacheLog.notice("[prefetch] PAUSED — YouTube is blocking this network; queue dropped")
+    }
+
     // MARK: - Private: worker pool drain
 
     /// Updates the tracked network path and re-evaluates the worker pool.
@@ -285,6 +297,7 @@ public actor VideoPreloadCache {
     func drainQueue(workerCap: Int? = nil) {
         let cap = workerCap ?? networkCap
         guard cap > 0 else { return }  // paused when offline
+        guard !gate.isPaused(now: .init()) else { return }
         while activeWorkerCount < cap, !prefetchQueue.isEmpty {
             let request = prefetchQueue.removeFirst()
             guard prefetchTasks[request.videoId] == nil else { continue }
@@ -314,7 +327,15 @@ public actor VideoPreloadCache {
         }
         cacheLog.notice("[coalesce] creating new in-flight task for \(videoId, privacy: .public)")
         let task = Task<PlayerInfo?, Never>(priority: .userInitiated) {
-            let result = try? await self.api.fetchPlayerInfo(videoId: videoId)
+            let result: PlayerInfo?
+            do {
+                result = try await self.api.fetchPlayerInfo(videoId: videoId)
+            } catch APIError.ipBlocked {
+                self.pauseForNetworkBlock()
+                result = nil
+            } catch {
+                result = nil
+            }
             self.inFlightPlayerFetches.removeValue(forKey: videoId)
             return result
         }
@@ -578,7 +599,12 @@ public actor VideoPreloadCache {
 
         let elapsed = String(format: "%.2fs", Date().timeIntervalSince(startedAt))
 
-        if let player { store(playerInfo: player, for: videoId) }
+        if let player {
+            store(playerInfo: player, for: videoId)
+            gate.noteSuccess(videoId: videoId)
+        } else {
+            gate.noteFailure(videoId: videoId, now: .init())
+        }
         let tracking: PlaybackTrackingURLs? = player?.trackingURLs
         store(trackingURLs: tracking, for: videoId)
         if let next { store(nextInfo: next, for: videoId) }

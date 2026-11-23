@@ -650,6 +650,8 @@ extension PlaybackViewModel {
                         // without a "Try Again" button. Suppress Crashlytics recording —
                         // this is a user-side network condition, not an app bug.
                         playerLog.error("⚠️ iOS client detected IP block — reason: \(reason)")
+                        // Feed prefetches would keep asking from the same blocked network.
+                        await VideoPreloadCache.shared.pauseForNetworkBlock()
                         throw error
                     } else if case APIError.unavailable = error, hasAuthToken {
                         playerLog.notice("⚠️ iOS client returned unavailable — retrying with authenticated TV client")

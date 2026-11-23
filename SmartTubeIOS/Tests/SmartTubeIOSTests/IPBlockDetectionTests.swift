@@ -15,12 +15,10 @@ struct IPBlockDetectionTests {
 
     // MARK: - Helpers
 
-    /// Mirrors the keyword heuristic in InnerTubeAPI+Player.swift so tests stay in sync.
-    /// If the keywords change in the implementation, this list must change too.
-    private func isIPBlockReason(_ reason: String) -> Bool {
-        let lower = reason.lowercased()
-        let keywords = ["your ip", "ip address", "vpn", "proxy", "bot", "sign in to confirm"]
-        return keywords.contains(where: { lower.contains($0) })
+    /// Runs the real classification used by `parsePlayerInfo` for an `UNPLAYABLE` response.
+    private func isIPBlockReason(_ reason: String, status: String = "UNPLAYABLE") -> Bool {
+        if case .ipBlocked = InnerTubeAPI.unplayableError(status: status, reason: reason) { return true }
+        return false
     }
 
     // MARK: - Keyword heuristic
@@ -53,6 +51,28 @@ struct IPBlockDetectionTests {
     @Test("'sign in to confirm' triggers IP-block classification")
     func signInToConfirmKeyword() {
         #expect(isIPBlockReason("Sign in to confirm you're not a bot."))
+    }
+
+    @Test("bot check sent as LOGIN_REQUIRED is a network block, not a sign-in request")
+    func botCheckWithLoginRequiredIsIPBlock() {
+        // Exact response seen on an Apple TV: status LOGIN_REQUIRED, curly apostrophe.
+        #expect(isIPBlockReason("Sign in to confirm you\u{2019}re not a bot", status: "LOGIN_REQUIRED"))
+        #expect(isIPBlockReason("Sign in to confirm you're not a bot.", status: "LOGIN_REQUIRED"))
+    }
+
+    @Test("age-restricted and sign-in-only videos stay sign-in errors")
+    func ageRestrictedStaysSignIn() {
+        let ageGate = InnerTubeAPI.unplayableError(
+            status: "LOGIN_REQUIRED", reason: "Sign in to confirm your age. This video may be inappropriate.")
+        guard case .signInRequired = ageGate else {
+            Issue.record("age gate classified as \(ageGate)")
+            return
+        }
+        let members = InnerTubeAPI.unplayableError(status: "LOGIN_REQUIRED", reason: "Sign in to watch this video")
+        guard case .signInRequired = members else {
+            Issue.record("sign-in-only video classified as \(members)")
+            return
+        }
     }
 
     @Test("Generic 'video unavailable' does NOT trigger IP-block classification")

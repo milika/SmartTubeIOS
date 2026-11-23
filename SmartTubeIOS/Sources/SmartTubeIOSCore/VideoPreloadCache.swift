@@ -138,7 +138,13 @@ public actor VideoPreloadCache {
 
     private var prefetchQueue: [PrefetchRequest] = []
     internal static let maxQueueDepth = 20  // internal for tests + Phase K
+    #if os(tvOS)
+    // Apple TV shows a whole grid of cards at once; 5 parallel prefetches sent bursts of
+    // ~10 /player requests a second. 2 spreads them out.
+    internal static let maxWorkersWiFi = 2  // internal for Phase K override
+    #else
     internal static let maxWorkersWiFi = 5  // internal for Phase K override
+    #endif
     internal static let maxWorkersCellular = 2  // internal for Phase K override
     private var activeWorkerCount = 0
     /// Network-block pause and failed-video memory (see `PrefetchGate`).

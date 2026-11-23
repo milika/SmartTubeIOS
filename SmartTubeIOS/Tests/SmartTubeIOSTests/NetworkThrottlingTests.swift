@@ -15,9 +15,13 @@ struct NetworkThrottlingTests {
 
     // MARK: - Worker cap constants
 
-    @Test("maxWorkersWiFi is 5")
+    @Test("maxWorkersWiFi is 5 (2 on tvOS)")
     func maxWorkersWiFiIs5() {
+        #if os(tvOS)
+        #expect(VideoPreloadCache.maxWorkersWiFi == 2)
+        #else
         #expect(VideoPreloadCache.maxWorkersWiFi == 5)
+        #endif
     }
 
     @Test("maxWorkersCellular is 2")
@@ -25,9 +29,9 @@ struct NetworkThrottlingTests {
         #expect(VideoPreloadCache.maxWorkersCellular == 2)
     }
 
-    @Test("cellular cap is less than WiFi cap")
+    @Test("cellular cap is not above the WiFi cap")
     func cellularCapLessThanWiFi() {
-        #expect(VideoPreloadCache.maxWorkersCellular < VideoPreloadCache.maxWorkersWiFi)
+        #expect(VideoPreloadCache.maxWorkersCellular <= VideoPreloadCache.maxWorkersWiFi)
     }
 
     // MARK: - Network cap before first path update

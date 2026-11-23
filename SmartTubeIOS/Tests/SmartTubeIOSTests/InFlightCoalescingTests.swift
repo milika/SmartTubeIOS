@@ -50,6 +50,10 @@ struct InFlightCoalescingTests {
     @Test("PrefetchPriority and queue depths are correct")
     func queueDepthAndWorkerConstants() async {
         #expect(VideoPreloadCache.maxQueueDepth == 20)
+        #if os(tvOS)
+        #expect(VideoPreloadCache.maxWorkersWiFi == 2)
+        #else
         #expect(VideoPreloadCache.maxWorkersWiFi == 5)
+        #endif
     }
 }

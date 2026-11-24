@@ -114,6 +114,34 @@ final class TVSettingsUITests: XCTestCase {
         )
     }
 
+    /// tvOS 27 pushes an empty option list for a `Picker` in a `Form`, and leaving it left
+    /// Settings blank. Settings rows push their own list (`SettingsPicker`): opening one
+    /// must show its options, and choosing one must return to Settings.
+    func testPickerRowShowsOptionsAndReturnsToSettings() throws {
+        let row = app.cells.containing(.any, identifier: "settings.preferredQualityPicker").element
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "Default Quality row must exist")
+        var focused = false
+        for _ in 0..<6 where !focused {
+            remote.press(.down)
+            focused = waitForFocus(on: row, timeout: 2)
+        }
+        XCTAssertTrue(focused, "Default Quality row must take focus")
+
+        remote.press(.select)
+        let option = app.cells.containing(NSPredicate(format: "label ==[c] '1080p'")).element
+        XCTAssertTrue(option.waitForExistence(timeout: 5), "the pushed list must show the quality options")
+
+        // The current value (Auto) starts focused, so this keeps the setting unchanged.
+        remote.press(.select)
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "choosing an option must return to Settings")
+        XCTAssertFalse(option.exists, "the option list must be closed")
+    }
+
+    private func waitForFocus(on element: XCUIElement, timeout: TimeInterval) -> Bool {
+        let focus = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hasFocus == true"), object: element)
+        return XCTWaiter.wait(for: [focus], timeout: timeout) == .completed
+    }
+
     /// The Reset All Settings button must be in the accessibility tree.
     func testResetAllSettingsButtonExists() {
         let button = app.descendants(matching: .any)

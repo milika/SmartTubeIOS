@@ -137,48 +137,41 @@ public struct SettingsView: View {
     private var playerSection: some View {
         @Bindable var store = store
         return Section("Player") {
-            Picker("Playback Speed", selection: $store.settings.playbackSpeed) {
-                ForEach(AppSettings.availableSpeeds, id: \.self) { s in
-                    Text(s == 1.0 ? "Normal" : "\(s, specifier: "%.2g")×").tag(s)
-                }
+            SettingsPicker(
+                "Playback Speed", selection: $store.settings.playbackSpeed, options: AppSettings.availableSpeeds
+            ) { speed in
+                Text(speed == 1.0 ? "Normal" : "\(speed, specifier: "%.2g")×")
             }
 
             #if !os(iOS)
-            Picker("Default Quality", selection: $store.settings.preferredQuality) {
-                ForEach(AppSettings.VideoQuality.allCases, id: \.self) { q in
-                    Text(q.rawValue.capitalized).tag(q)
-                }
+            SettingsPicker(
+                "Default Quality", selection: $store.settings.preferredQuality,
+                options: AppSettings.VideoQuality.allCases
+            ) { quality in
+                Text(quality.rawValue.capitalized)
             }
             .accessibilityIdentifier("settings.preferredQualityPicker")
 
-            Picker("Preferred Audio Language", selection: $store.settings.preferredAudioLanguage) {
-                Text("System Default").tag(nil as String?)
-                Divider()
-                Text("English").tag("en" as String?)
-                Text("Spanish").tag("es" as String?)
-                Text("French").tag("fr" as String?)
-                Text("German").tag("de" as String?)
-                Text("Japanese").tag("ja" as String?)
-                Text("Korean").tag("ko" as String?)
-                Text("Portuguese (Brazil)").tag("pt-BR" as String?)
-                Text("Chinese (Simplified)").tag("zh-Hans" as String?)
-                Divider()
-                Text("Original Track Only").tag("original" as String?)
+            SettingsPicker(
+                "Preferred Audio Language", selection: $store.settings.preferredAudioLanguage,
+                options: AudioLanguageChoice.codes
+            ) { code in
+                Text(AudioLanguageChoice.name(code))
             }
             .accessibilityIdentifier("settings.preferredAudioLanguageRow")
             #endif
 
             #if os(tvOS)
-            Picker("Seek Back", selection: $store.settings.seekBackSeconds) {
-                ForEach(AppSettings.availableSeekOptions, id: \.self) { s in
-                    Text("\(s) s").tag(s)
-                }
+            SettingsPicker(
+                "Seek Back", selection: $store.settings.seekBackSeconds, options: AppSettings.availableSeekOptions
+            ) { seconds in
+                Text("\(seconds) s")
             }
             .accessibilityIdentifier("settings.seekBackRow")
-            Picker("Seek Forward", selection: $store.settings.seekForwardSeconds) {
-                ForEach(AppSettings.availableSeekOptions, id: \.self) { s in
-                    Text("\(s) s").tag(s)
-                }
+            SettingsPicker(
+                "Seek Forward", selection: $store.settings.seekForwardSeconds, options: AppSettings.availableSeekOptions
+            ) { seconds in
+                Text("\(seconds) s")
             }
             .accessibilityIdentifier("settings.seekForwardRow")
             #elseif os(macOS)
@@ -199,18 +192,20 @@ public struct SettingsView: View {
             #endif
 
             #if !os(iOS)
-            Picker("Hide Controls After", selection: $store.settings.controlsHideTimeout) {
-                Text("2s").tag(2)
-                Text("3s").tag(3)
-                Text("4s").tag(4)
-                Text("5s").tag(5)
-                Text("8s").tag(8)
-                Text("10s").tag(10)
+            SettingsPicker(
+                "Hide Controls After", selection: $store.settings.controlsHideTimeout, options: [2, 3, 4, 5, 8, 10]
+            ) { seconds in
+                Text("\(seconds)s")
             }
 
-            Picker("Video Fit", selection: $store.settings.videoGravityMode) {
-                Text("Fit (letterbox)").tag(AppSettings.VideoGravityMode.fit)
-                Text("Fill (crop)").tag(AppSettings.VideoGravityMode.fill)
+            SettingsPicker(
+                "Video Fit", selection: $store.settings.videoGravityMode,
+                options: AppSettings.VideoGravityMode.allCases
+            ) { mode in
+                switch mode {
+                case .fit: Text("Fit (letterbox)")
+                case .fill: Text("Fill (crop)")
+                }
             }
             #endif
 
@@ -231,9 +226,13 @@ public struct SettingsView: View {
     private var generalSection: some View {
         @Bindable var store = store
         return Section {
-            Picker("Watch History", selection: $store.settings.historyState) {
-                Text("Enabled").tag(AppSettings.HistoryState.enabled)
-                Text("Disabled").tag(AppSettings.HistoryState.disabled)
+            SettingsPicker(
+                "Watch History", selection: $store.settings.historyState, options: AppSettings.HistoryState.allCases
+            ) { state in
+                switch state {
+                case .enabled: Text("Enabled")
+                case .disabled: Text("Disabled")
+                }
             }
             if !LocalWatchHistoryStore.shared.entries.isEmpty {
                 Button("Clear Watch History on This Device", role: .destructive) {
@@ -275,27 +274,31 @@ public struct SettingsView: View {
     private var uiSection: some View {
         @Bindable var store = store
         return Section("Interface") {
-            Picker("Theme", selection: $store.settings.themeName) {
-                ForEach(AppSettings.ThemeName.allCases, id: \.self) { t in
-                    Text(t.rawValue).tag(t)
-                }
+            SettingsPicker(
+                "Theme", selection: $store.settings.themeName, options: AppSettings.ThemeName.allCases
+            ) { theme in
+                Text(theme.rawValue)
             }
             .accessibilityIdentifier("settings.themeRow")
-            Picker("Accent Color", selection: $store.settings.accentColor) {
-                ForEach(AppSettings.AccentColorChoice.allCases, id: \.self) { choice in
-                    Label {
-                        Text(choice.displayName)
-                    } icon: {
-                        choice.swatch
-                    }
-                    .tag(choice)
+            SettingsPicker(
+                "Accent Color", selection: $store.settings.accentColor,
+                options: AppSettings.AccentColorChoice.allCases
+            ) { choice in
+                Label {
+                    Text(choice.displayName)
+                } icon: {
+                    choice.swatch
                 }
             }
             .accessibilityIdentifier("settings.accentColorPicker")
-            Picker("Thumbnails", selection: thumbnailStyle) {
-                Text("Standard").tag(ThumbnailStyle.standard)
-                Text("High Resolution").tag(ThumbnailStyle.highResolution)
-                Text("Compact").tag(ThumbnailStyle.compact)
+            SettingsPicker(
+                "Thumbnails", selection: thumbnailStyle, options: [.standard, .highResolution, .compact]
+            ) { style in
+                switch style {
+                case .standard: Text("Standard")
+                case .highResolution: Text("High Resolution")
+                case .compact: Text("Compact")
+                }
             }
             .accessibilityIdentifier("settings.thumbnailStylePicker")
             #if !os(tvOS)
@@ -323,10 +326,11 @@ public struct SettingsView: View {
             if store.settings.hideWatchedVideos {
                 #if os(tvOS)
                 // tvOS has no Stepper.
-                Picker("Watched threshold", selection: $store.settings.hideWatchedThreshold) {
-                    ForEach(Array(stride(from: 50, through: 100, by: 5)), id: \.self) { percent in
-                        Text("\(percent)%").tag(Double(percent) / 100)
-                    }
+                SettingsPicker(
+                    "Watched threshold", selection: $store.settings.hideWatchedThreshold,
+                    options: stride(from: 50, through: 100, by: 5).map { Double($0) / 100 }
+                ) { fraction in
+                    Text("\(Int((fraction * 100).rounded()))%")
                 }
                 .accessibilityIdentifier("settings.hideWatchedThresholdStepper")
                 #else
@@ -365,28 +369,30 @@ public struct SettingsView: View {
                         Circle()
                             .fill(cat.color)
                             .frame(width: 10, height: 10)
-                        Picker(
+                        SettingsPicker(
                             cat.displayName,
                             selection: Binding(
                                 get: { store.settings.sponsorBlockActions[cat] ?? .nothing },
                                 set: { store.settings.sponsorBlockActions[cat] = $0 }
-                            )
-                        ) {
-                            Text("Skip").tag(AppSettings.SponsorBlockAction.skip)
-                            Text("Show Toast").tag(AppSettings.SponsorBlockAction.showToast)
-                            Text("Nothing").tag(AppSettings.SponsorBlockAction.nothing)
+                            ),
+                            options: AppSettings.SponsorBlockAction.allCases
+                        ) { action in
+                            switch action {
+                            case .skip: Text("Skip")
+                            case .showToast: Text("Show Toast")
+                            case .nothing: Text("Nothing")
+                            }
                         }
                         .accessibilityIdentifier("settings.sponsorBlock.\(cat.rawValue)")
                     }
                 }
 
                 // Minimum segment duration
-                Picker("Min. Segment Length", selection: $store.settings.sponsorBlockMinSegmentDuration) {
-                    Text("Off").tag(0.0)
-                    Text("1s").tag(1.0)
-                    Text("2s").tag(2.0)
-                    Text("5s").tag(5.0)
-                    Text("10s").tag(10.0)
+                SettingsPicker(
+                    "Min. Segment Length", selection: $store.settings.sponsorBlockMinSegmentDuration,
+                    options: [0.0, 1.0, 2.0, 5.0, 10.0]
+                ) { seconds in
+                    Text(seconds == 0 ? "Off" : "\(Int(seconds))s")
                 }
 
                 // Excluded channels
@@ -481,6 +487,30 @@ public struct SettingsView: View {
         let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
         let b = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
         return "\(v) (\(b))"
+    }
+}
+
+// MARK: - AudioLanguageChoice
+
+/// Settings › Player › Preferred Audio Language: `nil` follows the system language,
+/// "original" keeps the video's original track.
+private enum AudioLanguageChoice {
+    static let codes: [String?] = [nil, "en", "es", "fr", "de", "ja", "ko", "pt-BR", "zh-Hans", "original"]
+
+    static func name(_ code: String?) -> LocalizedStringKey {
+        switch code {
+        case nil: "System Default"
+        case "en": "English"
+        case "es": "Spanish"
+        case "fr": "French"
+        case "de": "German"
+        case "ja": "Japanese"
+        case "ko": "Korean"
+        case "pt-BR": "Portuguese (Brazil)"
+        case "zh-Hans": "Chinese (Simplified)"
+        case "original": "Original Track Only"
+        default: LocalizedStringKey(code ?? "")
+        }
     }
 }
 

@@ -462,6 +462,8 @@ public final class PlaybackViewModel {
         self.comments = CommentsController(api: api)
 
         player.allowsExternalPlayback = true
+        player.usesExternalPlaybackWhileExternalScreenIsActive = true
+
         #if canImport(UIKit)
         do {
             // Only configure the audio category at init time. setActive(true) is
